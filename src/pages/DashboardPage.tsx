@@ -8,6 +8,7 @@ import ScannerButton from "@/components/ScannerButton";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 
 const DashboardPage: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
