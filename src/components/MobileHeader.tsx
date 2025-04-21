@@ -1,0 +1,63 @@
+
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Search, Bell } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+
+interface MobileHeaderProps {
+  title: string;
+  showBackButton?: boolean;
+  showSearchButton?: boolean;
+  onSearch?: () => void;
+}
+
+const MobileHeader: React.FC<MobileHeaderProps> = ({
+  title,
+  showBackButton = true,
+  showSearchButton = false,
+  onSearch,
+}) => {
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  
+  return (
+    <div className="sticky top-0 z-40 bg-temple-background border-b border-temple-gold/20 mobile-safe-area">
+      <div className="flex items-center justify-between h-14 px-4">
+        <div className="flex items-center">
+          {showBackButton && (
+            <button
+              onClick={() => navigate(-1)}
+              className="mr-2 p-1 rounded-full hover:bg-temple-gold/10"
+            >
+              <ArrowLeft size={24} className="text-temple-maroon" />
+            </button>
+          )}
+          <h1 className="font-bold text-lg text-temple-maroon truncate max-w-[200px]">
+            {title}
+          </h1>
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          {showSearchButton && onSearch && (
+            <button
+              onClick={onSearch}
+              className="p-1 rounded-full hover:bg-temple-gold/10"
+            >
+              <Search size={20} className="text-temple-maroon" />
+            </button>
+          )}
+          
+          <button className="p-1 rounded-full hover:bg-temple-gold/10">
+            <Bell size={20} className="text-temple-maroon" />
+          </button>
+          
+          <div className="h-8 w-8 bg-temple-saffron rounded-full flex items-center justify-center text-white text-sm font-bold">
+            {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : "U"}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default MobileHeader;

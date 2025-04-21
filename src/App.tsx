@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useEffect } from "react";
 import { initializeSampleData } from "@/services/storageService";
+import MobileNavBar from "@/components/MobileNavBar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Pages
 import DashboardPage from "./pages/DashboardPage";
@@ -48,6 +50,7 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 
 const AppContent = () => {
   const { isAuthenticated } = useAuth();
+  const isMobile = useIsMobile();
   
   // Initialize sample data on first load
   useEffect(() => {
@@ -55,49 +58,56 @@ const AppContent = () => {
   }, []);
   
   return (
-    <Routes>
-      <Route path="/login" element={
-        isAuthenticated ? <Navigate to="/" /> : <LoginPage />
-      } />
+    <div className="min-h-screen bg-temple-background">
+      <Routes>
+        <Route path="/login" element={
+          isAuthenticated ? <Navigate to="/" /> : <LoginPage />
+        } />
+        
+        <Route path="/" element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/books" element={
+          <ProtectedRoute>
+            <BooksPage />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/sell/:bookId" element={
+          <ProtectedRoute>
+            <SellBookPage />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/add-book" element={
+          <AdminRoute>
+            <AddBookPage />
+          </AdminRoute>
+        } />
+        
+        <Route path="/sales" element={
+          <ProtectedRoute>
+            <SalesPage />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/reports" element={
+          <AdminRoute>
+            <ReportsPage />
+          </AdminRoute>
+        } />
+        
+        <Route path="*" element={<NotFound />} />
+      </Routes>
       
-      <Route path="/" element={
-        <ProtectedRoute>
-          <DashboardPage />
-        </ProtectedRoute>
-      } />
+      {isAuthenticated && isMobile && <MobileNavBar />}
       
-      <Route path="/books" element={
-        <ProtectedRoute>
-          <BooksPage />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/sell/:bookId" element={
-        <ProtectedRoute>
-          <SellBookPage />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/add-book" element={
-        <AdminRoute>
-          <AddBookPage />
-        </AdminRoute>
-      } />
-      
-      <Route path="/sales" element={
-        <ProtectedRoute>
-          <SalesPage />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/reports" element={
-        <AdminRoute>
-          <ReportsPage />
-        </AdminRoute>
-      } />
-      
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+      {/* Add padding-bottom to create space for the mobile navigation bar */}
+      {isAuthenticated && isMobile && <div className="h-16"></div>}
+    </div>
   );
 };
 
