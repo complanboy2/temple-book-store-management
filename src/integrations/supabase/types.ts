@@ -9,7 +9,234 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      book_stalls: {
+        Row: {
+          createdat: string
+          id: string
+          instituteid: string
+          location: string | null
+          name: string
+        }
+        Insert: {
+          createdat?: string
+          id?: string
+          instituteid: string
+          location?: string | null
+          name: string
+        }
+        Update: {
+          createdat?: string
+          id?: string
+          instituteid?: string
+          location?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
+      books: {
+        Row: {
+          author: string
+          barcode: string | null
+          category: string | null
+          createdat: string
+          id: string
+          language: string | null
+          name: string
+          originalprice: number
+          printinginstitute: string | null
+          quantity: number
+          saleprice: number
+          stallid: string
+          updatedat: string
+        }
+        Insert: {
+          author: string
+          barcode?: string | null
+          category?: string | null
+          createdat?: string
+          id?: string
+          language?: string | null
+          name: string
+          originalprice: number
+          printinginstitute?: string | null
+          quantity: number
+          saleprice: number
+          stallid: string
+          updatedat?: string
+        }
+        Update: {
+          author?: string
+          barcode?: string | null
+          category?: string | null
+          createdat?: string
+          id?: string
+          language?: string | null
+          name?: string
+          originalprice?: number
+          printinginstitute?: string | null
+          quantity?: number
+          saleprice?: number
+          stallid?: string
+          updatedat?: string
+        }
+        Relationships: []
+      }
+      institutes: {
+        Row: {
+          address: string | null
+          adminid: string
+          createdat: string
+          id: string
+          name: string
+        }
+        Insert: {
+          address?: string | null
+          adminid: string
+          createdat?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          address?: string | null
+          adminid?: string
+          createdat?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      restock_entries: {
+        Row: {
+          adminid: string
+          bookid: string
+          cost: number
+          createdat: string
+          id: string
+          quantity: number
+          stallid: string
+          synced: boolean
+        }
+        Insert: {
+          adminid: string
+          bookid: string
+          cost: number
+          createdat?: string
+          id?: string
+          quantity: number
+          stallid: string
+          synced?: boolean
+        }
+        Update: {
+          adminid?: string
+          bookid?: string
+          cost?: number
+          createdat?: string
+          id?: string
+          quantity?: number
+          stallid?: string
+          synced?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restock_entries_bookid_fkey"
+            columns: ["bookid"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales: {
+        Row: {
+          bookid: string
+          buyername: string | null
+          buyerphone: string | null
+          createdat: string
+          id: string
+          paymentmethod: string
+          personnelid: string
+          quantity: number
+          stallid: string
+          synced: boolean
+          totalamount: number
+        }
+        Insert: {
+          bookid: string
+          buyername?: string | null
+          buyerphone?: string | null
+          createdat?: string
+          id?: string
+          paymentmethod: string
+          personnelid: string
+          quantity: number
+          stallid: string
+          synced?: boolean
+          totalamount: number
+        }
+        Update: {
+          bookid?: string
+          buyername?: string | null
+          buyerphone?: string | null
+          createdat?: string
+          id?: string
+          paymentmethod?: string
+          personnelid?: string
+          quantity?: number
+          stallid?: string
+          synced?: boolean
+          totalamount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_bookid_fkey"
+            columns: ["bookid"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          canrestock: boolean
+          cansell: boolean
+          email: string
+          id: string
+          instituteid: string | null
+          name: string
+          phone: string | null
+          role: string
+        }
+        Insert: {
+          canrestock?: boolean
+          cansell?: boolean
+          email: string
+          id?: string
+          instituteid?: string | null
+          name: string
+          phone?: string | null
+          role: string
+        }
+        Update: {
+          canrestock?: boolean
+          cansell?: boolean
+          email?: string
+          id?: string
+          instituteid?: string | null
+          name?: string
+          phone?: string | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "users_instituteid_fkey"
+            columns: ["instituteid"]
+            isOneToOne: false
+            referencedRelation: "institutes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
