@@ -15,6 +15,7 @@ import BooksPage from "./pages/BooksPage";
 import SellBookPage from "./pages/SellBookPage";
 import AddBookPage from "./pages/AddBookPage";
 import SalesPage from "./pages/SalesPage";
+import ReportsPage from "./pages/ReportsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -87,6 +88,12 @@ const AppContent = () => {
         <ProtectedRoute>
           <SalesPage />
         </ProtectedRoute>
+      } />
+      
+      <Route path="/reports" element={
+        <AdminRoute>
+          <ReportsPage />
+        </AdminRoute>
       } />
       
       <Route path="*" element={<NotFound />} />
