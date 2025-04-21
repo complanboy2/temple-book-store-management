@@ -8,8 +8,11 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<User>;
   logout: () => void;
   register: (name: string, email: string, phone: string, password: string, role: UserRole, instituteId: string) => Promise<User>;
+  inviteUser: (name: string, email: string, phone: string, role: UserRole) => Promise<string>;
+  completeRegistration: (inviteCode: string, password: string) => Promise<User>;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,6 +20,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [invites, setInvites] = useState<Record<string, Partial<User>>>({});
 
   // Check for existing user session on load
   useEffect(() => {
@@ -24,6 +28,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (user) {
       setUser(user);
     }
+    
+    // Load stored invites
+    const storedInvites = localStorage.getItem('temple_invites');
+    if (storedInvites) {
+      setInvites(JSON.parse(storedInvites));
+    }
+    
     setIsLoading(false);
   }, []);
 
@@ -80,6 +91,87 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
   
+  // Invite user function - creates an invite code
+  const inviteUser = async (
+    name: string,
+    email: string,
+    phone: string,
+    role: UserRole
+  ): Promise<string> => {
+    if (!currentUser || currentUser.role !== "admin") {
+      throw new Error("Only admins can invite users");
+    }
+
+    const users = getUsers();
+    const existingUser = users.find(u => u.email === email);
+    
+    if (existingUser) {
+      throw new Error("User already exists");
+    }
+    
+    // Generate invite code
+    const inviteCode = generateId();
+    
+    // Store invite data
+    const inviteData = {
+      name,
+      email,
+      phone,
+      role,
+      instituteId: currentUser.instituteId,
+      invitedBy: currentUser.id,
+      invitedAt: new Date(),
+    };
+    
+    const updatedInvites = { ...invites, [inviteCode]: inviteData };
+    setInvites(updatedInvites);
+    localStorage.setItem('temple_invites', JSON.stringify(updatedInvites));
+    
+    // In a real app, this would send a WhatsApp message with a link
+    // For now, we'll just return the invite code
+    return inviteCode;
+  };
+  
+  // Complete registration with invite code
+  const completeRegistration = async (inviteCode: string, password: string): Promise<User> => {
+    if (!invites[inviteCode]) {
+      throw new Error("Invalid invite code");
+    }
+    
+    const inviteData = invites[inviteCode];
+    
+    if (!inviteData.name || !inviteData.email || !inviteData.role || !inviteData.instituteId) {
+      throw new Error("Invalid invite data");
+    }
+    
+    // Create the user
+    const newUser: User = {
+      id: generateId(),
+      name: inviteData.name,
+      email: inviteData.email,
+      phone: inviteData.phone || "",
+      role: inviteData.role as UserRole,
+      canRestock: inviteData.role === "admin",
+      canSell: true,
+      instituteId: inviteData.instituteId,
+    };
+    
+    const users = getUsers();
+    const updatedUsers = [...users, newUser];
+    setUsers(updatedUsers);
+    
+    // Remove the invite
+    const { [inviteCode]: _, ...remainingInvites } = invites;
+    setInvites(remainingInvites);
+    localStorage.setItem('temple_invites', JSON.stringify(remainingInvites));
+    
+    // Log in the user
+    setUser(newUser);
+    setCurrentUser(newUser);
+    
+    return newUser;
+  };
+  
   const logout = () => {
     setUser(null);
     setCurrentUser(null);
@@ -90,8 +182,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login,
     logout,
     register,
+    inviteUser,
+    completeRegistration,
     isAuthenticated: !!currentUser,
     isAdmin: currentUser?.role === "admin",
+    isLoading,
   };
 
   return (

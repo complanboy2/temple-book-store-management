@@ -3,16 +3,22 @@ import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Home, BookOpen, BarChart2, PlusCircle, Menu } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useStallContext } from "@/contexts/StallContext";
 
 const MobileNavBar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAdmin } = useAuth();
-
-  const isActive = (path: string) => location.pathname === path;
+  const { currentStall } = useStallContext();
+  
+  const isActive = (path: string) => {
+    if (path === "/" && location.pathname === "/") return true;
+    if (path !== "/" && location.pathname.startsWith(path)) return true;
+    return false;
+  };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-temple-gold/30 shadow-lg z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-temple-gold/30 shadow-lg z-40 pb-safe">
       <div className="flex justify-around items-center h-16">
         <button
           onClick={() => navigate("/")}
@@ -58,9 +64,9 @@ const MobileNavBar = () => {
         
         {isAdmin && (
           <button
-            onClick={() => navigate("/reports")}
+            onClick={() => navigate("/admin")}
             className={`flex flex-col items-center justify-center w-full h-full ${
-              isActive("/reports") ? "text-temple-saffron" : "text-gray-500"
+              isActive("/admin") || isActive("/reports") ? "text-temple-saffron" : "text-gray-500"
             }`}
           >
             <Menu size={24} />

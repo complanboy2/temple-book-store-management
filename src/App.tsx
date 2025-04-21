@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { StallProvider } from "@/contexts/StallContext";
 import { useEffect } from "react";
 import { initializeSampleData } from "@/services/storageService";
 import MobileNavBar from "@/components/MobileNavBar";
@@ -19,6 +20,10 @@ import AddBookPage from "./pages/AddBookPage";
 import SalesPage from "./pages/SalesPage";
 import ReportsPage from "./pages/ReportsPage";
 import NotFound from "./pages/NotFound";
+import SearchPage from "./pages/SearchPage";
+import ProfilePage from "./pages/ProfilePage";
+import AdminPage from "./pages/AdminPage";
+import CompleteSignupPage from "./pages/CompleteSignupPage";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +69,8 @@ const AppContent = () => {
           isAuthenticated ? <Navigate to="/" /> : <LoginPage />
         } />
         
+        <Route path="/complete-signup/:inviteCode" element={<CompleteSignupPage />} />
+        
         <Route path="/" element={
           <ProtectedRoute>
             <DashboardPage />
@@ -73,6 +80,18 @@ const AppContent = () => {
         <Route path="/books" element={
           <ProtectedRoute>
             <BooksPage />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/search" element={
+          <ProtectedRoute>
+            <SearchPage />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <ProfilePage />
           </ProtectedRoute>
         } />
         
@@ -100,13 +119,16 @@ const AppContent = () => {
           </AdminRoute>
         } />
         
+        <Route path="/admin" element={
+          <AdminRoute>
+            <AdminPage />
+          </AdminRoute>
+        } />
+        
         <Route path="*" element={<NotFound />} />
       </Routes>
       
       {isAuthenticated && isMobile && <MobileNavBar />}
-      
-      {/* Add padding-bottom to create space for the mobile navigation bar */}
-      {isAuthenticated && isMobile && <div className="h-16"></div>}
     </div>
   );
 };
@@ -115,11 +137,13 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <BrowserRouter>
-          <AppContent />
-        </BrowserRouter>
-        <Toaster />
-        <Sonner />
+        <StallProvider>
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
+          <Toaster />
+          <Sonner />
+        </StallProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
