@@ -2,126 +2,228 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { BookStall } from "@/types";
 import { useAuth } from "./AuthContext";
-import { getBookStalls } from "@/services/storageService";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
 
-interface StallContextType {
-  stalls: BookStall[];
-  currentStall: string | null;
-  setCurrentStall: (stallId: string) => void;
-  addStall: (name: string, location?: string) => Promise<BookStall>;
-  updateStall: (id: string, data: Partial<BookStall>) => Promise<BookStall>;
-  deleteStall: (id: string) => Promise<void>;
+interface StoreContextType {
+  stores: BookStall[];
+  currentStore: string | null;
+  setCurrentStore: (storeId: string) => void;
+  addStore: (name: string, location?: string) => Promise<BookStall | null>;
+  updateStore: (id: string, data: Partial<BookStall>) => Promise<BookStall | null>;
+  deleteStore: (id: string) => Promise<void>;
+  isLoading: boolean;
 }
 
-const StallContext = createContext<StallContextType | undefined>(undefined);
+const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [stalls, setStalls] = useState<BookStall[]>([]);
-  const [currentStall, setCurrentStallState] = useState<string | null>(null);
+  const [stores, setStores] = useState<BookStall[]>([]);
+  const [currentStore, setCurrentStoreState] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { currentUser, isAdmin } = useAuth();
 
-  // Fetch stalls on mount and when current user changes
+  // Fetch stores on mount and when current user changes
   useEffect(() => {
     if (currentUser) {
-      const fetchStalls = () => {
-        const allStalls = getBookStalls();
-        // If admin, can see all stalls from their institute
-        // If not admin, can only see stalls they are assigned to
-        const filteredStalls = isAdmin 
-          ? allStalls.filter(stall => stall.instituteId === currentUser.instituteId)
-          : allStalls.filter(stall => stall.instituteId === currentUser.instituteId);
-        
-        setStalls(filteredStalls);
-        
-        // Set current stall to the first one if not already set
-        if (filteredStalls.length > 0 && !currentStall) {
-          setCurrentStallState(filteredStalls[0].id);
-          localStorage.setItem('currentStall', filteredStalls[0].id);
+      const fetchStores = async () => {
+        setIsLoading(true);
+        try {
+          const { data, error } = await supabase
+            .from("book_stalls")
+            .select("*")
+            .order('createdat', { ascending: false });
+          
+          if (error) {
+            console.error("Error fetching stores:", error);
+            toast({
+              title: "Error fetching stores",
+              description: error.message,
+              variant: "destructive",
+            });
+            setStores([]);
+            setIsLoading(false);
+            return;
+          }
+          
+          const filteredStores = isAdmin 
+            ? data.filter(store => store.instituteid === currentUser.instituteId)
+            : data.filter(store => store.instituteid === currentUser.instituteId);
+          
+          setStores(filteredStores);
+          
+          // Check if there's a saved store in localStorage
+          const savedStore = localStorage.getItem('currentStore');
+          if (savedStore && filteredStores.some(store => store.id === savedStore)) {
+            setCurrentStoreState(savedStore);
+          } else if (filteredStores.length > 0) {
+            // Set current store to the first one if not already set
+            setCurrentStoreState(filteredStores[0].id);
+            localStorage.setItem('currentStore', filteredStores[0].id);
+          } else {
+            // No stores available
+            setCurrentStoreState(null);
+            localStorage.removeItem('currentStore');
+          }
+        } catch (err) {
+          console.error("Failed to fetch stores:", err);
+        } finally {
+          setIsLoading(false);
         }
       };
       
-      fetchStalls();
-      
-      // Check if there's a saved stall in localStorage
-      const savedStall = localStorage.getItem('currentStall');
-      if (savedStall) {
-        setCurrentStallState(savedStall);
-      }
+      fetchStores();
     }
   }, [currentUser, isAdmin]);
 
-  const setCurrentStall = (stallId: string) => {
-    setCurrentStallState(stallId);
-    localStorage.setItem('currentStall', stallId);
+  const setCurrentStore = (storeId: string) => {
+    setCurrentStoreState(storeId);
+    localStorage.setItem('currentStore', storeId);
   };
 
-  const addStall = async (name: string, location?: string): Promise<BookStall> => {
-    if (!currentUser) throw new Error("User not authenticated");
+  const addStore = async (name: string, location?: string): Promise<BookStall | null> => {
+    if (!currentUser) {
+      toast({
+        title: "Authentication required",
+        description: "You must be logged in to add a store",
+        variant: "destructive",
+      });
+      return null;
+    }
     
-    const { generateId, setBookStalls } = await import("@/services/storageService");
-    
-    const newStall: BookStall = {
-      id: generateId(),
-      name,
-      location,
-      instituteId: currentUser.instituteId,
-      createdAt: new Date(),
-    };
-    
-    const updatedStalls = [...stalls, newStall];
-    setStalls(updatedStalls);
-    setBookStalls(updatedStalls);
-    
-    return newStall;
+    try {
+      const newStore = {
+        name,
+        location: location || null,
+        instituteid: currentUser.instituteId,
+      };
+      
+      const { data, error } = await supabase
+        .from("book_stalls")
+        .insert([newStore])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Error adding store:", error);
+        toast({
+          title: "Error adding store",
+          description: error.message,
+          variant: "destructive",
+        });
+        return null;
+      }
+      
+      const addedStore = data as BookStall;
+      setStores(prevStores => [addedStore, ...prevStores]);
+      
+      // If this is the first store, set it as current
+      if (stores.length === 0) {
+        setCurrentStore(addedStore.id);
+      }
+      
+      toast({
+        title: "Store Added",
+        description: `${name} has been added successfully`,
+      });
+      
+      return addedStore;
+    } catch (err) {
+      console.error("Failed to add store:", err);
+      toast({
+        title: "Error",
+        description: "Failed to add store. Please try again.",
+        variant: "destructive",
+      });
+      return null;
+    }
   };
 
-  const updateStall = async (id: string, data: Partial<BookStall>): Promise<BookStall> => {
-    const { setBookStalls } = await import("@/services/storageService");
-    
-    const stallIndex = stalls.findIndex(stall => stall.id === id);
-    if (stallIndex === -1) throw new Error("Stall not found");
-    
-    const updatedStall = { ...stalls[stallIndex], ...data };
-    const updatedStalls = [...stalls];
-    updatedStalls[stallIndex] = updatedStall;
-    
-    setStalls(updatedStalls);
-    setBookStalls(updatedStalls);
-    
-    return updatedStall;
+  const updateStore = async (id: string, data: Partial<BookStall>): Promise<BookStall | null> => {
+    try {
+      const { data: updatedStore, error } = await supabase
+        .from("book_stalls")
+        .update(data)
+        .eq("id", id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Error updating store:", error);
+        toast({
+          title: "Error updating store",
+          description: error.message,
+          variant: "destructive",
+        });
+        return null;
+      }
+      
+      setStores(prevStores => 
+        prevStores.map(store => 
+          store.id === id ? { ...store, ...updatedStore } : store
+        )
+      );
+      
+      return updatedStore as BookStall;
+    } catch (err) {
+      console.error("Failed to update store:", err);
+      return null;
+    }
   };
 
-  const deleteStall = async (id: string): Promise<void> => {
-    const { setBookStalls } = await import("@/services/storageService");
-    
-    const updatedStalls = stalls.filter(stall => stall.id !== id);
-    setStalls(updatedStalls);
-    setBookStalls(updatedStalls);
-    
-    // If deleting current stall, switch to another one if available
-    if (currentStall === id && updatedStalls.length > 0) {
-      setCurrentStall(updatedStalls[0].id);
+  const deleteStore = async (id: string): Promise<void> => {
+    try {
+      const { error } = await supabase
+        .from("book_stalls")
+        .delete()
+        .eq("id", id);
+      
+      if (error) {
+        console.error("Error deleting store:", error);
+        toast({
+          title: "Error deleting store",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setStores(prevStores => prevStores.filter(store => store.id !== id));
+      
+      // If deleting current store, switch to another one if available
+      if (currentStore === id) {
+        const remaining = stores.filter(store => store.id !== id);
+        if (remaining.length > 0) {
+          setCurrentStore(remaining[0].id);
+        } else {
+          setCurrentStoreState(null);
+          localStorage.removeItem('currentStore');
+        }
+      }
+    } catch (err) {
+      console.error("Failed to delete store:", err);
     }
   };
 
   return (
-    <StallContext.Provider 
+    <StoreContext.Provider 
       value={{ 
-        stalls, 
-        currentStall, 
-        setCurrentStall,
-        addStall,
-        updateStall,
-        deleteStall
+        stores, 
+        currentStore, 
+        setCurrentStore,
+        addStore,
+        updateStore,
+        deleteStore,
+        isLoading
       }}
     >
       {children}
-    </StallContext.Provider>
+    </StoreContext.Provider>
   );
 };
 
 export const useStallContext = () => {
-  const context = useContext(StallContext);
+  const context = useContext(StoreContext);
   if (context === undefined) {
     throw new Error("useStallContext must be used within a StallProvider");
   }

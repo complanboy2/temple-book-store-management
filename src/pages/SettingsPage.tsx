@@ -12,6 +12,9 @@ import {
 } from "@/services/storageService";
 import { Input } from "@/components/ui/input";
 import { X } from "lucide-react";
+import { useStallContext } from "@/contexts/StallContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 const SettingsPage: React.FC = () => {
   const [authors, setLocalAuthors] = useState<string[]>([]);
@@ -20,6 +23,10 @@ const SettingsPage: React.FC = () => {
   const [newAuthor, setNewAuthor] = useState("");
   const [newCategory, setNewCategory] = useState("");
   const [saleInput, setSaleInput] = useState<{[k: string]: string}>({});
+  const { stores, currentStore, addStore } = useStallContext();
+  const [newStoreName, setNewStoreName] = useState("");
+  const [newStoreLocation, setNewStoreLocation] = useState("");
+  const { toast } = useToast();
 
   useEffect(() => {
     setLocalAuthors(getAuthors());
@@ -73,9 +80,80 @@ const SettingsPage: React.FC = () => {
     setSaleInput({ ...saleInput, [author]: "" });
   };
 
+  const handleAddStore = async () => {
+    if (!newStoreName.trim()) {
+      toast({
+        title: "Store name required",
+        description: "Please enter a name for the store",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const result = await addStore(newStoreName, newStoreLocation);
+    if (result) {
+      toast({
+        title: "Store Added",
+        description: `${newStoreName} has been added successfully`,
+      });
+      setNewStoreName("");
+      setNewStoreLocation("");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-temple-background px-2 py-4">
       <h1 className="text-temple-maroon text-2xl font-bold mb-4">Settings</h1>
+      
+      {/* Stores section */}
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle>Book Stores</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-2 mb-2">
+            <Input 
+              value={newStoreName} 
+              onChange={e => setNewStoreName(e.target.value)} 
+              placeholder="Store name" 
+              className="mb-1"
+            />
+            <Input 
+              value={newStoreLocation} 
+              onChange={e => setNewStoreLocation(e.target.value)} 
+              placeholder="Store location (optional)" 
+              className="mb-1"
+            />
+            <Button 
+              onClick={handleAddStore} 
+              disabled={!newStoreName.trim()} 
+              className="bg-temple-saffron hover:bg-temple-saffron/90"
+            >
+              Add Store
+            </Button>
+          </div>
+          
+          <div className="mt-4">
+            <h3 className="text-sm font-medium mb-2">Current Stores:</h3>
+            {stores.length > 0 ? (
+              <div className="space-y-2">
+                {stores.map(store => (
+                  <div key={store.id} className="p-3 border rounded bg-gray-50">
+                    <div className="font-medium">{store.name}</div>
+                    {store.location && <div className="text-sm text-gray-500">{store.location}</div>}
+                    {currentStore === store.id && (
+                      <div className="text-xs text-temple-saffron mt-1">Current Store</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">No stores added yet.</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+      
       {/* Author section */}
       <Card className="mb-4">
         <CardHeader>
@@ -105,6 +183,7 @@ const SettingsPage: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+      
       {/* Category section */}
       <Card>
         <CardHeader>
@@ -125,6 +204,7 @@ const SettingsPage: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+      
       {/* Explain for admin */}
       <div className="mt-6 text-[13px] text-temple-maroon/60">
         Tip: Sale percentage is added on top of book's original price per author. Leave blank for no default.
@@ -132,4 +212,5 @@ const SettingsPage: React.FC = () => {
     </div>
   );
 };
+
 export default SettingsPage;
