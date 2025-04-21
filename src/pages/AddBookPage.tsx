@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getBooks, setBooks, generateId, getBookStalls } from "@/services/storageService";
@@ -7,6 +6,11 @@ import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import { getAuthors, setAuthors, getCategories, setCategories } from "@/services/storageService";
+import { X, Plus } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const AddBookPage: React.FC = () => {
   const [name, setName] = useState("");
@@ -20,6 +24,51 @@ const AddBookPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // New state and logic for authors and categories
+  const [authors, setLocalAuthors] = useState<string[]>([]);
+  const [categories, setLocalCategories] = useState<string[]>([]);
+  const [customAuthor, setCustomAuthor] = useState("");
+  const [customCategory, setCustomCategory] = useState("");
+
+  useEffect(() => {
+    setLocalAuthors(getAuthors());
+    setLocalCategories(getCategories());
+  }, []);
+
+  const addAuthor = () => {
+    if (customAuthor.trim() && !authors.includes(customAuthor.trim())) {
+      const next = [...authors, customAuthor.trim()];
+      setAuthors(next);
+      setLocalAuthors(next);
+      setAuthor(customAuthor.trim());
+      setCustomAuthor("");
+    }
+  };
+
+  const deleteAuthor = (name: string) => {
+    const next = authors.filter(a => a !== name);
+    setAuthors(next);
+    setLocalAuthors(next);
+    if (author === name) setAuthor("");
+  };
+
+  const addCategory = () => {
+    if (customCategory.trim() && !categories.includes(customCategory.trim())) {
+      const next = [...categories, customCategory.trim()];
+      setCategories(next);
+      setLocalCategories(next);
+      setCategory(customCategory.trim());
+      setCustomCategory("");
+    }
+  };
+
+  const deleteCategory = (name: string) => {
+    const next = categories.filter(c => c !== name);
+    setCategories(next);
+    setLocalCategories(next);
+    if (category === name) setCategory("");
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,15 +117,14 @@ const AddBookPage: React.FC = () => {
   };
 
   const validateForm = () => {
-    if (!name || !author || !category || !printingInstitute || !originalPrice || !salePrice || !quantity) {
+    if (!name || !author || !printingInstitute || !originalPrice || !salePrice || !quantity) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields.",
+        description: "Please fill in all required fields (Book Name, Author, Printing Institute, Prices, Quantity).",
         variant: "destructive",
       });
       return false;
     }
-    
     if (isNaN(parseFloat(originalPrice)) || isNaN(parseFloat(salePrice)) || isNaN(parseInt(quantity))) {
       toast({
         title: "Validation Error",
@@ -85,7 +133,6 @@ const AddBookPage: React.FC = () => {
       });
       return false;
     }
-    
     return true;
   };
 
@@ -93,7 +140,7 @@ const AddBookPage: React.FC = () => {
     <div className="min-h-screen bg-temple-background">
       <Header />
       
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-2 py-2">
         <Button
           variant="ghost"
           onClick={() => navigate(-1)}
@@ -123,35 +170,83 @@ const AddBookPage: React.FC = () => {
                 />
               </div>
               
-              <div className="space-y-2">
-                <label htmlFor="author" className="text-lg font-medium">
-                  Author*
-                </label>
-                <input
-                  id="author"
-                  type="text"
+            {/* --- AUTHOR FIELD --- */}
+            <div className="space-y-2">
+              <label className="text-lg font-medium">
+                Author*
+              </label>
+              <div className="flex gap-2">
+                <Select
                   value={author}
-                  onChange={(e) => setAuthor(e.target.value)}
-                  required
-                  className="temple-input w-full"
-                  placeholder="Enter author name"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="category" className="text-lg font-medium">
-                  Category*
-                </label>
+                  onValueChange={val => setAuthor(val)}
+                  defaultValue=""
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select author..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {authors.map(a => (
+                      <div key={a} className="flex items-center justify-between">
+                        <SelectItem value={a}>{a}</SelectItem>
+                        <button type="button" className="ml-2 text-destructive" onClick={() => deleteAuthor(a)}>
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <input
-                  id="category"
                   type="text"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  required
-                  className="temple-input w-full"
-                  placeholder="Enter category (e.g., Scripture, Epic)"
+                  className="temple-input flex-1"
+                  value={customAuthor}
+                  placeholder="Add new author"
+                  onChange={e => setCustomAuthor(e.target.value)}
                 />
+                <button type="button" onClick={addAuthor} className={cn("bg-temple-maroon text-white rounded px-2", !customAuthor && "opacity-40")} disabled={!customAuthor}>
+                  <Plus className="w-4 h-4" />
+                </button>
               </div>
+            </div>
+            
+            {/* --- CATEGORY FIELD --- */}
+            <div className="space-y-2">
+              <label className="text-lg font-medium">
+                Category{" "}
+                <span className="text-[12px] text-gray-400">(optional)</span>
+              </label>
+              <div className="flex gap-2">
+                <Select
+                  value={category}
+                  onValueChange={val => setCategory(val)}
+                  defaultValue=""
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select category..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(c => (
+                      <div key={c} className="flex items-center justify-between">
+                        <SelectItem value={c}>{c}</SelectItem>
+                        <button type="button" className="ml-2 text-destructive" onClick={() => deleteCategory(c)}>
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <input
+                  type="text"
+                  className="temple-input flex-1"
+                  value={customCategory}
+                  placeholder="Add new category"
+                  onChange={e => setCustomCategory(e.target.value)}
+                />
+                <button type="button" onClick={addCategory} className={cn("bg-temple-maroon text-white rounded px-2", !customCategory && "opacity-40")} disabled={!customCategory}>
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
               
               <div className="space-y-2">
                 <label htmlFor="printingInstitute" className="text-lg font-medium">

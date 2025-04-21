@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { getBooks, getSales } from "@/services/storageService";
 import { Book, Sale } from "@/types";
@@ -6,12 +5,14 @@ import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 
 const SalesPage: React.FC = () => {
   const [sales, setSales] = useState<Sale[]>([]);
   const [books, setBooks] = useState<Book[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<string>("all");
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     const allSales = getSales();
@@ -25,32 +26,42 @@ const SalesPage: React.FC = () => {
   }, []);
 
   const getFilteredSales = () => {
+    let filtered = sales;
+    if (search.trim()) {
+      filtered = filtered.filter(sale => {
+        const book = books.find(b => b.id === sale.bookId);
+        return (
+          (book?.name?.toLowerCase().includes(search.toLowerCase())) ||
+          (book?.author?.toLowerCase().includes(search.toLowerCase())) ||
+          (sale.buyerName?.toLowerCase().includes(search.toLowerCase())) ||
+          (sale.personnelId?.toLowerCase().includes(search.toLowerCase()))
+        );
+      });
+    }
     const now = new Date();
-    
     switch (selectedPeriod) {
       case "today": {
         const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        return sales.filter(sale => new Date(sale.createdAt) >= startOfDay);
+        return filtered.filter(sale => new Date(sale.createdAt) >= startOfDay);
       }
       case "week": {
         const startOfWeek = new Date(now);
         startOfWeek.setDate(now.getDate() - now.getDay());
         startOfWeek.setHours(0, 0, 0, 0);
-        return sales.filter(sale => new Date(sale.createdAt) >= startOfWeek);
+        return filtered.filter(sale => new Date(sale.createdAt) >= startOfWeek);
       }
       case "month": {
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        return sales.filter(sale => new Date(sale.createdAt) >= startOfMonth);
+        return filtered.filter(sale => new Date(sale.createdAt) >= startOfMonth);
       }
       default:
-        return sales;
+        return filtered;
     }
   };
 
   const filteredSales = getFilteredSales();
   const filteredRevenue = filteredSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
 
-  // Sort sales by date (most recent first)
   const sortedSales = [...filteredSales].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
@@ -58,10 +69,16 @@ const SalesPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-temple-background">
       <Header />
-      
-      <main className="container mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold text-temple-maroon mb-6">Sales History</h1>
-        
+      <main className="container mx-auto px-2 py-4">
+        <h1 className="text-2xl font-bold text-temple-maroon mb-4">Sales History</h1>
+        <div className="flex gap-2 mb-4">
+          <Input
+            placeholder="Search by book, author or buyer"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="max-w-xs"
+          />
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <Card className="temple-card">
             <CardContent className="pt-6">

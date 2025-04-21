@@ -1,7 +1,6 @@
-
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, BookOpen, BarChart2, PlusCircle, Menu } from "lucide-react";
+import { Home, BookOpen, BarChart2, PlusCircle, Menu, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStallContext } from "@/contexts/StallContext";
 
@@ -71,6 +70,17 @@ const MobileNavBar = () => {
           >
             <Menu size={24} />
             <span className="text-xs mt-1">More</span>
+          </button>
+        )}
+        {isAdmin && (
+          <button
+            onClick={() => navigate("/settings")}
+            className={`flex flex-col items-center justify-center w-full h-full ${
+              isActive("/settings") ? "text-temple-saffron" : "text-gray-500"
+            }`}
+          >
+            <Settings size={24} />
+            <span className="text-xs mt-1">Settings</span>
           </button>
         )}
       </div>

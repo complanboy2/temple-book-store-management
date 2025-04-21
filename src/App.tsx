@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,6 +23,7 @@ import SearchPage from "./pages/SearchPage";
 import ProfilePage from "./pages/ProfilePage";
 import AdminPage from "./pages/AdminPage";
 import CompleteSignupPage from "./pages/CompleteSignupPage";
+import SettingsPage from "./pages/SettingsPage";
 
 const queryClient = new QueryClient();
 
@@ -122,6 +122,12 @@ const AppContent = () => {
         <Route path="/admin" element={
           <AdminRoute>
             <AdminPage />
+          </AdminRoute>
+        } />
+        
+        <Route path="/settings" element={
+          <AdminRoute>
+            <SettingsPage />
           </AdminRoute>
         } />
         

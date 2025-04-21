@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { getBooks, getSales } from "@/services/storageService";
 import { Book, Sale } from "@/types";
@@ -18,6 +17,8 @@ const DashboardPage: React.FC = () => {
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [lowStockCount, setLowStockCount] = useState(0);
   const [topSellingBooks, setTopSellingBooks] = useState<{id: string, name: string, count: number}[]>([]);
+  const [lowStockBooks, setLowStockBooks] = useState([]);
+  const [notified, setNotified] = useState(false);
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const { currentStall, stalls } = useStallContext();
@@ -30,7 +31,6 @@ const DashboardPage: React.FC = () => {
       let filteredBooks = allBooks;
       let filteredSales = allSales;
       
-      // Filter by current stall if available
       if (currentStall) {
         filteredBooks = allBooks.filter(book => book.stallId === currentStall);
         filteredSales = allSales.filter(sale => sale.stallId === currentStall);
@@ -39,15 +39,12 @@ const DashboardPage: React.FC = () => {
       setBooks(filteredBooks);
       setSales(filteredSales);
       
-      // Calculate total revenue
       const revenue = filteredSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
       setTotalRevenue(revenue);
       
-      // Calculate low stock count
       const lowStock = filteredBooks.filter(book => book.quantity < 5).length;
       setLowStockCount(lowStock);
       
-      // Calculate top selling books
       const bookSalesCount: Record<string, {id: string, name: string, count: number}> = {};
       filteredSales.forEach(sale => {
         const book = filteredBooks.find(b => b.id === sale.bookId);
@@ -68,10 +65,30 @@ const DashboardPage: React.FC = () => {
     
     fetchData();
     
-    // Re-fetch data when returning to the page or when currentStall changes
     const intervalId = setInterval(fetchData, 5000);
     return () => clearInterval(intervalId);
   }, [currentStall]);
+
+  useEffect(() => {
+    const allBooks = getBooks();
+    const low = allBooks.filter(b => b.quantity <= 5);
+    setLowStockBooks(low);
+    
+    if (low.length && !notified) {
+      if (window.Notification && Notification.permission === "granted") {
+        low.forEach(book => {
+          new Notification("Low Stock Alert", {
+            body: `${book.name} by ${book.author} is running low! Only ${book.quantity} left.`,
+          });
+        });
+        setNotified(true);
+      } else if (window.Notification && Notification.permission !== "denied") {
+        Notification.requestPermission().then(permission => {
+          if (permission === "granted") setNotified(true);
+        });
+      }
+    }
+  }, []);
 
   const handleCodeScanned = (code: string) => {
     const book = books.find(b => b.id === code || b.barcode === code);
@@ -82,14 +99,12 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  // Get today's sales
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todaySales = sales.filter(
     sale => new Date(sale.createdAt).getTime() >= today.getTime()
   );
   
-  // Get recent sales for display
   const recentSales = [...sales]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
@@ -105,7 +120,6 @@ const DashboardPage: React.FC = () => {
       />
       
       <main className="mobile-container">
-        {/* Stats Overview */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           <StatsCard 
             title="Books" 
@@ -133,12 +147,21 @@ const DashboardPage: React.FC = () => {
           />
         </div>
         
-        {/* Scan Button */}
         <div className="mb-4">
           <ScannerButton onCodeScanned={handleCodeScanned} />
         </div>
         
-        {/* Top Selling Books */}
+        {lowStockBooks.length > 0 && (
+          <div className="mb-4 p-3 rounded bg-yellow-100 border-l-4 border-yellow-400 flex flex-col gap-1">
+            <span className="font-bold text-orange-600">Low Stock Alert</span>
+            {lowStockBooks.map(book => (
+              <span key={book.id} className="text-xs">
+                {book.name} (by {book.author}): Only <span className="font-semibold">{book.quantity}</span> left!
+              </span>
+            ))}
+          </div>
+        )}
+        
         {topSellingBooks.length > 0 && (
           <Card className="mobile-card mb-4">
             <CardHeader className="pb-2">
@@ -166,7 +189,6 @@ const DashboardPage: React.FC = () => {
           </Card>
         )}
         
-        {/* Quick Actions */}
         <Card className="mobile-card mb-4">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg text-temple-maroon">Quick Actions</CardTitle>
@@ -211,7 +233,6 @@ const DashboardPage: React.FC = () => {
           </CardContent>
         </Card>
         
-        {/* Recent Sales */}
         <Card className="temple-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg text-temple-maroon">Recent Sales</CardTitle>

@@ -1,4 +1,3 @@
-
 import { Book, Sale, RestockEntry, Institute, BookStall, User } from "../types";
 
 // Local storage keys
@@ -10,6 +9,9 @@ const KEYS = {
   BOOKS: "temple_books",
   SALES: "temple_sales",
   RESTOCK: "temple_restock",
+  AUTHORS: "temple_authors",
+  CATEGORIES: "temple_categories",
+  SALE_PERCENTAGE: "temple_author_sale_percent",
 };
 
 // Generic function to get items from local storage
@@ -66,6 +68,23 @@ export const addRestockEntry = (entry: RestockEntry): void => {
   const entries = getRestockEntries();
   entries.push(entry);
   setRestockEntries(entries);
+};
+
+// Author functions
+export const getAuthors = (): string[] => getItems<string>(KEYS.AUTHORS);
+export const setAuthors = (authors: string[]) => setItems(KEYS.AUTHORS, authors);
+
+// Category functions
+export const getCategories = (): string[] => getItems<string>(KEYS.CATEGORIES);
+export const setCategories = (categories: string[]) => setItems(KEYS.CATEGORIES, categories);
+
+// Sale percentage by author
+export const getAuthorSalePercentage = (): Record<string, number> => {
+  const val = localStorage.getItem(KEYS.SALE_PERCENTAGE);
+  return val ? JSON.parse(val) : {};
+};
+export const setAuthorSalePercentage = (obj: Record<string, number>) => {
+  localStorage.setItem(KEYS.SALE_PERCENTAGE, JSON.stringify(obj));
 };
 
 // Book operations
