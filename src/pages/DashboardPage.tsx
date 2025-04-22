@@ -23,6 +23,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const storeFormSchema = z.object({
   name: z.string().min(1, "Store name is required"),
@@ -191,18 +199,24 @@ const DashboardPage: React.FC = () => {
       <div className="mobile-container flex flex-col md:flex-row md:items-center gap-2 mt-3">
         <div className="flex-1">
           {stores.length > 0 ? (
-            <select
-              className="temple-input w-full md:w-auto"
+            <Select
               value={currentStore || ""}
-              onChange={e => setCurrentStore(e.target.value)}
+              onValueChange={(value) => setCurrentStore(value)}
             >
-              {stores.map(store => (
-                <option key={store.id} value={store.id}>
-                  {store.name}
-                  {store.location ? ` (${store.location})` : ""}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="temple-input w-full md:w-auto">
+                <SelectValue placeholder="Select a store" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {stores.map(store => (
+                    <SelectItem key={store.id} value={store.id || "default-store"}>
+                      {store.name}
+                      {store.location ? ` (${store.location})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           ) : (
             <div className="text-sm text-muted-foreground py-2">
               {isLoading ? "Loading stores..." : "No stores available"}
