@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import ScannerButton from "@/components/ScannerButton";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 import {
   Select,
   SelectContent,
@@ -19,13 +20,13 @@ import MobileHeader from "@/components/MobileHeader";
 import { useStallContext } from "@/contexts/StallContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTranslation } from "react-i18next";
-import { toast } from "@/components/ui/use-toast";
 
 const BooksPage: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { currentStore } = useStallContext();
   const isMobile = useIsMobile();
@@ -33,52 +34,69 @@ const BooksPage: React.FC = () => {
 
   useEffect(() => {
     const fetchBooks = async () => {
+      setIsLoading(true);
+      
       if (!currentStore) {
         console.log("No store selected, cannot fetch books");
         setBooks([]);
         setFilteredBooks([]);
+        setIsLoading(false);
         return;
       }
 
-      let query = supabase
-        .from("books")
-        .select("*")
-        .eq("stallid", currentStore)
-        .order("createdat", { ascending: false });
-        
-      const { data, error } = await query;
+      console.log(`Fetching books for store ID: ${currentStore}`);
 
-      if (error) {
-        console.error("Error fetching books from Supabase:", error);
+      try {
+        const { data, error } = await supabase
+          .from("books")
+          .select("*")
+          .eq("stallid", currentStore)
+          .order("createdat", { ascending: false });
+          
+        if (error) {
+          console.error("Error fetching books from Supabase:", error);
+          toast({
+            title: "Error",
+            description: "Error fetching books. Please try again.",
+            variant: "destructive",
+          });
+          setBooks([]);
+          setFilteredBooks([]);
+          setIsLoading(false);
+          return;
+        }
+
+        // Transform API result to local Book type
+        const result: Book[] = (data || []).map((row: any) => ({
+          id: row.id,
+          barcode: row.barcode ?? undefined,
+          name: row.name,
+          author: row.author,
+          category: row.category ?? "",
+          printingInstitute: row.printinginstitute ?? "",
+          originalPrice: row.originalprice,
+          salePrice: row.saleprice,
+          quantity: row.quantity,
+          stallId: row.stallid,
+          createdAt: row.createdat ? new Date(row.createdat) : new Date(),
+          updatedAt: row.updatedat ? new Date(row.updatedat) : new Date()
+        }));
+
+        console.log(`Fetched ${result.length} books for store ${currentStore}`);
+        setBooks(result);
+        setFilteredBooks(result);
+      } catch (err) {
+        console.error("Unexpected error fetching books:", err);
         toast({
           title: "Error",
-          description: "Error fetching books. Please try again.",
+          description: "Unexpected error fetching books. Please try again.",
           variant: "destructive",
         });
         setBooks([]);
         setFilteredBooks([]);
-        return;
+      } finally {
+        setIsLoading(false);
       }
-
-      // Transform API result to local Book type
-      const result: Book[] = (data || []).map((row: any) => ({
-        id: row.id,
-        barcode: row.barcode ?? undefined,
-        name: row.name,
-        author: row.author,
-        category: row.category ?? "",
-        printingInstitute: row.printinginstitute ?? "",
-        originalPrice: row.originalprice,
-        salePrice: row.saleprice,
-        quantity: row.quantity,
-        stallId: row.stallid,
-        createdAt: row.createdat ? new Date(row.createdat) : new Date(),
-        updatedAt: row.updatedat ? new Date(row.updatedat) : new Date()
-      }));
-
-      console.log(`Fetched ${result.length} books for store ${currentStore}`);
-      setBooks(result);
-      setFilteredBooks(result);
     };
 
     fetchBooks();
@@ -90,7 +108,7 @@ const BooksPage: React.FC = () => {
       results = results.filter(book => 
         book.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        book.category.toLowerCase().includes(searchTerm.toLowerCase())
+        (book.category && book.category.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
     if (selectedCategory) {
@@ -120,24 +138,16 @@ const BooksPage: React.FC = () => {
   const categories = Array.from(new Set(books.map(book => book.category).filter(Boolean)));
 
   return (
-    <div className="min-h-screen bg-temple-background">
-      {isMobile ? (
-        <MobileHeader 
-          title={t("common.booksInventory")} 
-          showBackButton={true}
-          backTo="/"
-          showSearchButton={true}
-          onSearch={() => document.getElementById('searchInput')?.focus()}
-        />
-      ) : (
-        <MobileHeader 
-          title={t("common.booksInventory")} 
-          showBackButton={true}
-          backTo="/"
-          showSearchButton={true}
-          onSearch={() => document.getElementById('searchInput')?.focus()}
-        />
-      )}
+    <div className="min-h-screen bg-temple-background pb-20">
+      <MobileHeader 
+        title={t("common.booksInventory")} 
+        showBackButton={true}
+        backTo="/"
+        showSearchButton={true}
+        showStallSelector={true}
+        onSearch={() => document.getElementById('searchInput')?.focus()}
+      />
+      
       <main className="container mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-temple-maroon mb-4 md:mb-0">{t("common.booksInventory")}</h1>
@@ -148,9 +158,11 @@ const BooksPage: React.FC = () => {
             {t("common.addNewBook")}
           </Button>
         </div>
+        
         <div className="mb-6">
           <ScannerButton onCodeScanned={handleCodeScanned} />
         </div>
+        
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="w-full md:flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
@@ -170,7 +182,7 @@ const BooksPage: React.FC = () => {
               <SelectValue placeholder={t("common.allCategories")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">{t("common.allCategories")}</SelectItem>
+              <SelectItem key="all-categories" value="">{t("common.allCategories")}</SelectItem>
               {categories.map((category) => (
                 <SelectItem key={category} value={category}>
                   {category}
@@ -179,7 +191,12 @@ const BooksPage: React.FC = () => {
             </SelectContent>
           </Select>
         </div>
-        {filteredBooks.length > 0 ? (
+        
+        {isLoading ? (
+          <div className="text-center py-12">
+            <p className="text-lg text-muted-foreground">{t("common.loading")}...</p>
+          </div>
+        ) : filteredBooks.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredBooks.map((book) => (
               <BookCard key={book.id} book={book} onSelect={handleBookSelect} />

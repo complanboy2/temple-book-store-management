@@ -75,7 +75,7 @@ const AddBookPage: React.FC = () => {
       if (!currentStore) {
         toast({
           title: t("common.error"),
-          description: "No store selected. Please select a store first.",
+          description: t("common.noStoreSelected"),
           variant: "destructive",
         });
         setIsLoading(false);
@@ -97,12 +97,13 @@ const AddBookPage: React.FC = () => {
         updatedAt: new Date(),
       };
       
+      console.log("Saving new book to local storage:", newBook);
+      
       // Save to local storage
       const books = getBooks();
       setBooks([...books, newBook]);
       
-      // Also save to Supabase
-      const { error } = await supabase.from("books").insert({
+      console.log("Saving new book to Supabase:", {
         id: newBook.id,
         name: newBook.name,
         author: newBook.author,
@@ -112,20 +113,54 @@ const AddBookPage: React.FC = () => {
         saleprice: newBook.salePrice,
         quantity: newBook.quantity,
         stallid: newBook.stallId,
-        barcode: newBook.barcode || null,
-        createdat: new Date().toISOString(),
-        updatedat: new Date().toISOString()
+        barcode: newBook.barcode || null
       });
+      
+      // Also save to Supabase
+      const { data, error } = await supabase
+        .from("books")
+        .insert({
+          id: newBook.id,
+          name: newBook.name,
+          author: newBook.author,
+          category: newBook.category,
+          printinginstitute: newBook.printingInstitute,
+          originalprice: newBook.originalPrice,
+          saleprice: newBook.salePrice,
+          quantity: newBook.quantity,
+          stallid: newBook.stallId,
+          barcode: newBook.barcode || null,
+          createdat: new Date().toISOString(),
+          updatedat: new Date().toISOString()
+        })
+        .select();
       
       if (error) {
         console.error("Error adding book to Supabase:", error);
+        toast({
+          title: t("common.supabaseError"),
+          description: error.message,
+          variant: "destructive",
+        });
         // Continue anyway as we have added to local storage
+      } else {
+        console.log("Book added to Supabase successfully:", data);
       }
       
       toast({
         title: t("common.bookAdded"),
         description: `"${name}" ${t("common.addedToInventory")}`,
       });
+      
+      // Reset form
+      setName("");
+      setAuthor("");
+      setCategory("");
+      setPrintingInstitute("");
+      setOriginalPrice("");
+      setSalePrice("");
+      setQuantity("");
+      setBarcode("");
       
       navigate("/books");
     } catch (error) {
@@ -169,7 +204,7 @@ const AddBookPage: React.FC = () => {
   // Show author percentage if available
   const getAuthorPercentageDisplay = () => {
     if (author && authorPercentages[author]) {
-      return `(${authorPercentages[author]}% royalty)`;
+      return `(${authorPercentages[author]}% ${t("common.authorRoyalty")})`;
     }
     return '';
   };
@@ -180,6 +215,7 @@ const AddBookPage: React.FC = () => {
         title={t("common.addBook")} 
         showBackButton={true}
         backTo="/books"
+        showStallSelector={true}
       />
       
       <main className="container mx-auto px-4 py-6">

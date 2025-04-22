@@ -53,6 +53,7 @@
     "bookAdded": "Book Added",
     "addedToInventory": "has been added to inventory",
     "error": "Error",
+    "supabaseError": "Supabase Error",
     "failedToAddBook": "Failed to add book",
     "validationError": "Validation Error",
     "fillRequiredFields": "Please fill in all required fields",
@@ -86,7 +87,8 @@
     "backToDashboard": "Back to Dashboard",
     "goBack": "Go Back",
     "viewAll": "View All",
-    "authorRoyalty": "Author Royalty"
+    "authorRoyalty": "Royalty",
+    "noStoreSelected": "No store selected. Please select a store first."
   },
   "auth": {
     "login": "Login",

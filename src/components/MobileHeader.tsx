@@ -56,10 +56,10 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
           </h1>
         </div>
         
-        {showStallSelector && currentStore && stores.length > 0 && (
+        {showStallSelector && stores.length > 0 && (
           <div className="flex-1 mx-2">
             <Select
-              value={currentStore || "default-store"}
+              value={currentStore || ""}
               onValueChange={(value) => setCurrentStore(value)}
             >
               <SelectTrigger className="w-full">
