@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { BookStall } from "@/types";
 import { useAuth } from "./AuthContext";
@@ -28,7 +27,6 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isLoading, setIsLoading] = useState(true);
   const { currentUser, isAdmin } = useAuth();
 
-  // Fetch stores on mount and when current user changes
   useEffect(() => {
     if (currentUser) {
       const fetchStores = async () => {
@@ -55,7 +53,6 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             ? data.filter(store => store.instituteid === currentUser.instituteId)
             : data.filter(store => store.instituteid === currentUser.instituteId);
           
-          // Transform the data to match the BookStall interface
           const mappedStores: BookStall[] = filteredStores.map(store => ({
             id: store.id,
             name: store.name,
@@ -66,16 +63,13 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           
           setStores(mappedStores);
           
-          // Check if there's a saved store in localStorage
           const savedStore = localStorage.getItem('currentStore');
           if (savedStore && mappedStores.some(store => store.id === savedStore)) {
             setCurrentStoreState(savedStore);
           } else if (mappedStores.length > 0) {
-            // Set current store to the first one if not already set
             setCurrentStoreState(mappedStores[0].id);
             localStorage.setItem('currentStore', mappedStores[0].id);
           } else {
-            // No stores available
             setCurrentStoreState(null);
             localStorage.removeItem('currentStore');
           }
@@ -108,16 +102,25 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       console.log("Adding store with institute ID:", currentUser.instituteId);
       
+      if (!currentUser.instituteId) {
+        toast({
+          title: "Institute Error",
+          description: "No institute associated with your account",
+          variant: "destructive",
+        });
+        return null;
+      }
+      
       const newStore = {
         name,
         location: location || null,
         instituteid: currentUser.instituteId,
+        createdat: new Date().toISOString()
       };
       
-      // Use Supabase client to insert the new store
       const { data, error } = await supabase
         .from("book_stalls")
-        .insert([newStore])
+        .insert(newStore)
         .select()
         .single();
       
@@ -133,7 +136,6 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       
       console.log("Successfully added store:", data);
       
-      // Transform the data to match the BookStall interface
       const addedStore: BookStall = {
         id: data.id,
         name: data.name,
@@ -144,7 +146,6 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       
       setStores(prevStores => [addedStore, ...prevStores]);
       
-      // If this is the first store, set it as current
       if (stores.length === 0) {
         setCurrentStore(addedStore.id);
       }
@@ -168,7 +169,6 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateStore = async (id: string, data: Partial<BookStall>): Promise<BookStall | null> => {
     try {
-      // Transform the data to match the database schema
       const updateData: any = {
         ...(data.name !== undefined && { name: data.name }),
         ...(data.location !== undefined && { location: data.location }),
@@ -191,7 +191,6 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return null;
       }
       
-      // Transform the response to match the BookStall interface
       const mappedStore: BookStall = {
         id: updatedStore.id,
         name: updatedStore.name,
@@ -232,7 +231,6 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       
       setStores(prevStores => prevStores.filter(store => store.id !== id));
       
-      // If deleting current store, switch to another one if available
       if (currentStore === id) {
         const remaining = stores.filter(store => store.id !== id);
         if (remaining.length > 0) {
@@ -257,7 +255,6 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateStore,
         deleteStore,
         isLoading,
-        // Alias properties for backward compatibility
         stalls: stores,
         currentStall: currentStore,
         setCurrentStall: setCurrentStore,
