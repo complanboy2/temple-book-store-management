@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { BookStall } from "@/types";
 import { useAuth } from "./AuthContext";
@@ -49,9 +50,18 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             return;
           }
           
-          const filteredStores = isAdmin 
-            ? data.filter(store => store.instituteid === currentUser.instituteId)
-            : data.filter(store => store.instituteid === currentUser.instituteId);
+          // Safety check - ensure instituteid exists in the user object
+          if (!currentUser.instituteId) {
+            console.error("User has no institute ID");
+            setStores([]);
+            setIsLoading(false);
+            return;
+          }
+          
+          // Filter stores by the user's institute
+          const filteredStores = data.filter(store => 
+            store.instituteid === currentUser.instituteId
+          );
           
           const mappedStores: BookStall[] = filteredStores.map(store => ({
             id: store.id,
@@ -75,12 +85,22 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           }
         } catch (err) {
           console.error("Failed to fetch stores:", err);
+          toast({
+            title: "Error",
+            description: "Failed to fetch stores. Please refresh the page.",
+            variant: "destructive",
+          });
         } finally {
           setIsLoading(false);
         }
       };
       
       fetchStores();
+    } else {
+      // Clear stores when user logs out
+      setStores([]);
+      setCurrentStoreState(null);
+      localStorage.removeItem('currentStore');
     }
   }, [currentUser, isAdmin]);
 
@@ -100,8 +120,7 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     
     try {
-      console.log("Adding store with institute ID:", currentUser.instituteId);
-      
+      // Validate institute ID
       if (!currentUser.instituteId) {
         toast({
           title: "Institute Error",
@@ -117,6 +136,8 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         instituteid: currentUser.instituteId,
         createdat: new Date().toISOString()
       };
+      
+      console.log("Creating new store with data:", newStore);
       
       const { data, error } = await supabase
         .from("book_stalls")
@@ -205,9 +226,19 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         )
       );
       
+      toast({
+        title: "Store Updated",
+        description: `${updatedStore.name} has been updated`,
+      });
+      
       return mappedStore;
     } catch (err) {
       console.error("Failed to update store:", err);
+      toast({
+        title: "Error",
+        description: "Failed to update store. Please try again.",
+        variant: "destructive",
+      });
       return null;
     }
   };
@@ -240,8 +271,18 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           localStorage.removeItem('currentStore');
         }
       }
+      
+      toast({
+        title: "Store Deleted",
+        description: "Store has been removed successfully",
+      });
     } catch (err) {
       console.error("Failed to delete store:", err);
+      toast({
+        title: "Error",
+        description: "Failed to delete store. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

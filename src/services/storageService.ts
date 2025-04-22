@@ -1,3 +1,4 @@
+
 import { Book, Sale, RestockEntry, Institute, BookStall, User } from "../types";
 
 // Local storage keys
@@ -140,84 +141,9 @@ export const generateId = (): string => {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
 };
 
-// Initialize sample data for testing - remove in production
-export const initializeSampleData = () => {
-  if (getUsers().length === 0) {
-    // Create sample admin
-    const admin: User = {
-      id: generateId(),
-      name: "Admin User",
-      email: "admin@temple.com",
-      role: "admin",
-      canRestock: true,
-      canSell: true,
-      instituteId: "inst-1",
-    };
-    
-    // Create sample institute
-    const institute: Institute = {
-      id: "inst-1",
-      name: "Sri Krishna Temple",
-      adminId: admin.id,
-      createdAt: new Date(),
-    };
-    
-    // Create sample book stall
-    const bookStall: BookStall = {
-      id: "stall-1",
-      name: "Main Book Stall",
-      instituteId: institute.id,
-      createdAt: new Date(),
-    };
-    
-    // Create sample books
-    const books: Book[] = [
-      {
-        id: generateId(),
-        name: "Bhagavad Gita",
-        author: "Vyasa",
-        category: "Scripture",
-        printingInstitute: "Gita Press",
-        originalPrice: 150,
-        salePrice: 200,
-        quantity: 50,
-        stallId: bookStall.id,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: generateId(),
-        name: "Ramayana",
-        author: "Valmiki",
-        category: "Epic",
-        printingInstitute: "Gita Press",
-        originalPrice: 250,
-        salePrice: 300,
-        quantity: 30,
-        stallId: bookStall.id,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: generateId(),
-        name: "Mahabharata (Simplified)",
-        author: "Vyasa",
-        category: "Epic",
-        printingInstitute: "Temple Trust",
-        originalPrice: 350,
-        salePrice: 400,
-        quantity: 20,
-        stallId: bookStall.id,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ];
-    
-    // Store sample data
-    setUsers([admin]);
-    setCurrentUser(admin);
-    setInstitutes([institute]);
-    setBookStalls([bookStall]);
-    setBooks(books);
-  }
+// Clear local storage function
+export const clearLocalStorage = (): void => {
+  Object.values(KEYS).forEach(key => {
+    localStorage.removeItem(key);
+  });
 };
