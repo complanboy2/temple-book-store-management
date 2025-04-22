@@ -1,4 +1,3 @@
-
 import { Book, Sale, RestockEntry, Institute, BookStall, User } from "../types";
 
 // Local storage keys
@@ -13,6 +12,7 @@ const KEYS = {
   AUTHORS: "temple_authors",
   CATEGORIES: "temple_categories",
   SALE_PERCENTAGE: "temple_author_sale_percent",
+  PRINTING_INSTITUTES: "printingInstitutes"
 };
 
 // Generic function to get items from local storage
@@ -146,6 +146,26 @@ export const clearLocalStorage = (): void => {
   Object.values(KEYS).forEach(key => {
     localStorage.removeItem(key);
   });
+};
+
+// Get printing institutes
+export const getPrintingInstitutes = (): string[] => {
+  try {
+    const institutes = localStorage.getItem('printingInstitutes');
+    return institutes ? JSON.parse(institutes) : [];
+  } catch (error) {
+    console.error('Error getting printing institutes:', error);
+    return [];
+  }
+};
+
+// Set printing institutes
+export const setPrintingInstitutes = (institutes: string[]): void => {
+  try {
+    localStorage.setItem('printingInstitutes', JSON.stringify(institutes));
+  } catch (error) {
+    console.error('Error setting printing institutes:', error);
+  }
 };
 
 // Sample data initialization function

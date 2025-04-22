@@ -5,6 +5,7 @@ import { ArrowLeft, Search, Bell, ChevronDown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStallContext } from "@/contexts/StallContext";
 import { useTranslation } from "react-i18next";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface MobileHeaderProps {
   title: string;
@@ -12,6 +13,7 @@ interface MobileHeaderProps {
   showSearchButton?: boolean;
   showStallSelector?: boolean;
   onSearch?: () => void;
+  backTo?: string; // New prop to specify where to navigate back to
 }
 
 const MobileHeader: React.FC<MobileHeaderProps> = ({
@@ -20,15 +22,19 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   showSearchButton = false,
   showStallSelector = false,
   onSearch,
+  backTo,
 }) => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { currentStore, stores, setCurrentStore } = useStallContext();
   const { t } = useTranslation();
   
-  const handleStallChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const stallId = e.target.value;
-    setCurrentStore(stallId);
+  const handleBack = () => {
+    if (backTo) {
+      navigate(backTo);
+    } else {
+      navigate(-1);
+    }
   };
   
   return (
@@ -37,7 +43,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
         <div className="flex items-center">
           {showBackButton && (
             <button
-              onClick={() => navigate(-1)}
+              onClick={handleBack}
               className="mr-2 p-1 rounded-full hover:bg-temple-gold/10"
             >
               <ArrowLeft size={24} className="text-temple-maroon" />
@@ -50,17 +56,21 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
         
         {showStallSelector && currentStore && stores.length > 0 && (
           <div className="flex-1 mx-2">
-            <select 
-              className="stall-selector w-full"
-              value={currentStore}
-              onChange={handleStallChange}
+            <Select
+              value={currentStore || "default-store"}
+              onValueChange={(value) => setCurrentStore(value)}
             >
-              {stores.map((store) => (
-                <option key={store.id} value={store.id}>
-                  {store.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={t("common.selectStore")} />
+              </SelectTrigger>
+              <SelectContent>
+                {stores.map((store) => (
+                  <SelectItem key={store.id} value={store.id}>
+                    {store.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
         
@@ -79,7 +89,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
           </button>
           
           <div 
-            className="h-8 w-8 bg-temple-saffron rounded-full flex items-center justify-center text-white text-sm font-bold"
+            className="h-8 w-8 bg-temple-saffron rounded-full flex items-center justify-center text-white text-sm font-bold cursor-pointer"
             onClick={() => navigate("/profile")}
           >
             {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : "U"}

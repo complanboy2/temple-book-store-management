@@ -2,88 +2,25 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  getAuthors,
-  setAuthors,
-  getCategories,
-  setCategories,
-  getAuthorSalePercentage,
-  setAuthorSalePercentage
-} from "@/services/storageService";
 import { Input } from "@/components/ui/input";
-import { X } from "lucide-react";
 import { useStallContext } from "@/contexts/StallContext";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useTranslation } from "react-i18next";
 import MobileHeader from "@/components/MobileHeader";
+import { useNavigate } from "react-router-dom";
 
 const SettingsPage: React.FC = () => {
-  const [authors, setLocalAuthors] = useState<string[]>([]);
-  const [categories, setLocalCategories] = useState<string[]>([]);
-  const [salePercent, setSalePercent] = useState<Record<string, number>>({});
-  const [newAuthor, setNewAuthor] = useState("");
-  const [newCategory, setNewCategory] = useState("");
-  const [saleInput, setSaleInput] = useState<{[k: string]: string}>({});
-  const { stores, currentStore, addStore } = useStallContext();
   const [newStoreName, setNewStoreName] = useState("");
   const [newStoreLocation, setNewStoreLocation] = useState("");
+  const { stores, currentStore, addStore } = useStallContext();
   const { toast } = useToast();
   const { t, i18n } = useTranslation();
   const [currentLanguage, setCurrentLanguage] = useState(i18n.language || 'en');
+  const navigate = useNavigate();
 
   useEffect(() => {
-    setLocalAuthors(getAuthors());
-    setLocalCategories(getCategories());
-    setSalePercent(getAuthorSalePercentage() || {});
     setCurrentLanguage(i18n.language);
-  }, []);
-
-  const handleAddAuthor = () => {
-    if (newAuthor.trim() && !authors.includes(newAuthor.trim())) {
-      const next = [...authors, newAuthor.trim()];
-      setAuthors(next);
-      setLocalAuthors(next);
-      setNewAuthor("");
-    }
-  };
-
-  const handleDeleteAuthor = (name: string) => {
-    setLocalAuthors(authors.filter(a => a !== name));
-    setAuthors(authors.filter(a => a !== name));
-    const next = {...salePercent};
-    delete next[name];
-    setSalePercent(next);
-    setAuthorSalePercentage(next);
-  };
-
-  const handleAddCategory = () => {
-    if (newCategory.trim() && !categories.includes(newCategory.trim())) {
-      const next = [...categories, newCategory.trim()];
-      setCategories(next);
-      setLocalCategories(next);
-      setNewCategory("");
-    }
-  };
-
-  const handleDeleteCategory = (cat: string) => {
-    setLocalCategories(categories.filter(c => c !== cat));
-    setCategories(categories.filter(c => c !== cat));
-  };
-
-  const handleSaleChange = (author: string, value: string) => {
-    setSaleInput({ ...saleInput, [author]: value });
-  };
-
-  const handleSaveSale = (author: string) => {
-    const percent = Number(saleInput[author]);
-    if (!isNaN(percent) && percent >= 0) {
-      const next = {...salePercent, [author]: percent};
-      setSalePercent(next);
-      setAuthorSalePercentage(next);
-    }
-    setSaleInput({ ...saleInput, [author]: "" });
-  };
+  }, [i18n.language]);
 
   const handleAddStore = async () => {
     if (!newStoreName.trim()) {
@@ -112,12 +49,31 @@ const SettingsPage: React.FC = () => {
     localStorage.setItem('i18nextLng', lng);
   };
 
+  const handleManageMetadata = () => {
+    navigate('/metadata-manager');
+  };
+
   return (
-    <div className="min-h-screen bg-temple-background">
-      <MobileHeader title={t("settings.settings")} showBackButton={true} />
-      <div className="px-2 py-4 mb-20">
+    <div className="min-h-screen bg-temple-background pb-20">
+      <MobileHeader 
+        title={t("settings.settings")} 
+        showBackButton={true} 
+        backTo="/"
+      />
+      
+      <div className="container mx-auto px-4 py-6">
+        {/* Action Buttons */}
+        <div className="mb-6">
+          <Button 
+            onClick={handleManageMetadata} 
+            className="w-full bg-temple-maroon hover:bg-temple-maroon/90 text-white"
+          >
+            {t("common.manageMetadata")}
+          </Button>
+        </div>
+        
         {/* Language selection section */}
-        <Card className="mb-4">
+        <Card className="mb-6">
           <CardHeader>
             <CardTitle>{t("settings.language")}</CardTitle>
           </CardHeader>
@@ -170,12 +126,12 @@ const SettingsPage: React.FC = () => {
         </Card>
         
         {/* Stores section */}
-        <Card className="mb-4">
+        <Card>
           <CardHeader>
             <CardTitle>{t("settings.storeManagement")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col gap-2 mb-2">
+            <div className="flex flex-col gap-2 mb-4">
               <Input 
                 value={newStoreName} 
                 onChange={e => setNewStoreName(e.target.value)} 
@@ -217,62 +173,6 @@ const SettingsPage: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-        
-        {/* Author section */}
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle>{t("common.authors")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-2 mb-2">
-              <Input value={newAuthor} onChange={e => setNewAuthor(e.target.value)} placeholder={t("common.addAuthor")} />
-              <Button onClick={handleAddAuthor} disabled={!newAuthor}>{t("common.add")}</Button>
-            </div>
-            <div className="flex flex-col gap-2">
-              {authors.map(a =>
-                <div key={a} className="flex gap-2 items-center">
-                  <span className="flex-1">{a}</span>
-                  <Input
-                    className="max-w-[80px]"
-                    type="number"
-                    min={0}
-                    value={saleInput[a] ?? salePercent[a] ?? ""}
-                    onChange={e => handleSaleChange(a, e.target.value)}
-                    placeholder="%"
-                  />
-                  <Button size="sm" onClick={() => handleSaveSale(a)}>{t("common.save")} %</Button>
-                  <Button size="icon" variant="ghost" onClick={() => handleDeleteAuthor(a)}><X className="w-4 h-4" /></Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Category section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("common.categories")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-2 mb-2">
-              <Input value={newCategory} onChange={e => setNewCategory(e.target.value)} placeholder={t("common.addCategory")} />
-              <Button onClick={handleAddCategory} disabled={!newCategory}>{t("common.add")}</Button>
-            </div>
-            <div className="flex flex-col gap-2">
-              {categories.map(c =>
-                <div key={c} className="flex gap-2 items-center">
-                  <span className="flex-1">{c}</span>
-                  <Button size="icon" variant="ghost" onClick={() => handleDeleteCategory(c)}><X className="w-4 h-4" /></Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Explain for admin */}
-        <div className="mt-6 text-[13px] text-temple-maroon/60">
-          {t("settings.tipSalePercentage")}
-        </div>
       </div>
     </div>
   );

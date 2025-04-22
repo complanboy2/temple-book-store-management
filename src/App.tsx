@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,6 +25,7 @@ import ProfilePage from "./pages/ProfilePage";
 import AdminPage from "./pages/AdminPage";
 import CompleteSignupPage from "./pages/CompleteSignupPage";
 import SettingsPage from "./pages/SettingsPage";
+import MetadataManagerPage from "./pages/MetadataManagerPage";
 
 const queryClient = new QueryClient();
 
@@ -128,6 +130,12 @@ const AppContent = () => {
         <Route path="/settings" element={
           <AdminRoute>
             <SettingsPage />
+          </AdminRoute>
+        } />
+        
+        <Route path="/metadata-manager" element={
+          <AdminRoute>
+            <MetadataManagerPage />
           </AdminRoute>
         } />
         

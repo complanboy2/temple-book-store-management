@@ -3,11 +3,13 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getBooks, addSale, updateBookQuantity, generateId } from "@/services/storageService";
 import { Book, Sale } from "@/types";
-import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import MobileHeader from "@/components/MobileHeader";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTranslation } from "react-i18next";
 
 const SellBookPage: React.FC = () => {
   const { bookId } = useParams<{ bookId: string }>();
@@ -20,6 +22,7 @@ const SellBookPage: React.FC = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (bookId) {
@@ -69,16 +72,16 @@ const SellBookPage: React.FC = () => {
       
       // Show success toast
       toast({
-        title: "Sale Completed",
-        description: `${quantity} copies of "${book.name}" sold successfully.`,
+        title: t("common.saleCompleted"),
+        description: `${quantity} ${t("common.copiesOf")} "${book.name}" ${t("common.soldSuccessfully")}.`,
       });
       
       // Navigate to dashboard
       navigate("/");
     } catch (error) {
       toast({
-        title: "Sale Failed",
-        description: "An error occurred while processing the sale.",
+        title: t("common.saleFailed"),
+        description: t("common.errorProcessingSale"),
         variant: "destructive",
       });
     } finally {
@@ -89,9 +92,13 @@ const SellBookPage: React.FC = () => {
   if (!book) {
     return (
       <div className="min-h-screen bg-temple-background">
-        <Header />
+        <MobileHeader 
+          title={t("common.loading")} 
+          showBackButton={true}
+          backTo="/books"
+        />
         <div className="container mx-auto px-4 py-12 text-center">
-          <p className="text-lg">Loading...</p>
+          <p className="text-lg">{t("common.loading")}...</p>
         </div>
       </div>
     );
@@ -100,18 +107,14 @@ const SellBookPage: React.FC = () => {
   const totalAmount = book.salePrice * quantity;
 
   return (
-    <div className="min-h-screen bg-temple-background">
-      <Header />
+    <div className="min-h-screen bg-temple-background pb-20">
+      <MobileHeader 
+        title={t("common.sellBook")} 
+        showBackButton={true}
+        backTo="/books"
+      />
       
       <main className="container mx-auto px-4 py-6">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(-1)}
-          className="mb-6"
-        >
-          ← Back
-        </Button>
-        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="temple-card">
             <CardHeader>
@@ -120,25 +123,25 @@ const SellBookPage: React.FC = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Author</p>
+                  <p className="text-sm text-muted-foreground">{t("common.author")}</p>
                   <p className="font-medium">{book.author}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Category</p>
-                  <p className="font-medium">{book.category}</p>
+                  <p className="text-sm text-muted-foreground">{t("common.category")}</p>
+                  <p className="font-medium">{book.category || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Price</p>
+                  <p className="text-sm text-muted-foreground">{t("common.price")}</p>
                   <p className="font-bold text-temple-saffron">₹{book.salePrice}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Available</p>
-                  <p className="font-medium">{book.quantity} copies</p>
+                  <p className="text-sm text-muted-foreground">{t("common.available")}</p>
+                  <p className="font-medium">{book.quantity} {t("common.copies")}</p>
                 </div>
               </div>
               
               <div className="pt-4 border-t border-border">
-                <p className="text-sm text-muted-foreground mb-2">Printing Institute</p>
+                <p className="text-sm text-muted-foreground mb-2">{t("common.printingInstitute")}</p>
                 <p>{book.printingInstitute}</p>
               </div>
             </CardContent>
@@ -146,13 +149,13 @@ const SellBookPage: React.FC = () => {
           
           <Card className="temple-card">
             <CardHeader>
-              <CardTitle className="text-2xl text-temple-maroon">Complete Sale</CardTitle>
+              <CardTitle className="text-2xl text-temple-maroon">{t("common.completeSale")}</CardTitle>
             </CardHeader>
             <CardContent>
               <form className="space-y-4">
                 <div className="space-y-2">
                   <label htmlFor="quantity" className="text-lg font-medium">
-                    Quantity
+                    {t("common.quantity")}
                   </label>
                   <div className="flex items-center">
                     <Button
@@ -187,24 +190,24 @@ const SellBookPage: React.FC = () => {
                 
                 <div className="space-y-2">
                   <label htmlFor="paymentMethod" className="text-lg font-medium">
-                    Payment Method
+                    {t("common.paymentMethod")}
                   </label>
-                  <select
-                    id="paymentMethod"
-                    value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="temple-input w-full"
-                  >
-                    <option value="cash">Cash</option>
-                    <option value="upi">UPI</option>
-                    <option value="card">Card</option>
-                    <option value="other">Other</option>
-                  </select>
+                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder={t("common.selectPaymentMethod")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">{t("common.cash")}</SelectItem>
+                      <SelectItem value="upi">{t("common.upi")}</SelectItem>
+                      <SelectItem value="card">{t("common.card")}</SelectItem>
+                      <SelectItem value="other">{t("common.other")}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <div className="space-y-2">
                   <label htmlFor="buyerName" className="text-lg font-medium">
-                    Buyer Name (Optional)
+                    {t("common.buyerName")} ({t("common.optional")})
                   </label>
                   <input
                     id="buyerName"
@@ -212,13 +215,13 @@ const SellBookPage: React.FC = () => {
                     value={buyerName}
                     onChange={(e) => setBuyerName(e.target.value)}
                     className="temple-input w-full"
-                    placeholder="Enter buyer name"
+                    placeholder={t("common.enterBuyerName")}
                   />
                 </div>
                 
                 <div className="space-y-2">
                   <label htmlFor="buyerPhone" className="text-lg font-medium">
-                    Buyer Phone (Optional)
+                    {t("common.buyerPhone")} ({t("common.optional")})
                   </label>
                   <input
                     id="buyerPhone"
@@ -226,13 +229,13 @@ const SellBookPage: React.FC = () => {
                     value={buyerPhone}
                     onChange={(e) => setBuyerPhone(e.target.value)}
                     className="temple-input w-full"
-                    placeholder="Enter buyer phone"
+                    placeholder={t("common.enterBuyerPhone")}
                   />
                 </div>
                 
                 <div className="pt-4 border-t border-border">
                   <div className="flex justify-between items-center mb-4">
-                    <span className="text-lg">Total Amount:</span>
+                    <span className="text-lg">{t("common.totalAmount")}:</span>
                     <span className="text-2xl font-bold text-temple-maroon">₹{totalAmount}</span>
                   </div>
                   
@@ -242,7 +245,7 @@ const SellBookPage: React.FC = () => {
                     disabled={isLoading || book.quantity < 1}
                     className="temple-button w-full"
                   >
-                    {isLoading ? "Processing..." : "Complete Sale"}
+                    {isLoading ? t("common.processing") : t("common.completeSale")}
                   </Button>
                 </div>
               </form>

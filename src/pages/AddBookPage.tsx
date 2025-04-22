@@ -1,16 +1,23 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getBooks, setBooks, generateId, getBookStalls } from "@/services/storageService";
+import { 
+  getBooks, 
+  setBooks, 
+  generateId, 
+  getBookStalls, 
+  getAuthors, 
+  getCategories,
+  getPrintingInstitutes
+} from "@/services/storageService";
 import { Book } from "@/types";
-import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
-import { getAuthors, setAuthors, getCategories, setCategories } from "@/services/storageService";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
+import MobileHeader from "@/components/MobileHeader";
 
 const AddBookPage: React.FC = () => {
   const [name, setName] = useState("");
@@ -22,53 +29,22 @@ const AddBookPage: React.FC = () => {
   const [quantity, setQuantity] = useState("");
   const [barcode, setBarcode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Lists for selection
+  const [authors, setAuthors] = useState<string[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [institutes, setInstitutes] = useState<string[]>([]);
+  
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  // New state and logic for authors and categories
-  const [authors, setLocalAuthors] = useState<string[]>([]);
-  const [categories, setLocalCategories] = useState<string[]>([]);
-  const [customAuthor, setCustomAuthor] = useState("");
-  const [customCategory, setCustomCategory] = useState("");
+  const { t } = useTranslation();
 
   useEffect(() => {
-    setLocalAuthors(getAuthors());
-    setLocalCategories(getCategories());
+    // Load dropdowns data
+    setAuthors(getAuthors());
+    setCategories(getCategories());
+    setInstitutes(getPrintingInstitutes() || []);
   }, []);
-
-  const addAuthor = () => {
-    if (customAuthor.trim() && !authors.includes(customAuthor.trim())) {
-      const next = [...authors, customAuthor.trim()];
-      setAuthors(next);
-      setLocalAuthors(next);
-      setAuthor(customAuthor.trim());
-      setCustomAuthor("");
-    }
-  };
-
-  const deleteAuthor = (name: string) => {
-    const next = authors.filter(a => a !== name);
-    setAuthors(next);
-    setLocalAuthors(next);
-    if (author === name) setAuthor("");
-  };
-
-  const addCategory = () => {
-    if (customCategory.trim() && !categories.includes(customCategory.trim())) {
-      const next = [...categories, customCategory.trim()];
-      setCategories(next);
-      setLocalCategories(next);
-      setCategory(customCategory.trim());
-      setCustomCategory("");
-    }
-  };
-
-  const deleteCategory = (name: string) => {
-    const next = categories.filter(c => c !== name);
-    setCategories(next);
-    setLocalCategories(next);
-    if (category === name) setCategory("");
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,15 +76,15 @@ const AddBookPage: React.FC = () => {
       setBooks([...books, newBook]);
       
       toast({
-        title: "Book Added",
-        description: `"${name}" has been added to the inventory.`,
+        title: t("common.bookAdded"),
+        description: `"${name}" ${t("common.addedToInventory")}`,
       });
       
       navigate("/books");
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to add the book. Please try again.",
+        title: t("common.error"),
+        description: t("common.failedToAddBook"),
         variant: "destructive",
       });
     } finally {
@@ -119,45 +95,55 @@ const AddBookPage: React.FC = () => {
   const validateForm = () => {
     if (!name || !author || !printingInstitute || !originalPrice || !salePrice || !quantity) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields (Book Name, Author, Printing Institute, Prices, Quantity).",
+        title: t("common.validationError"),
+        description: t("common.fillRequiredFields"),
         variant: "destructive",
       });
       return false;
     }
+    
     if (isNaN(parseFloat(originalPrice)) || isNaN(parseFloat(salePrice)) || isNaN(parseInt(quantity))) {
       toast({
-        title: "Validation Error",
-        description: "Price and quantity must be valid numbers.",
+        title: t("common.validationError"),
+        description: t("common.priceQuantityMustBeNumbers"),
         variant: "destructive",
       });
       return false;
     }
+    
     return true;
   };
 
+  const handleManageMetadata = () => {
+    navigate("/metadata-manager");
+  };
+
   return (
-    <div className="min-h-screen bg-temple-background">
-      <Header />
+    <div className="min-h-screen bg-temple-background pb-20">
+      <MobileHeader 
+        title={t("common.addBook")} 
+        showBackButton={true}
+        backTo="/books"
+      />
       
-      <main className="container mx-auto px-2 py-2">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(-1)}
-          className="mb-6"
-        >
-          ← Back
-        </Button>
+      <main className="container mx-auto px-4 py-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-temple-maroon">{t("common.addNewBook")}</h1>
+          <Button 
+            variant="outline" 
+            onClick={handleManageMetadata}
+            className="text-temple-maroon border-temple-maroon hover:bg-temple-maroon/10"
+          >
+            {t("common.manageMetadata")}
+          </Button>
+        </div>
         
         <Card className="temple-card max-w-2xl mx-auto">
-          <CardHeader>
-            <CardTitle className="text-2xl text-temple-maroon">Add New Book</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <label htmlFor="name" className="text-lg font-medium">
-                  Book Name*
+                  {t("common.bookName")}*
                 </label>
                 <input
                   id="name"
@@ -166,107 +152,87 @@ const AddBookPage: React.FC = () => {
                   onChange={(e) => setName(e.target.value)}
                   required
                   className="temple-input w-full"
-                  placeholder="Enter book name"
+                  placeholder={t("common.enterBookName")}
                 />
               </div>
-              
-            {/* --- AUTHOR FIELD --- */}
-            <div className="space-y-2">
-              <label className="text-lg font-medium">
-                Author*
-              </label>
-              <div className="flex gap-2">
-                <Select
-                  value={author}
-                  onValueChange={val => setAuthor(val)}
-                  defaultValue=""
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select author..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {authors.map(a => (
-                      <div key={a} className="flex items-center justify-between">
-                        <SelectItem value={a}>{a}</SelectItem>
-                        <button type="button" className="ml-2 text-destructive" onClick={() => deleteAuthor(a)}>
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <input
-                  type="text"
-                  className="temple-input flex-1"
-                  value={customAuthor}
-                  placeholder="Add new author"
-                  onChange={e => setCustomAuthor(e.target.value)}
-                />
-                <button type="button" onClick={addAuthor} className={cn("bg-temple-maroon text-white rounded px-2", !customAuthor && "opacity-40")} disabled={!customAuthor}>
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            
-            {/* --- CATEGORY FIELD --- */}
-            <div className="space-y-2">
-              <label className="text-lg font-medium">
-                Category{" "}
-                <span className="text-[12px] text-gray-400">(optional)</span>
-              </label>
-              <div className="flex gap-2">
-                <Select
-                  value={category}
-                  onValueChange={val => setCategory(val)}
-                  defaultValue=""
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select category..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map(c => (
-                      <div key={c} className="flex items-center justify-between">
-                        <SelectItem value={c}>{c}</SelectItem>
-                        <button type="button" className="ml-2 text-destructive" onClick={() => deleteCategory(c)}>
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <input
-                  type="text"
-                  className="temple-input flex-1"
-                  value={customCategory}
-                  placeholder="Add new category"
-                  onChange={e => setCustomCategory(e.target.value)}
-                />
-                <button type="button" onClick={addCategory} className={cn("bg-temple-maroon text-white rounded px-2", !customCategory && "opacity-40")} disabled={!customCategory}>
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
               
               <div className="space-y-2">
-                <label htmlFor="printingInstitute" className="text-lg font-medium">
-                  Printing Institute*
+                <label className="text-lg font-medium">
+                  {t("common.author")}*
                 </label>
-                <input
-                  id="printingInstitute"
-                  type="text"
-                  value={printingInstitute}
-                  onChange={(e) => setPrintingInstitute(e.target.value)}
-                  required
-                  className="temple-input w-full"
-                  placeholder="Enter printing institute"
-                />
+                <Select value={author} onValueChange={setAuthor}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={t("common.selectAuthor")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {authors.length === 0 ? (
+                      <div className="p-2 text-center text-muted-foreground">
+                        {t("common.noAuthors")}
+                      </div>
+                    ) : (
+                      authors.map((a) => (
+                        <SelectItem key={a} value={a}>
+                          {a}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-lg font-medium">
+                  {t("common.category")}{" "}
+                  <span className="text-[12px] text-gray-400">({t("common.optional")})</span>
+                </label>
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={t("common.selectCategory")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.length === 0 ? (
+                      <div className="p-2 text-center text-muted-foreground">
+                        {t("common.noCategories")}
+                      </div>
+                    ) : (
+                      categories.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-lg font-medium">
+                  {t("common.printingInstitute")}*
+                </label>
+                <Select value={printingInstitute} onValueChange={setPrintingInstitute}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={t("common.selectInstitute")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {institutes.length === 0 ? (
+                      <div className="p-2 text-center text-muted-foreground">
+                        {t("common.noInstitutes")}
+                      </div>
+                    ) : (
+                      institutes.map((i) => (
+                        <SelectItem key={i} value={i}>
+                          {i}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label htmlFor="originalPrice" className="text-lg font-medium">
-                    Original Price (₹)*
+                    {t("common.originalPrice")} (₹)*
                   </label>
                   <input
                     id="originalPrice"
@@ -283,7 +249,7 @@ const AddBookPage: React.FC = () => {
                 
                 <div className="space-y-2">
                   <label htmlFor="salePrice" className="text-lg font-medium">
-                    Sale Price (₹)*
+                    {t("common.salePrice")} (₹)*
                   </label>
                   <input
                     id="salePrice"
@@ -301,7 +267,7 @@ const AddBookPage: React.FC = () => {
               
               <div className="space-y-2">
                 <label htmlFor="quantity" className="text-lg font-medium">
-                  Quantity*
+                  {t("common.quantity")}*
                 </label>
                 <input
                   id="quantity"
@@ -311,13 +277,13 @@ const AddBookPage: React.FC = () => {
                   onChange={(e) => setQuantity(e.target.value)}
                   required
                   className="temple-input w-full"
-                  placeholder="Enter quantity"
+                  placeholder={t("common.enterQuantity")}
                 />
               </div>
               
               <div className="space-y-2">
                 <label htmlFor="barcode" className="text-lg font-medium">
-                  Barcode/QR Code (Optional)
+                  {t("common.barcode")} ({t("common.optional")})
                 </label>
                 <input
                   id="barcode"
@@ -325,7 +291,7 @@ const AddBookPage: React.FC = () => {
                   value={barcode}
                   onChange={(e) => setBarcode(e.target.value)}
                   className="temple-input w-full"
-                  placeholder="Enter barcode or QR code"
+                  placeholder={t("common.enterBarcode")}
                 />
               </div>
               
@@ -335,7 +301,7 @@ const AddBookPage: React.FC = () => {
                   disabled={isLoading}
                   className="temple-button w-full"
                 >
-                  {isLoading ? "Adding Book..." : "Add Book to Inventory"}
+                  {isLoading ? t("common.addingBook") : t("common.addBookToInventory")}
                 </Button>
               </div>
             </form>
