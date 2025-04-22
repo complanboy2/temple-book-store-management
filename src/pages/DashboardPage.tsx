@@ -61,7 +61,11 @@ const DashboardPage: React.FC = () => {
   // Open add store dialog when no stores are available (for admin)
   useEffect(() => {
     if (!isLoading && stores.length === 0 && isAdmin) {
+      console.log("No stores available, opening add store dialog");
       setIsAddStoreDialogOpen(true);
+    } else if (stores.length > 0) {
+      console.log("Stores available, not showing dialog:", stores);
+      setIsAddStoreDialogOpen(false);
     }
   }, [stores, isLoading, isAdmin]);
 

@@ -151,8 +151,8 @@ export const clearLocalStorage = (): void => {
 // Sample data initialization function
 export const initializeSampleData = (): void => {
   // Only initialize if data doesn't exist
-  const existingUsers = getUsers();
-  if (existingUsers.length > 0) {
+  const existingStalls = getBookStalls();
+  if (existingStalls.length > 0) {
     console.log("Sample data already exists, skipping initialization");
     return;
   }
@@ -289,4 +289,3 @@ export const initializeSampleData = (): void => {
   
   console.log("Sample data initialization complete");
 };
-

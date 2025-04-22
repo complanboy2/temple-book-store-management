@@ -4,6 +4,7 @@ import { BookStall } from "@/types";
 import { useAuth } from "./AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import { getBookStalls, setBookStalls } from "@/services/storageService";
 
 interface StoreContextType {
   stores: BookStall[];
@@ -33,6 +34,35 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const fetchStores = async () => {
         setIsLoading(true);
         try {
+          // First check if we have stores in localStorage (offline mode)
+          const localStores = getBookStalls();
+          
+          if (localStores.length > 0) {
+            console.log("Using local stores from storage:", localStores);
+            
+            // Filter stores by the user's institute
+            const filteredStores = localStores.filter(store => 
+              store.instituteId === currentUser.instituteId
+            );
+            
+            setStores(filteredStores);
+            
+            const savedStore = localStorage.getItem('currentStore');
+            if (savedStore && filteredStores.some(store => store.id === savedStore)) {
+              setCurrentStoreState(savedStore);
+            } else if (filteredStores.length > 0) {
+              setCurrentStoreState(filteredStores[0].id);
+              localStorage.setItem('currentStore', filteredStores[0].id);
+            } else {
+              setCurrentStoreState(null);
+              localStorage.removeItem('currentStore');
+            }
+            
+            setIsLoading(false);
+            return;
+          }
+          
+          // If no local stores, try to fetch from Supabase
           const { data, error } = await supabase
             .from("book_stalls")
             .select("*")
@@ -71,6 +101,8 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             createdAt: new Date(store.createdat)
           }));
           
+          // Update local storage with fetched stores
+          setBookStalls(mappedStores);
           setStores(mappedStores);
           
           const savedStore = localStorage.getItem('currentStore');
@@ -101,6 +133,7 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setStores([]);
       setCurrentStoreState(null);
       localStorage.removeItem('currentStore');
+      setIsLoading(false);
     }
   }, [currentUser, isAdmin]);
 
@@ -130,45 +163,50 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return null;
       }
       
-      const newStore = {
+      // First add to local storage for offline support
+      const newStore: BookStall = {
+        id: Date.now().toString(), // Simple ID for local storage
         name,
-        location: location || null,
-        instituteid: currentUser.instituteId,
-        createdat: new Date().toISOString()
+        location,
+        instituteId: currentUser.instituteId,
+        createdAt: new Date()
       };
       
-      console.log("Creating new store with data:", newStore);
+      const currentStores = getBookStalls();
+      setBookStalls([...currentStores, newStore]);
       
-      const { data, error } = await supabase
-        .from("book_stalls")
-        .insert(newStore)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error("Error adding store:", error);
-        toast({
-          title: "Error adding store",
-          description: error.message,
-          variant: "destructive",
-        });
-        return null;
+      // Also try to save to Supabase if online
+      try {
+        const supabaseData = {
+          name,
+          location: location || null,
+          instituteid: currentUser.instituteId,
+          createdat: new Date().toISOString()
+        };
+        
+        const { data, error } = await supabase
+          .from("book_stalls")
+          .insert(supabaseData)
+          .select()
+          .single();
+        
+        if (!error && data) {
+          // Update the local store with the Supabase ID
+          newStore.id = data.id;
+          
+          // Update local storage
+          const updatedStores = getBookStalls().filter(s => s.id !== newStore.id);
+          setBookStalls([...updatedStores, newStore]);
+        }
+      } catch (supabaseErr) {
+        console.log("Supabase error (will use local store):", supabaseErr);
+        // Continue with local store only
       }
       
-      console.log("Successfully added store:", data);
-      
-      const addedStore: BookStall = {
-        id: data.id,
-        name: data.name,
-        location: data.location || undefined,
-        instituteId: data.instituteid,
-        createdAt: new Date(data.createdat)
-      };
-      
-      setStores(prevStores => [addedStore, ...prevStores]);
+      setStores(prevStores => [newStore, ...prevStores]);
       
       if (stores.length === 0) {
-        setCurrentStore(addedStore.id);
+        setCurrentStore(newStore.id);
       }
       
       toast({
@@ -176,7 +214,7 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         description: `${name} has been added successfully`,
       });
       
-      return addedStore;
+      return newStore;
     } catch (err: any) {
       console.error("Failed to add store:", err);
       toast({
