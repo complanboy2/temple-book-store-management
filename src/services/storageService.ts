@@ -147,3 +147,147 @@ export const clearLocalStorage = (): void => {
     localStorage.removeItem(key);
   });
 };
+
+// Sample data initialization function
+export const initializeSampleData = (): void => {
+  // Only initialize if data doesn't exist
+  const existingUsers = getUsers();
+  if (existingUsers.length > 0) {
+    console.log("Sample data already exists, skipping initialization");
+    return;
+  }
+
+  console.log("Initializing sample data");
+  
+  // Create sample users
+  const users: User[] = [
+    {
+      id: generateId(),
+      name: "Admin User",
+      email: "admin@example.com",
+      password: "password123", // In a real app, this would be hashed
+      role: "admin",
+      instituteId: "inst-1",
+      createdAt: new Date(),
+      updatedAt: new Date()
+    },
+    {
+      id: generateId(),
+      name: "Regular User",
+      email: "user@example.com",
+      password: "password123", // In a real app, this would be hashed
+      role: "user",
+      instituteId: "inst-1",
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+  ];
+  setUsers(users);
+  
+  // Create sample institutes
+  const institutes: Institute[] = [
+    {
+      id: "inst-1",
+      name: "Temple Institute",
+      location: "Bangalore",
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+  ];
+  setInstitutes(institutes);
+  
+  // Create sample book stalls
+  const bookStalls: BookStall[] = [
+    {
+      id: generateId(),
+      name: "Main Book Stall",
+      location: "Temple Entrance",
+      instituteId: "inst-1",
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+  ];
+  setBookStalls(bookStalls);
+  
+  // Create sample authors and categories
+  const authors = ["Vyasa", "Valmiki", "A.C. Bhaktivedanta Swami", "Satyarth Nath", "Ramesh Kumar"];
+  const categories = ["Bhagavad Gita", "Ramayana", "Vedic Literature", "Philosophy", "Children's Books"];
+  
+  setAuthors(authors);
+  setCategories(categories);
+  
+  // Set sample author sale percentages
+  const authorPercentages: Record<string, number> = {};
+  authors.forEach(author => {
+    authorPercentages[author] = Math.floor(Math.random() * 16) + 5; // 5% to 20%
+  });
+  setAuthorSalePercentage(authorPercentages);
+  
+  // Create sample books
+  const books: Book[] = [];
+  for (let i = 0; i < 15; i++) {
+    const author = authors[Math.floor(Math.random() * authors.length)];
+    const category = categories[Math.floor(Math.random() * categories.length)];
+    const originalPrice = Math.floor(Math.random() * 500) + 100; // 100 to 600
+    const salePrice = Math.floor(originalPrice * (1 - Math.random() * 0.3)); // 0-30% discount
+    
+    books.push({
+      id: generateId(),
+      name: `${category} - Volume ${i + 1}`,
+      author,
+      category,
+      originalPrice,
+      salePrice,
+      quantity: Math.floor(Math.random() * 20) + 5, // 5 to 25 copies
+      stallId: bookStalls[0].id,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+  }
+  setBooks(books);
+  
+  // Create sample sales
+  const sales: Sale[] = [];
+  for (let i = 0; i < 10; i++) {
+    const book = books[Math.floor(Math.random() * books.length)];
+    const quantity = Math.floor(Math.random() * 3) + 1; // 1 to 3 books per sale
+    
+    sales.push({
+      id: generateId(),
+      bookId: book.id,
+      bookName: book.name,
+      quantity,
+      salePrice: book.salePrice,
+      total: book.salePrice * quantity,
+      authorPercentage: authorPercentages[book.author] || 10,
+      soldBy: users[Math.floor(Math.random() * users.length)].id,
+      stallId: bookStalls[0].id,
+      synced: true,
+      createdAt: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000), // Random date in the last 30 days
+      updatedAt: new Date()
+    });
+  }
+  setSales(sales);
+  
+  // Create sample restock entries
+  const restockEntries: RestockEntry[] = [];
+  for (let i = 0; i < 5; i++) {
+    const book = books[Math.floor(Math.random() * books.length)];
+    const quantity = Math.floor(Math.random() * 10) + 5; // 5 to 15 books per restock
+    
+    restockEntries.push({
+      id: generateId(),
+      bookId: book.id,
+      bookName: book.name,
+      quantity,
+      restockedBy: users[Math.floor(Math.random() * users.length)].id,
+      stallId: bookStalls[0].id,
+      synced: true,
+      createdAt: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000), // Random date in the last 30 days
+      updatedAt: new Date()
+    });
+  }
+  setRestockEntries(restockEntries);
+  
+  console.log("Sample data initialization complete");
+};
