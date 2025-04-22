@@ -165,21 +165,21 @@ export const initializeSampleData = (): void => {
       id: generateId(),
       name: "Admin User",
       email: "admin@example.com",
-      password: "password123", // In a real app, this would be hashed
+      phone: "9876543210",
       role: "admin",
-      instituteId: "inst-1",
-      createdAt: new Date(),
-      updatedAt: new Date()
+      canSell: true,
+      canRestock: true,
+      instituteId: "inst-1"
     },
     {
       id: generateId(),
       name: "Regular User",
       email: "user@example.com",
-      password: "password123", // In a real app, this would be hashed
-      role: "user",
-      instituteId: "inst-1",
-      createdAt: new Date(),
-      updatedAt: new Date()
+      phone: "9876543211",
+      role: "personnel",
+      canSell: true,
+      canRestock: false,
+      instituteId: "inst-1"
     }
   ];
   setUsers(users);
@@ -189,9 +189,9 @@ export const initializeSampleData = (): void => {
     {
       id: "inst-1",
       name: "Temple Institute",
-      location: "Bangalore",
-      createdAt: new Date(),
-      updatedAt: new Date()
+      address: "Bangalore",
+      adminId: users[0].id,
+      createdAt: new Date()
     }
   ];
   setInstitutes(institutes);
@@ -203,8 +203,7 @@ export const initializeSampleData = (): void => {
       name: "Main Book Stall",
       location: "Temple Entrance",
       instituteId: "inst-1",
-      createdAt: new Date(),
-      updatedAt: new Date()
+      createdAt: new Date()
     }
   ];
   setBookStalls(bookStalls);
@@ -236,6 +235,7 @@ export const initializeSampleData = (): void => {
       name: `${category} - Volume ${i + 1}`,
       author,
       category,
+      printingInstitute: "Vedic Press",
       originalPrice,
       salePrice,
       quantity: Math.floor(Math.random() * 20) + 5, // 5 to 25 copies
@@ -255,16 +255,15 @@ export const initializeSampleData = (): void => {
     sales.push({
       id: generateId(),
       bookId: book.id,
-      bookName: book.name,
       quantity,
-      salePrice: book.salePrice,
-      total: book.salePrice * quantity,
-      authorPercentage: authorPercentages[book.author] || 10,
-      soldBy: users[Math.floor(Math.random() * users.length)].id,
+      totalAmount: book.salePrice * quantity,
+      paymentMethod: "cash",
+      buyerName: `Customer ${i+1}`,
+      buyerPhone: `98765432${i}`,
+      personnelId: users[Math.floor(Math.random() * users.length)].id,
       stallId: bookStalls[0].id,
       synced: true,
-      createdAt: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000), // Random date in the last 30 days
-      updatedAt: new Date()
+      createdAt: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000) // Random date in the last 30 days
     });
   }
   setSales(sales);
@@ -278,16 +277,16 @@ export const initializeSampleData = (): void => {
     restockEntries.push({
       id: generateId(),
       bookId: book.id,
-      bookName: book.name,
       quantity,
-      restockedBy: users[Math.floor(Math.random() * users.length)].id,
+      cost: book.originalPrice * quantity * 0.8, // 20% discount for restock
+      adminId: users[0].id,
       stallId: bookStalls[0].id,
       synced: true,
-      createdAt: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000), // Random date in the last 30 days
-      updatedAt: new Date()
+      createdAt: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000) // Random date in the last 30 days
     });
   }
   setRestockEntries(restockEntries);
   
   console.log("Sample data initialization complete");
 };
+
