@@ -77,7 +77,16 @@
     "copiesOf": "copies of",
     "soldSuccessfully": "sold successfully",
     "saleFailed": "Sale Failed",
-    "errorProcessingSale": "Error processing sale"
+    "errorProcessingSale": "Error processing sale",
+    "lowStockAlert": "Low Stock Alert",
+    "lowStockMessage": "The following books are running low on inventory:",
+    "onlyRemaining": "Only",
+    "left": "left",
+    "backToHome": "Back to Home",
+    "backToDashboard": "Back to Dashboard",
+    "goBack": "Go Back",
+    "viewAll": "View All",
+    "authorRoyalty": "Author Royalty"
   },
   "auth": {
     "login": "Login",

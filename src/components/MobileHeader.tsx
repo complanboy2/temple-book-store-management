@@ -14,6 +14,7 @@ interface MobileHeaderProps {
   showStallSelector?: boolean;
   onSearch?: () => void;
   backTo?: string; // Prop to specify where to navigate back to
+  showNotification?: boolean;
 }
 
 const MobileHeader: React.FC<MobileHeaderProps> = ({
@@ -23,6 +24,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   showStallSelector = false,
   onSearch,
   backTo,
+  showNotification = true,
 }) => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
@@ -84,9 +86,11 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
             </button>
           )}
           
-          <button className="p-1 rounded-full hover:bg-temple-gold/10">
-            <Bell size={20} className="text-temple-maroon" />
-          </button>
+          {showNotification && (
+            <button className="p-1 rounded-full hover:bg-temple-gold/10">
+              <Bell size={20} className="text-temple-maroon" />
+            </button>
+          )}
           
           <div 
             className="h-8 w-8 bg-temple-saffron rounded-full flex items-center justify-center text-white text-sm font-bold cursor-pointer"

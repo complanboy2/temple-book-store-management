@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from "react";
 import { Book } from "@/types";
 import { useNavigate } from "react-router-dom";
-import Header from "@/components/Header";
 import BookCard from "@/components/BookCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +19,7 @@ import MobileHeader from "@/components/MobileHeader";
 import { useStallContext } from "@/contexts/StallContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTranslation } from "react-i18next";
+import { toast } from "@/components/ui/use-toast";
 
 const BooksPage: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
@@ -33,20 +33,28 @@ const BooksPage: React.FC = () => {
 
   useEffect(() => {
     const fetchBooks = async () => {
+      if (!currentStore) {
+        console.log("No store selected, cannot fetch books");
+        setBooks([]);
+        setFilteredBooks([]);
+        return;
+      }
+
       let query = supabase
         .from("books")
         .select("*")
+        .eq("stallid", currentStore)
         .order("createdat", { ascending: false });
-        
-      // Filter books by current stall if available
-      if (currentStore) {
-        query = query.eq("stallid", currentStore);
-      }
         
       const { data, error } = await query;
 
       if (error) {
         console.error("Error fetching books from Supabase:", error);
+        toast({
+          title: "Error",
+          description: "Error fetching books. Please try again.",
+          variant: "destructive",
+        });
         setBooks([]);
         setFilteredBooks([]);
         return;
@@ -68,6 +76,7 @@ const BooksPage: React.FC = () => {
         updatedAt: row.updatedat ? new Date(row.updatedat) : new Date()
       }));
 
+      console.log(`Fetched ${result.length} books for store ${currentStore}`);
       setBooks(result);
       setFilteredBooks(result);
     };
@@ -99,7 +108,11 @@ const BooksPage: React.FC = () => {
     if (book) {
       navigate(`/sell/${book.id}`);
     } else {
-      alert(t("common.bookNotFound"));
+      toast({
+        title: "Book Not Found",
+        description: t("common.bookNotFound"),
+        variant: "destructive",
+      });
     }
   };
 
@@ -110,14 +123,20 @@ const BooksPage: React.FC = () => {
     <div className="min-h-screen bg-temple-background">
       {isMobile ? (
         <MobileHeader 
-          title={t("common.books")} 
+          title={t("common.booksInventory")} 
           showBackButton={true}
           backTo="/"
           showSearchButton={true}
           onSearch={() => document.getElementById('searchInput')?.focus()}
         />
       ) : (
-        <Header />
+        <MobileHeader 
+          title={t("common.booksInventory")} 
+          showBackButton={true}
+          backTo="/"
+          showSearchButton={true}
+          onSearch={() => document.getElementById('searchInput')?.focus()}
+        />
       )}
       <main className="container mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
@@ -169,16 +188,18 @@ const BooksPage: React.FC = () => {
         ) : (
           <div className="text-center py-12">
             <p className="text-lg text-muted-foreground">{t("common.noBooks")}</p>
-            <Button
-              onClick={() => {
-                setSearchTerm("");
-                setSelectedCategory("");
-              }}
-              variant="link"
-              className="mt-2 text-temple-saffron"
-            >
-              {t("common.clearFilters")}
-            </Button>
+            {(searchTerm || selectedCategory) && (
+              <Button
+                onClick={() => {
+                  setSearchTerm("");
+                  setSelectedCategory("");
+                }}
+                variant="link"
+                className="mt-2 text-temple-saffron"
+              >
+                {t("common.clearFilters")}
+              </Button>
+            )}
           </div>
         )}
       </main>

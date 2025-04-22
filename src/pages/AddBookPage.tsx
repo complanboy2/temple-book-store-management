@@ -13,12 +13,13 @@ import {
 } from "@/services/storageService";
 import { Book } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Plus } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import MobileHeader from "@/components/MobileHeader";
+import { useTranslation } from "react-i18next";
+import { useStallContext } from "@/contexts/StallContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const AddBookPage: React.FC = () => {
   const [name, setName] = useState("");
@@ -40,6 +41,7 @@ const AddBookPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { currentStore } = useStallContext();
 
   useEffect(() => {
     // Load dropdowns data
@@ -55,13 +57,14 @@ const AddBookPage: React.FC = () => {
       const original = parseFloat(originalPrice);
       if (!isNaN(original)) {
         const percentage = authorPercentages[author] / 100;
-        const calculatedSalePrice = original * (1 + percentage);
+        // Calculate: original price + (original price * percentage)
+        const calculatedSalePrice = original + (original * percentage);
         setSalePrice(calculatedSalePrice.toFixed(2));
       }
     }
   }, [originalPrice, author, authorPercentages]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) return;
@@ -69,8 +72,15 @@ const AddBookPage: React.FC = () => {
     setIsLoading(true);
     
     try {
-      const bookStalls = getBookStalls();
-      const stallId = bookStalls.length > 0 ? bookStalls[0].id : "stall-1";
+      if (!currentStore) {
+        toast({
+          title: t("common.error"),
+          description: "No store selected. Please select a store first.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
       
       const newBook: Book = {
         id: generateId(),
@@ -82,13 +92,35 @@ const AddBookPage: React.FC = () => {
         originalPrice: parseFloat(originalPrice),
         salePrice: parseFloat(salePrice),
         quantity: parseInt(quantity),
-        stallId,
+        stallId: currentStore,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
       
+      // Save to local storage
       const books = getBooks();
       setBooks([...books, newBook]);
+      
+      // Also save to Supabase
+      const { error } = await supabase.from("books").insert({
+        id: newBook.id,
+        name: newBook.name,
+        author: newBook.author,
+        category: newBook.category,
+        printinginstitute: newBook.printingInstitute,
+        originalprice: newBook.originalPrice,
+        saleprice: newBook.salePrice,
+        quantity: newBook.quantity,
+        stallid: newBook.stallId,
+        barcode: newBook.barcode || null,
+        createdat: new Date().toISOString(),
+        updatedat: new Date().toISOString()
+      });
+      
+      if (error) {
+        console.error("Error adding book to Supabase:", error);
+        // Continue anyway as we have added to local storage
+      }
       
       toast({
         title: t("common.bookAdded"),
@@ -97,6 +129,7 @@ const AddBookPage: React.FC = () => {
       
       navigate("/books");
     } catch (error) {
+      console.error("Error adding book:", error);
       toast({
         title: t("common.error"),
         description: t("common.failedToAddBook"),

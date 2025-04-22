@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import MobileHeader from "@/components/MobileHeader";
-import { BookOpen, BarChart2, PlusCircle, Search, TrendingUp } from "lucide-react";
+import { BookOpen, BarChart2, PlusCircle, Search, TrendingUp, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { useStallContext } from "@/contexts/StallContext";
@@ -23,6 +23,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useToast } from "@/components/ui/use-toast";
+import { useTranslation } from "react-i18next";
 import {
   Select,
   SelectContent,
@@ -47,9 +48,11 @@ const DashboardPage: React.FC = () => {
   const [topSellingBooks, setTopSellingBooks] = useState<{ id: string, name: string, count: number }[]>([]);
   const [lowStockBooks, setLowStockBooks] = useState<any[]>([]);
   const [isAddStoreDialogOpen, setIsAddStoreDialogOpen] = useState(false);
+  const [showLowStockNotification, setShowLowStockNotification] = useState(false);
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { 
     stores, 
     currentStore, 
@@ -94,6 +97,7 @@ const DashboardPage: React.FC = () => {
           console.error("Error fetching books:", booksError);
           setBooks([]);
         } else {
+          console.log(`Fetched ${booksData?.length || 0} books for store ${currentStore}`);
           setBooks(booksData || []);
         }
 
@@ -108,6 +112,7 @@ const DashboardPage: React.FC = () => {
           console.error("Error fetching sales:", salesError);
           setSales([]);
         } else {
+          console.log(`Fetched ${salesData?.length || 0} sales for store ${currentStore}`);
           setSales(salesData || []);
         }
       } catch (err) {
@@ -128,6 +133,7 @@ const DashboardPage: React.FC = () => {
     const lowStock = books.filter(book => (book.quantity ?? 0) < 5);
     setLowStockCount(lowStock.length);
     setLowStockBooks(lowStock);
+    setShowLowStockNotification(lowStock.length > 0);
 
     // Top selling books
     const bookSalesMap: Record<string, { id: string, name: string, count: number }> = {};
@@ -151,7 +157,7 @@ const DashboardPage: React.FC = () => {
     } else {
       toast({
         title: "Book Not Found",
-        description: "Book not found! Please try again or search manually.",
+        description: t("common.bookNotFound"),
         variant: "destructive",
       });
     }
@@ -168,10 +174,10 @@ const DashboardPage: React.FC = () => {
 
   // Card click handlers for analytics
   const analyticsLinks = {
-    books: () => navigate(`/books?storeId=${currentStore}`),
-    sales: () => navigate(`/sales?storeId=${currentStore}&today=1`),
-    revenue: () => navigate(`/sales?storeId=${currentStore}`),
-    lowStock: () => navigate(`/books?storeId=${currentStore}&lowStock=1`),
+    books: () => navigate(`/books`),
+    sales: () => navigate(`/sales?today=1`),
+    revenue: () => navigate(`/sales`),
+    lowStock: () => navigate(`/books?lowStock=1`),
   };
 
   // Quick: today's sales
@@ -200,16 +206,16 @@ const DashboardPage: React.FC = () => {
         <div className="flex-1">
           {stores.length > 0 ? (
             <Select
-              value={currentStore || ""}
+              value={currentStore || "default-store"}
               onValueChange={(value) => setCurrentStore(value)}
             >
               <SelectTrigger className="temple-input w-full md:w-auto">
-                <SelectValue placeholder="Select a store" />
+                <SelectValue placeholder={t("common.selectStore")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
                   {stores.map(store => (
-                    <SelectItem key={store.id} value={store.id || "default-store"}>
+                    <SelectItem key={store.id} value={store.id}>
                       {store.name}
                       {store.location ? ` (${store.location})` : ""}
                     </SelectItem>
@@ -228,7 +234,7 @@ const DashboardPage: React.FC = () => {
             className="bg-temple-saffron hover:bg-temple-saffron/90"
             onClick={() => setIsAddStoreDialogOpen(true)}
           >
-            Add Store
+            {t("common.addStore")}
           </Button>
         )}
       </div>
@@ -237,7 +243,7 @@ const DashboardPage: React.FC = () => {
       {isAddStoreDialogOpen && (
         <div className="fixed top-0 left-0 w-full h-full bg-black/40 z-30 flex items-center justify-center">
           <div className="bg-white p-5 rounded shadow-lg min-w-[320px]">
-            <h2 className="text-lg font-semibold mb-3">Add a New Store</h2>
+            <h2 className="text-lg font-semibold mb-3">{t("common.addStore")}</h2>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
@@ -245,9 +251,9 @@ const DashboardPage: React.FC = () => {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Store Name</FormLabel>
+                      <FormLabel>{t("common.storeName")}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter store name" {...field} />
+                        <Input placeholder={t("common.storeName")} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -258,9 +264,9 @@ const DashboardPage: React.FC = () => {
                   name="location"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Location (optional)</FormLabel>
+                      <FormLabel>{t("common.storeLocation")} ({t("common.optional")})</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter location" {...field} />
+                        <Input placeholder={t("common.storeLocation")} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -273,14 +279,14 @@ const DashboardPage: React.FC = () => {
                       variant="outline" 
                       onClick={() => setIsAddStoreDialogOpen(false)}
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </Button>
                   )}
                   <Button 
                     type="submit" 
                     className="bg-temple-saffron hover:bg-temple-saffron/90"
                   >
-                    Add Store
+                    {t("common.addStore")}
                   </Button>
                 </div>
               </form>
@@ -292,6 +298,34 @@ const DashboardPage: React.FC = () => {
       <main className="mobile-container">
         {currentStore ? (
           <>
+            {/* Low Stock Notification */}
+            {showLowStockNotification && lowStockBooks.length > 0 && (
+              <div className="mb-4 p-4 rounded-lg bg-yellow-50 border-l-4 border-yellow-400 shadow-sm">
+                <div className="flex items-start">
+                  <AlertTriangle className="text-yellow-500 mr-3 mt-0.5" size={20} />
+                  <div>
+                    <h3 className="font-semibold text-yellow-800">{t("common.lowStockAlert")}</h3>
+                    <div className="mt-1 space-y-1">
+                      {lowStockBooks.slice(0, 3).map((book) => (
+                        <p key={book.id} className="text-sm text-yellow-700">
+                          <span className="font-medium">{book.name}</span>: {t("common.onlyRemaining")} <span className="font-semibold">{book.quantity}</span> {t("common.left")}
+                        </p>
+                      ))}
+                      {lowStockBooks.length > 3 && (
+                        <Button 
+                          variant="link" 
+                          className="text-xs text-yellow-800 p-0 h-auto" 
+                          onClick={() => navigate("/books?lowStock=1")}
+                        >
+                          +{lowStockBooks.length - 3} {t("common.more")}...
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div
                 tabIndex={0}
@@ -300,7 +334,7 @@ const DashboardPage: React.FC = () => {
                 className="cursor-pointer"
               >
                 <StatsCard
-                  title="Books"
+                  title={t("dashboard.totalBooks")}
                   value={books.length}
                   icon={<BookOpen className="text-temple-maroon" size={18} />}
                 />
@@ -312,7 +346,7 @@ const DashboardPage: React.FC = () => {
                 className="cursor-pointer"
               >
                 <StatsCard
-                  title="Sales Today"
+                  title={t("dashboard.salesToday")}
                   value={todaySales.length}
                   trend="up"
                   trendValue={`${todaySales.length > 0 ? "+" : ""}${todaySales.length}`}
@@ -326,7 +360,7 @@ const DashboardPage: React.FC = () => {
                 className="cursor-pointer"
               >
                 <StatsCard
-                  title="Revenue"
+                  title={t("dashboard.revenue")}
                   value={`₹${totalRevenue}`}
                   icon={<BarChart2 className="text-temple-maroon" size={18} />}
                 />
@@ -338,7 +372,7 @@ const DashboardPage: React.FC = () => {
                 className="cursor-pointer"
               >
                 <StatsCard
-                  title="Low Stock"
+                  title={t("dashboard.lowStock")}
                   value={lowStockCount}
                   trend={lowStockCount > 0 ? "down" : "neutral"}
                   trendValue={lowStockCount > 0 ? "Need restock" : "All good"}
@@ -351,21 +385,10 @@ const DashboardPage: React.FC = () => {
               <ScannerButton onCodeScanned={handleCodeScanned} />
             </div>
 
-            {lowStockBooks.length > 0 && (
-              <div className="mb-4 p-3 rounded bg-yellow-100 border-l-4 border-yellow-400 flex flex-col gap-1">
-                <span className="font-bold text-orange-600">Low Stock Alert</span>
-                {lowStockBooks.map(book => (
-                  <span key={book.id} className="text-xs">
-                    {book.name} (by {book.author}): Only <span className="font-semibold">{book.quantity}</span> left!
-                  </span>
-                ))}
-              </div>
-            )}
-
             {topSellingBooks.length > 0 && (
               <Card className="mobile-card mb-4">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg text-temple-maroon">Top Selling Books</CardTitle>
+                  <CardTitle className="text-lg text-temple-maroon">{t("dashboard.topSellingBooks")}</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="space-y-2">
@@ -381,7 +404,7 @@ const DashboardPage: React.FC = () => {
                           </div>
                           <span className="font-medium">{book.name}</span>
                         </div>
-                        <span className="text-sm text-gray-500">{book.count} sold</span>
+                        <span className="text-sm text-gray-500">{book.count} {t("common.sold")}</span>
                       </div>
                     ))}
                   </div>
@@ -435,7 +458,7 @@ const DashboardPage: React.FC = () => {
 
             <Card className="temple-card">
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg text-temple-maroon">Recent Sales</CardTitle>
+                <CardTitle className="text-lg text-temple-maroon">{t("dashboard.recentSales")}</CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
                 {recentSales.length > 0 ? (
@@ -447,7 +470,7 @@ const DashboardPage: React.FC = () => {
                           <div>
                             <p className="font-medium">{book?.name || "Unknown Book"}</p>
                             <p className="text-sm text-muted-foreground">
-                              Qty: {sale.quantity} • {new Date(sale.createdat).toLocaleDateString()}
+                              {t("common.quantity")}: {sale.quantity} • {new Date(sale.createdat).toLocaleDateString()}
                             </p>
                           </div>
                           <p className="font-semibold text-temple-saffron">₹{sale.totalamount}</p>
@@ -460,7 +483,7 @@ const DashboardPage: React.FC = () => {
                       className="w-full mt-2 text-temple-maroon border-temple-gold/20"
                       onClick={() => navigate("/sales")}
                     >
-                      View All Sales
+                      {t("common.viewAll")}
                     </Button>
                   </div>
                 ) : (

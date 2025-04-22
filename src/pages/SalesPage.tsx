@@ -1,11 +1,16 @@
+
 import React, { useEffect, useState } from "react";
-import { getBooks, getSales } from "@/services/storageService";
 import { Book, Sale } from "@/types";
-import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
+import MobileHeader from "@/components/MobileHeader";
+import { useStallContext } from "@/contexts/StallContext";
+import { useTranslation } from "react-i18next";
+import { toast } from "@/components/ui/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const SalesPage: React.FC = () => {
   const [sales, setSales] = useState<Sale[]>([]);
@@ -13,17 +18,102 @@ const SalesPage: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<string>("all");
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
   const [search, setSearch] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const { currentStore } = useStallContext();
+  const { t } = useTranslation();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
-    const allSales = getSales();
-    const allBooks = getBooks();
-    
-    setSales(allSales);
-    setBooks(allBooks);
-    
-    const total = allSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
-    setTotalRevenue(total);
-  }, []);
+    const fetchSalesAndBooks = async () => {
+      if (!currentStore) {
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        // Fetch sales for current store
+        const { data: salesData, error: salesError } = await supabase
+          .from("sales")
+          .select("*")
+          .eq("stallid", currentStore)
+          .order("createdat", { ascending: false });
+
+        if (salesError) {
+          console.error("Error fetching sales:", salesError);
+          toast({
+            title: "Error",
+            description: "Failed to fetch sales data",
+            variant: "destructive",
+          });
+          setSales([]);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Transform to local Sale type
+        const salesResult = salesData?.map(sale => ({
+          id: sale.id,
+          bookId: sale.bookid,
+          quantity: sale.quantity,
+          totalAmount: sale.totalamount,
+          paymentMethod: sale.paymentmethod,
+          buyerName: sale.buyername || undefined,
+          buyerPhone: sale.buyerphone || undefined,
+          personnelId: sale.personnelid,
+          stallId: sale.stallid,
+          createdAt: new Date(sale.createdat),
+          synced: sale.synced
+        })) || [];
+        
+        setSales(salesResult);
+        
+        // Fetch books for current store
+        const { data: booksData, error: booksError } = await supabase
+          .from("books")
+          .select("*")
+          .eq("stallid", currentStore);
+
+        if (booksError) {
+          console.error("Error fetching books:", booksError);
+          setBooks([]);
+        } else {
+          // Transform to local Book type
+          const booksResult = booksData?.map(book => ({
+            id: book.id,
+            barcode: book.barcode || undefined,
+            name: book.name,
+            author: book.author,
+            category: book.category || "",
+            printingInstitute: book.printinginstitute || "",
+            originalPrice: book.originalprice,
+            salePrice: book.saleprice,
+            quantity: book.quantity,
+            stallId: book.stallid,
+            createdAt: new Date(book.createdat),
+            updatedAt: new Date(book.updatedat)
+          })) || [];
+          
+          setBooks(booksResult);
+        }
+        
+        // Calculate total revenue
+        const total = salesResult.reduce((sum, sale) => sum + sale.totalAmount, 0);
+        setTotalRevenue(total);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast({
+          title: "Error",
+          description: "Something went wrong while fetching data",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSalesAndBooks();
+  }, [currentStore]);
 
   const getFilteredSales = () => {
     let filtered = sales;
@@ -42,17 +132,17 @@ const SalesPage: React.FC = () => {
     switch (selectedPeriod) {
       case "today": {
         const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        return filtered.filter(sale => new Date(sale.createdAt) >= startOfDay);
+        return filtered.filter(sale => sale.createdAt >= startOfDay);
       }
       case "week": {
         const startOfWeek = new Date(now);
         startOfWeek.setDate(now.getDate() - now.getDay());
         startOfWeek.setHours(0, 0, 0, 0);
-        return filtered.filter(sale => new Date(sale.createdAt) >= startOfWeek);
+        return filtered.filter(sale => sale.createdAt >= startOfWeek);
       }
       case "month": {
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        return filtered.filter(sale => new Date(sale.createdAt) >= startOfMonth);
+        return filtered.filter(sale => sale.createdAt >= startOfMonth);
       }
       default:
         return filtered;
@@ -63,27 +153,39 @@ const SalesPage: React.FC = () => {
   const filteredRevenue = filteredSales.reduce((sum, sale) => sum + sale.totalAmount, 0);
 
   const sortedSales = [...filteredSales].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
   );
 
   return (
     <div className="min-h-screen bg-temple-background">
-      <Header />
+      <MobileHeader 
+        title={t("common.sales")}
+        showBackButton={true}
+        backTo="/"
+        showSearchButton={true}
+        onSearch={() => document.getElementById('salesSearchInput')?.focus()}
+      />
+      
       <main className="container mx-auto px-2 py-4">
-        <h1 className="text-2xl font-bold text-temple-maroon mb-4">Sales History</h1>
+        {!isMobile && (
+          <h1 className="text-2xl font-bold text-temple-maroon mb-4">{t("common.sales")}</h1>
+        )}
+        
         <div className="flex gap-2 mb-4">
           <Input
-            placeholder="Search by book, author or buyer"
+            id="salesSearchInput"
+            placeholder={t("common.search")}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="max-w-xs"
           />
         </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <Card className="temple-card">
             <CardContent className="pt-6">
               <div className="text-center">
-                <p className="text-sm text-muted-foreground mb-1">Total Revenue</p>
+                <p className="text-sm text-muted-foreground mb-1">{t("common.totalAmount")}</p>
                 <p className="text-3xl font-bold text-temple-maroon">₹{filteredRevenue}</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   {filteredSales.length} sales in selected period
@@ -111,7 +213,11 @@ const SalesPage: React.FC = () => {
             <CardTitle className="text-lg text-temple-maroon">Sales Transactions</CardTitle>
           </CardHeader>
           <CardContent>
-            {sortedSales.length > 0 ? (
+            {isLoading ? (
+              <div className="text-center py-8">
+                <p>{t("common.loading")}...</p>
+              </div>
+            ) : sortedSales.length > 0 ? (
               <div className="space-y-4">
                 {sortedSales.map(sale => {
                   const book = books.find(b => b.id === sale.bookId);
@@ -122,18 +228,18 @@ const SalesPage: React.FC = () => {
                           <h3 className="font-semibold text-lg">{book?.name || "Unknown Book"}</h3>
                           <div className="flex flex-col md:flex-row md:space-x-4">
                             <p className="text-sm text-muted-foreground">
-                              Qty: {sale.quantity}
+                              {t("common.quantity")}: {sale.quantity}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              Payment: {sale.paymentMethod.toUpperCase()}
+                              {t("common.paymentMethod")}: {sale.paymentMethod.toUpperCase()}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              {new Date(sale.createdAt).toLocaleString()}
+                              {sale.createdAt.toLocaleString()}
                             </p>
                           </div>
                           {sale.buyerName && (
                             <p className="text-sm text-muted-foreground mt-1">
-                              Buyer: {sale.buyerName} {sale.buyerPhone && `(${sale.buyerPhone})`}
+                              {t("common.buyerName")}: {sale.buyerName} {sale.buyerPhone && `(${sale.buyerPhone})`}
                             </p>
                           )}
                         </div>
