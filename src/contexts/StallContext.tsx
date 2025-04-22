@@ -13,6 +13,11 @@ interface StoreContextType {
   updateStore: (id: string, data: Partial<BookStall>) => Promise<BookStall | null>;
   deleteStore: (id: string) => Promise<void>;
   isLoading: boolean;
+  // For backward compatibility with components still using "stall" naming
+  stalls: BookStall[];
+  currentStall: string | null;
+  setCurrentStall: (stallId: string) => void;
+  addStall: (name: string, location?: string) => Promise<BookStall | null>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -50,16 +55,25 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             ? data.filter(store => store.instituteid === currentUser.instituteId)
             : data.filter(store => store.instituteid === currentUser.instituteId);
           
-          setStores(filteredStores);
+          // Transform the data to match the BookStall interface
+          const mappedStores: BookStall[] = filteredStores.map(store => ({
+            id: store.id,
+            name: store.name,
+            location: store.location || undefined,
+            instituteId: store.instituteid,
+            createdAt: new Date(store.createdat)
+          }));
+          
+          setStores(mappedStores);
           
           // Check if there's a saved store in localStorage
           const savedStore = localStorage.getItem('currentStore');
-          if (savedStore && filteredStores.some(store => store.id === savedStore)) {
+          if (savedStore && mappedStores.some(store => store.id === savedStore)) {
             setCurrentStoreState(savedStore);
-          } else if (filteredStores.length > 0) {
+          } else if (mappedStores.length > 0) {
             // Set current store to the first one if not already set
-            setCurrentStoreState(filteredStores[0].id);
-            localStorage.setItem('currentStore', filteredStores[0].id);
+            setCurrentStoreState(mappedStores[0].id);
+            localStorage.setItem('currentStore', mappedStores[0].id);
           } else {
             // No stores available
             setCurrentStoreState(null);
@@ -114,7 +128,15 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return null;
       }
       
-      const addedStore = data as BookStall;
+      // Transform the data to match the BookStall interface
+      const addedStore: BookStall = {
+        id: data.id,
+        name: data.name,
+        location: data.location || undefined,
+        instituteId: data.instituteid,
+        createdAt: new Date(data.createdat)
+      };
+      
       setStores(prevStores => [addedStore, ...prevStores]);
       
       // If this is the first store, set it as current
@@ -141,9 +163,15 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateStore = async (id: string, data: Partial<BookStall>): Promise<BookStall | null> => {
     try {
+      // Transform the data to match the database schema
+      const updateData: any = {
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.location !== undefined && { location: data.location }),
+      };
+      
       const { data: updatedStore, error } = await supabase
         .from("book_stalls")
-        .update(data)
+        .update(updateData)
         .eq("id", id)
         .select()
         .single();
@@ -158,13 +186,22 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return null;
       }
       
+      // Transform the response to match the BookStall interface
+      const mappedStore: BookStall = {
+        id: updatedStore.id,
+        name: updatedStore.name,
+        location: updatedStore.location || undefined,
+        instituteId: updatedStore.instituteid,
+        createdAt: new Date(updatedStore.createdat)
+      };
+      
       setStores(prevStores => 
         prevStores.map(store => 
-          store.id === id ? { ...store, ...updatedStore } : store
+          store.id === id ? { ...store, ...data } : store
         )
       );
       
-      return updatedStore as BookStall;
+      return mappedStore;
     } catch (err) {
       console.error("Failed to update store:", err);
       return null;
@@ -214,7 +251,12 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         addStore,
         updateStore,
         deleteStore,
-        isLoading
+        isLoading,
+        // Alias properties for backward compatibility
+        stalls: stores,
+        currentStall: currentStore,
+        setCurrentStall: setCurrentStore,
+        addStall: addStore
       }}
     >
       {children}

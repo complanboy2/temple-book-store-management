@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Home, BookOpen, BarChart2, PlusCircle, Menu, Settings } from "lucide-react";
@@ -8,7 +9,7 @@ const MobileNavBar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAdmin } = useAuth();
-  const { currentStall } = useStallContext();
+  const { currentStore } = useStallContext();
   
   const isActive = (path: string) => {
     if (path === "/" && location.pathname === "/") return true;

@@ -22,11 +22,11 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
 }) => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { currentStall, stalls, setCurrentStall } = useStallContext();
+  const { currentStore, stores, setCurrentStore } = useStallContext();
   
   const handleStallChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const stallId = e.target.value;
-    setCurrentStall(stallId);
+    setCurrentStore(stallId);
   };
   
   return (
@@ -46,16 +46,16 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
           </h1>
         </div>
         
-        {showStallSelector && currentStall && stalls.length > 0 && (
+        {showStallSelector && currentStore && stores.length > 0 && (
           <div className="flex-1 mx-2">
             <select 
               className="stall-selector w-full"
-              value={currentStall}
+              value={currentStore}
               onChange={handleStallChange}
             >
-              {stalls.map((stall) => (
-                <option key={stall.id} value={stall.id}>
-                  {stall.name}
+              {stores.map((store) => (
+                <option key={store.id} value={store.id}>
+                  {store.name}
                 </option>
               ))}
             </select>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, X } from "lucide-react";
@@ -16,14 +15,14 @@ const SearchPage = () => {
   const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const { currentStall } = useStallContext();
+  const { currentStore } = useStallContext();
   
   useEffect(() => {
     const books = getBooks();
     
-    // Filter by current stall if available
-    const filteredByStall = currentStall 
-      ? books.filter(book => book.stallId === currentStall) 
+    // Filter by current store if available
+    const filteredByStall = currentStore 
+      ? books.filter(book => book.stallId === currentStore) 
       : books;
       
     setAllBooks(filteredByStall);
@@ -34,7 +33,7 @@ const SearchPage = () => {
     
     // Initial search results
     setFilteredBooks(filteredByStall);
-  }, [currentStall]);
+  }, [currentStore]);
   
   useEffect(() => {
     // Filter books based on search term and category

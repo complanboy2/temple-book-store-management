@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import MobileHeader from "@/components/MobileHeader";
@@ -11,7 +10,7 @@ import { useStallContext } from "@/contexts/StallContext";
 const ProfilePage = () => {
   const navigate = useNavigate();
   const { currentUser, logout, isAdmin } = useAuth();
-  const { stalls } = useStallContext();
+  const { stores } = useStallContext();
   
   const handleLogout = () => {
     logout();

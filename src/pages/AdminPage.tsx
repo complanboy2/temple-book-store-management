@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Users, BookOpen, BarChart2, Settings } from "lucide-react";
@@ -21,7 +20,7 @@ import { useToast } from "@/components/ui/use-toast";
 const AdminPage = () => {
   const navigate = useNavigate();
   const { isAdmin, inviteUser } = useAuth();
-  const { stalls, addStall } = useStallContext();
+  const { stores, addStore } = useStallContext();
   const { toast } = useToast();
   const [isAddStallOpen, setIsAddStallOpen] = useState(false);
   const [isInviteUserOpen, setIsInviteUserOpen] = useState(false);
@@ -51,7 +50,7 @@ const AdminPage = () => {
 
     setIsSubmitting(true);
     try {
-      await addStall(newStallName, newStallLocation);
+      await addStore(newStallName, newStallLocation);
       toast({
         title: "Success",
         description: "Stall added successfully",
@@ -177,12 +176,12 @@ const AdminPage = () => {
               </Dialog>
             </div>
 
-            {stalls.length > 0 ? (
+            {stores.length > 0 ? (
               <div className="space-y-3">
-                {stalls.map((stall) => (
-                  <div key={stall.id} className="border border-temple-gold/20 rounded-lg p-3 bg-white shadow-sm">
-                    <h3 className="font-medium text-temple-maroon">{stall.name}</h3>
-                    {stall.location && <p className="text-sm text-gray-600">{stall.location}</p>}
+                {stores.map((store) => (
+                  <div key={store.id} className="border border-temple-gold/20 rounded-lg p-3 bg-white shadow-sm">
+                    <h3 className="font-medium text-temple-maroon">{store.name}</h3>
+                    {store.location && <p className="text-sm text-gray-600">{store.location}</p>}
                   </div>
                 ))}
               </div>
@@ -295,20 +294,22 @@ const AdminPage = () => {
                       </div>
                       <DialogFooter className="flex-col sm:flex-row gap-2">
                         <Button
-                          className="w-full sm:w-auto"
+                          className="w-full justify-start shadow-sm bg-temple-background hover:bg-temple-gold/10 text-temple-maroon"
                           variant="outline"
                           onClick={() => copyInviteLink(inviteCode)}
                         >
                           Copy Link
                         </Button>
                         <Button
-                          className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+                          className="w-full justify-start shadow-sm bg-temple-background hover:bg-temple-gold/10 text-temple-maroon"
+                          variant="outline"
                           onClick={() => window.open(generateWhatsAppLink(inviteCode), '_blank')}
                         >
                           Share via WhatsApp
                         </Button>
                         <Button
-                          className="w-full sm:w-auto bg-temple-saffron hover:bg-temple-saffron/90"
+                          className="w-full justify-start shadow-sm bg-temple-background hover:bg-temple-gold/10 text-temple-maroon"
+                          variant="outline"
                           onClick={() => {
                             setInviteCode("");
                             setInviteName("");
