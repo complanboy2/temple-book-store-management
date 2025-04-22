@@ -1,0 +1,52 @@
+
+{
+  "common": {
+    "store": "கடை",
+    "stores": "கடைகள்",
+    "addStore": "கடையை சேர்க்க",
+    "storeName": "கடையின் பெயர்",
+    "storeLocation": "கடையின் இடம்",
+    "books": "புத்தகங்கள்",
+    "sales": "விற்பனை",
+    "reports": "அறிக்கைகள்",
+    "settings": "அமைப்புகள்",
+    "home": "முகப்பு",
+    "addBook": "புத்தகம் சேர்க்க",
+    "more": "மேலும்",
+    "save": "சேமி",
+    "cancel": "ரத்து செய்",
+    "delete": "நீக்கு",
+    "edit": "திருத்து",
+    "search": "தேடு",
+    "required": "தேவை"
+  },
+  "auth": {
+    "login": "உள்நுழைய",
+    "logout": "வெளியேறு",
+    "profile": "சுயவிவரம்",
+    "signUp": "பதிவு செய்ய"
+  },
+  "dashboard": {
+    "totalBooks": "மொத்த புத்தகங்கள்",
+    "salesToday": "இன்றைய விற்பனை",
+    "revenue": "வருவாய்",
+    "lowStock": "குறைந்த கையிருப்பு",
+    "recentSales": "சமீபத்திய விற்பனை",
+    "topSellingBooks": "அதிகம் விற்பனையாகும் புத்தகங்கள்"
+  },
+  "settings": {
+    "language": "மொழி",
+    "selectLanguage": "மொழியை தேர்ந்தெடுக்கவும்",
+    "storeManagement": "கடை நிர்வாகம்",
+    "storeSettings": "கடை அமைப்புகள்",
+    "currentStore": "தற்போதைய கடை"
+  },
+  "languages": {
+    "english": "ஆங்கிலம்",
+    "hindi": "இந்தி",
+    "telugu": "தெலுங்கு",
+    "tamil": "தமிழ்",
+    "kannada": "கன்னடம்",
+    "marathi": "மராத்தி"
+  }
+}

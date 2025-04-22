@@ -4,12 +4,14 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Home, BookOpen, BarChart2, PlusCircle, Menu, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStallContext } from "@/contexts/StallContext";
+import { useTranslation } from "react-i18next";
 
 const MobileNavBar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAdmin } = useAuth();
   const { currentStore } = useStallContext();
+  const { t } = useTranslation();
   
   const isActive = (path: string) => {
     if (path === "/" && location.pathname === "/") return true;
@@ -27,7 +29,7 @@ const MobileNavBar = () => {
           }`}
         >
           <Home size={24} />
-          <span className="text-xs mt-1">Home</span>
+          <span className="text-xs mt-1">{t("common.home")}</span>
         </button>
         
         <button
@@ -37,7 +39,7 @@ const MobileNavBar = () => {
           }`}
         >
           <BookOpen size={24} />
-          <span className="text-xs mt-1">Books</span>
+          <span className="text-xs mt-1">{t("common.books")}</span>
         </button>
         
         {isAdmin && (
@@ -48,7 +50,7 @@ const MobileNavBar = () => {
             }`}
           >
             <PlusCircle size={24} />
-            <span className="text-xs mt-1">Add Book</span>
+            <span className="text-xs mt-1">{t("common.addBook")}</span>
           </button>
         )}
         
@@ -59,7 +61,7 @@ const MobileNavBar = () => {
           }`}
         >
           <BarChart2 size={24} />
-          <span className="text-xs mt-1">Sales</span>
+          <span className="text-xs mt-1">{t("common.sales")}</span>
         </button>
         
         {isAdmin && (
@@ -70,7 +72,7 @@ const MobileNavBar = () => {
             }`}
           >
             <Menu size={24} />
-            <span className="text-xs mt-1">More</span>
+            <span className="text-xs mt-1">{t("common.more")}</span>
           </button>
         )}
         {isAdmin && (
@@ -81,7 +83,7 @@ const MobileNavBar = () => {
             }`}
           >
             <Settings size={24} />
-            <span className="text-xs mt-1">Settings</span>
+            <span className="text-xs mt-1">{t("common.settings")}</span>
           </button>
         )}
       </div>

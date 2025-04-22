@@ -106,6 +106,8 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     
     try {
+      console.log("Adding store with institute ID:", currentUser.instituteId);
+      
       const newStore = {
         name,
         location: location || null,
@@ -150,7 +152,7 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
       
       return addedStore;
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to add store:", err);
       toast({
         title: "Error",

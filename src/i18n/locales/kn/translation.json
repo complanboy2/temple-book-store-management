@@ -1,0 +1,52 @@
+
+{
+  "common": {
+    "store": "ಅಂಗಡಿ",
+    "stores": "ಅಂಗಡಿಗಳು",
+    "addStore": "ಅಂಗಡಿ ಸೇರಿಸಿ",
+    "storeName": "ಅಂಗಡಿಯ ಹೆಸರು",
+    "storeLocation": "ಅಂಗಡಿಯ ಸ್ಥಳ",
+    "books": "ಪುಸ್ತಕಗಳು",
+    "sales": "ಮಾರಾಟಗಳು",
+    "reports": "ವರದಿಗಳು",
+    "settings": "ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
+    "home": "ಮುಖಪುಟ",
+    "addBook": "ಪುಸ್ತಕ ಸೇರಿಸಿ",
+    "more": "ಇನ್ನಷ್ಟು",
+    "save": "ಉಳಿಸಿ",
+    "cancel": "ರದ್ದುಮಾಡಿ",
+    "delete": "ಅಳಿಸಿ",
+    "edit": "ಸಂಪಾದಿಸಿ",
+    "search": "ಹುಡುಕಿ",
+    "required": "ಅಗತ್ಯವಿದೆ"
+  },
+  "auth": {
+    "login": "ಲಾಗಿನ್",
+    "logout": "ಲಾಗ್ ಔಟ್",
+    "profile": "ಪ್ರೊಫೈಲ್",
+    "signUp": "ಸೈನ್ ಅಪ್"
+  },
+  "dashboard": {
+    "totalBooks": "ಒಟ್ಟು ಪುಸ್ತಕಗಳು",
+    "salesToday": "ಇಂದಿನ ಮಾರಾಟಗಳು",
+    "revenue": "ಆದಾಯ",
+    "lowStock": "ಕಡಿಮೆ ಸ್ಟಾಕ್",
+    "recentSales": "ಇತ್ತೀಚಿನ ಮಾರಾಟಗಳು",
+    "topSellingBooks": "ಹೆಚ್ಚು ಮಾರಾಟವಾಗುತ್ತಿರುವ ಪುಸ್ತಕಗಳು"
+  },
+  "settings": {
+    "language": "ಭಾಷೆ",
+    "selectLanguage": "ಭಾಷೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ",
+    "storeManagement": "ಅಂಗಡಿ ನಿರ್ವಹಣೆ",
+    "storeSettings": "ಅಂಗಡಿ ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
+    "currentStore": "ಪ್ರಸ್ತುತ ಅಂಗಡಿ"
+  },
+  "languages": {
+    "english": "ಇಂಗ್ಲಿಷ್",
+    "hindi": "ಹಿಂದಿ",
+    "telugu": "ತೆಲುಗು",
+    "tamil": "ತಮಿಳು",
+    "kannada": "ಕನ್ನಡ",
+    "marathi": "ಮರಾಠಿ"
+  }
+}

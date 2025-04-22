@@ -1,0 +1,52 @@
+
+{
+  "common": {
+    "store": "स्टोअर",
+    "stores": "स्टोअर्स",
+    "addStore": "स्टोअर जोडा",
+    "storeName": "स्टोअरचे नाव",
+    "storeLocation": "स्टोअरचे स्थान",
+    "books": "पुस्तके",
+    "sales": "विक्री",
+    "reports": "अहवाल",
+    "settings": "सेटिंग्ज",
+    "home": "होम",
+    "addBook": "पुस्तक जोडा",
+    "more": "अधिक",
+    "save": "जतन करा",
+    "cancel": "रद्द करा",
+    "delete": "हटवा",
+    "edit": "संपादित करा",
+    "search": "शोध",
+    "required": "आवश्यक"
+  },
+  "auth": {
+    "login": "लॉगिन",
+    "logout": "लॉगआउट",
+    "profile": "प्रोफाइल",
+    "signUp": "साइन अप"
+  },
+  "dashboard": {
+    "totalBooks": "एकूण पुस्तके",
+    "salesToday": "आजची विक्री",
+    "revenue": "महसूल",
+    "lowStock": "कमी साठा",
+    "recentSales": "अलीकडील विक्री",
+    "topSellingBooks": "सर्वाधिक विकली जाणारी पुस्तके"
+  },
+  "settings": {
+    "language": "भाषा",
+    "selectLanguage": "भाषा निवडा",
+    "storeManagement": "स्टोअर व्यवस्थापन",
+    "storeSettings": "स्टोअर सेटिंग्ज",
+    "currentStore": "वर्तमान स्टोअर"
+  },
+  "languages": {
+    "english": "इंग्रजी",
+    "hindi": "हिंदी",
+    "telugu": "तेलुगू",
+    "tamil": "तामिळ",
+    "kannada": "कन्नड",
+    "marathi": "मराठी"
+  }
+}

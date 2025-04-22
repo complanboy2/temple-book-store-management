@@ -1,0 +1,52 @@
+
+{
+  "common": {
+    "store": "Store",
+    "stores": "Stores",
+    "addStore": "Add Store",
+    "storeName": "Store Name",
+    "storeLocation": "Store Location",
+    "books": "Books",
+    "sales": "Sales",
+    "reports": "Reports",
+    "settings": "Settings",
+    "home": "Home",
+    "addBook": "Add Book",
+    "more": "More",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "required": "Required"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "profile": "Profile",
+    "signUp": "Sign Up"
+  },
+  "dashboard": {
+    "totalBooks": "Total Books",
+    "salesToday": "Sales Today",
+    "revenue": "Revenue",
+    "lowStock": "Low Stock",
+    "recentSales": "Recent Sales",
+    "topSellingBooks": "Top Selling Books"
+  },
+  "settings": {
+    "language": "Language",
+    "selectLanguage": "Select Language",
+    "storeManagement": "Store Management",
+    "storeSettings": "Store Settings",
+    "currentStore": "Current Store"
+  },
+  "languages": {
+    "english": "English",
+    "hindi": "Hindi",
+    "telugu": "Telugu",
+    "tamil": "Tamil",
+    "kannada": "Kannada",
+    "marathi": "Marathi"
+  }
+}

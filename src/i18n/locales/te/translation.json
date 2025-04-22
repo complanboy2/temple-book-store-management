@@ -1,0 +1,52 @@
+
+{
+  "common": {
+    "store": "స్టోర్",
+    "stores": "స్టోర్లు",
+    "addStore": "స్టోర్ జోడించు",
+    "storeName": "స్టోర్ పేరు",
+    "storeLocation": "స్టోర్ స్థానం",
+    "books": "పుస్తకాలు",
+    "sales": "అమ్మకాలు",
+    "reports": "నివేదికలు",
+    "settings": "సెట్టింగ్స్",
+    "home": "హోమ్",
+    "addBook": "పుస్తకం జోడించు",
+    "more": "మరిన్ని",
+    "save": "సేవ్ చేయి",
+    "cancel": "రద్దు చేయి",
+    "delete": "తొలగించు",
+    "edit": "సవరించు",
+    "search": "శోధన",
+    "required": "అవసరం"
+  },
+  "auth": {
+    "login": "లాగిన్",
+    "logout": "లాగౌట్",
+    "profile": "ప్రొఫైల్",
+    "signUp": "సైన్ అప్"
+  },
+  "dashboard": {
+    "totalBooks": "మొత్తం పుస్తకాలు",
+    "salesToday": "నేటి అమ్మకాలు",
+    "revenue": "ఆదాయం",
+    "lowStock": "తక్కువ స్టాక్",
+    "recentSales": "ఇటీవలి అమ్మకాలు",
+    "topSellingBooks": "అత్యధికంగా అమ్ముడవుతున్న పుస్తకాలు"
+  },
+  "settings": {
+    "language": "భాష",
+    "selectLanguage": "భాషను ఎంచుకోండి",
+    "storeManagement": "స్టోర్ నిర్వహణ",
+    "storeSettings": "స్టోర్ సెట్టింగ్స్",
+    "currentStore": "ప్రస్తుత స్టోర్"
+  },
+  "languages": {
+    "english": "ఆంగ్లం",
+    "hindi": "హిందీ",
+    "telugu": "తెలుగు",
+    "tamil": "తమిళం",
+    "kannada": "కన్నడం",
+    "marathi": "మరాఠీ"
+  }
+}

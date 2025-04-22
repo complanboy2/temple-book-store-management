@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Search, Bell, ChevronDown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStallContext } from "@/contexts/StallContext";
+import { useTranslation } from "react-i18next";
 
 interface MobileHeaderProps {
   title: string;
@@ -23,6 +24,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { currentStore, stores, setCurrentStore } = useStallContext();
+  const { t } = useTranslation();
   
   const handleStallChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const stallId = e.target.value;
