@@ -114,6 +114,7 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         instituteid: currentUser.instituteId,
       };
       
+      // Use Supabase client to insert the new store
       const { data, error } = await supabase
         .from("book_stalls")
         .insert([newStore])
@@ -129,6 +130,8 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         });
         return null;
       }
+      
+      console.log("Successfully added store:", data);
       
       // Transform the data to match the BookStall interface
       const addedStore: BookStall = {
