@@ -13,7 +13,7 @@ interface MobileHeaderProps {
   showSearchButton?: boolean;
   showStallSelector?: boolean;
   onSearch?: () => void;
-  backTo?: string; // New prop to specify where to navigate back to
+  backTo?: string; // Prop to specify where to navigate back to
 }
 
 const MobileHeader: React.FC<MobileHeaderProps> = ({

@@ -8,7 +8,8 @@ import {
   getBookStalls, 
   getAuthors, 
   getCategories,
-  getPrintingInstitutes
+  getPrintingInstitutes,
+  getAuthorSalePercentage
 } from "@/services/storageService";
 import { Book } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,7 @@ const AddBookPage: React.FC = () => {
   const [authors, setAuthors] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [institutes, setInstitutes] = useState<string[]>([]);
+  const [authorPercentages, setAuthorPercentages] = useState<Record<string, number>>({});
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -44,7 +46,20 @@ const AddBookPage: React.FC = () => {
     setAuthors(getAuthors());
     setCategories(getCategories());
     setInstitutes(getPrintingInstitutes() || []);
+    setAuthorPercentages(getAuthorSalePercentage());
   }, []);
+
+  // Calculate sale price based on original price and author percentage
+  useEffect(() => {
+    if (originalPrice && author && authorPercentages[author]) {
+      const original = parseFloat(originalPrice);
+      if (!isNaN(original)) {
+        const percentage = authorPercentages[author] / 100;
+        const calculatedSalePrice = original * (1 + percentage);
+        setSalePrice(calculatedSalePrice.toFixed(2));
+      }
+    }
+  }, [originalPrice, author, authorPercentages]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,6 +133,14 @@ const AddBookPage: React.FC = () => {
     navigate("/metadata-manager");
   };
 
+  // Show author percentage if available
+  const getAuthorPercentageDisplay = () => {
+    if (author && authorPercentages[author]) {
+      return `(${authorPercentages[author]}% royalty)`;
+    }
+    return '';
+  };
+
   return (
     <div className="min-h-screen bg-temple-background pb-20">
       <MobileHeader 
@@ -158,7 +181,7 @@ const AddBookPage: React.FC = () => {
               
               <div className="space-y-2">
                 <label className="text-lg font-medium">
-                  {t("common.author")}*
+                  {t("common.author")}* {getAuthorPercentageDisplay()}
                 </label>
                 <Select value={author} onValueChange={setAuthor}>
                   <SelectTrigger className="w-full">
@@ -172,7 +195,7 @@ const AddBookPage: React.FC = () => {
                     ) : (
                       authors.map((a) => (
                         <SelectItem key={a} value={a}>
-                          {a}
+                          {a} {authorPercentages[a] ? `(${authorPercentages[a]}%)` : ''}
                         </SelectItem>
                       ))
                     )}

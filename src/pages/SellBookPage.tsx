@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getBooks, addSale, updateBookQuantity, generateId } from "@/services/storageService";
+import { getBooks, addSale, updateBookQuantity, generateId, getAuthorSalePercentage } from "@/services/storageService";
 import { Book, Sale } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import MobileHeader from "@/components/MobileHeader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslation } from "react-i18next";
+import { useStallContext } from "@/contexts/StallContext";
 
 const SellBookPage: React.FC = () => {
   const { bookId } = useParams<{ bookId: string }>();
@@ -19,7 +20,9 @@ const SellBookPage: React.FC = () => {
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [authorPercentage, setAuthorPercentage] = useState<number | null>(null);
   const { currentUser } = useAuth();
+  const { currentStore } = useStallContext();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -27,14 +30,31 @@ const SellBookPage: React.FC = () => {
   useEffect(() => {
     if (bookId) {
       const books = getBooks();
-      const foundBook = books.find(b => b.id === bookId);
+      // Filter books by current stall if available
+      let filteredBooks = books;
+      if (currentStore) {
+        filteredBooks = books.filter(b => b.stallId === currentStore);
+      }
+      
+      const foundBook = filteredBooks.find(b => b.id === bookId);
       if (foundBook) {
         setBook(foundBook);
+        
+        // Get author percentage if available
+        const percentages = getAuthorSalePercentage();
+        if (percentages[foundBook.author]) {
+          setAuthorPercentage(percentages[foundBook.author]);
+        }
       } else {
+        toast({
+          title: t("common.error"),
+          description: t("common.bookNotFound"),
+          variant: "destructive",
+        });
         navigate("/books");
       }
     }
-  }, [bookId, navigate]);
+  }, [bookId, currentStore, navigate, toast, t]);
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
@@ -125,6 +145,9 @@ const SellBookPage: React.FC = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">{t("common.author")}</p>
                   <p className="font-medium">{book.author}</p>
+                  {authorPercentage && (
+                    <p className="text-xs text-temple-saffron">{authorPercentage}% royalty</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">{t("common.category")}</p>
@@ -133,6 +156,9 @@ const SellBookPage: React.FC = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">{t("common.price")}</p>
                   <p className="font-bold text-temple-saffron">₹{book.salePrice}</p>
+                  {book.originalPrice && book.originalPrice !== book.salePrice && (
+                    <p className="text-xs line-through text-gray-500">₹{book.originalPrice}</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">{t("common.available")}</p>

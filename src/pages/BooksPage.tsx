@@ -16,6 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import MobileHeader from "@/components/MobileHeader";
+import { useStallContext } from "@/contexts/StallContext";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useTranslation } from "react-i18next";
 
 const BooksPage: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
@@ -23,13 +27,23 @@ const BooksPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const navigate = useNavigate();
+  const { currentStore } = useStallContext();
+  const isMobile = useIsMobile();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchBooks = async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("books")
         .select("*")
         .order("createdat", { ascending: false });
+        
+      // Filter books by current stall if available
+      if (currentStore) {
+        query = query.eq("stallid", currentStore);
+      }
+        
+      const { data, error } = await query;
 
       if (error) {
         console.error("Error fetching books from Supabase:", error);
@@ -59,7 +73,7 @@ const BooksPage: React.FC = () => {
     };
 
     fetchBooks();
-  }, []);
+  }, [currentStore]);
 
   useEffect(() => {
     let results = books;
@@ -85,7 +99,7 @@ const BooksPage: React.FC = () => {
     if (book) {
       navigate(`/sell/${book.id}`);
     } else {
-      alert("Book not found! Please try again or search manually.");
+      alert(t("common.bookNotFound"));
     }
   };
 
@@ -94,15 +108,25 @@ const BooksPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-temple-background">
-      <Header />
+      {isMobile ? (
+        <MobileHeader 
+          title={t("common.books")} 
+          showBackButton={true}
+          backTo="/"
+          showSearchButton={true}
+          onSearch={() => document.getElementById('searchInput')?.focus()}
+        />
+      ) : (
+        <Header />
+      )}
       <main className="container mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-temple-maroon mb-4 md:mb-0">Books Inventory</h1>
+          <h1 className="text-2xl font-bold text-temple-maroon mb-4 md:mb-0">{t("common.booksInventory")}</h1>
           <Button
             onClick={() => navigate("/add-book")}
             className="bg-temple-saffron hover:bg-temple-saffron/90"
           >
-            Add New Book
+            {t("common.addNewBook")}
           </Button>
         </div>
         <div className="mb-6">
@@ -112,7 +136,8 @@ const BooksPage: React.FC = () => {
           <div className="w-full md:flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search books by name, author..."
+              id="searchInput"
+              placeholder={t("common.searchBooks")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="temple-input pl-10 w-full"
@@ -123,10 +148,10 @@ const BooksPage: React.FC = () => {
             onValueChange={setSelectedCategory}
           >
             <SelectTrigger className="w-full md:w-[200px]">
-              <SelectValue placeholder="All Categories" />
+              <SelectValue placeholder={t("common.allCategories")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value="">{t("common.allCategories")}</SelectItem>
               {categories.map((category) => (
                 <SelectItem key={category} value={category}>
                   {category}
@@ -143,7 +168,7 @@ const BooksPage: React.FC = () => {
           </div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-lg text-muted-foreground">No books found matching your search criteria.</p>
+            <p className="text-lg text-muted-foreground">{t("common.noBooks")}</p>
             <Button
               onClick={() => {
                 setSearchTerm("");
@@ -152,7 +177,7 @@ const BooksPage: React.FC = () => {
               variant="link"
               className="mt-2 text-temple-saffron"
             >
-              Clear filters
+              {t("common.clearFilters")}
             </Button>
           </div>
         )}
