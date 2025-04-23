@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Book } from "@/types";
 import { useNavigate } from "react-router-dom";
@@ -96,7 +95,7 @@ const BooksPage: React.FC = () => {
             toast({
               title: t("common.lowStock"),
               description: `${book.name}: ${book.quantity} ${t("common.left")}`,
-              variant: "warning",
+              variant: "default",
             });
           });
         }

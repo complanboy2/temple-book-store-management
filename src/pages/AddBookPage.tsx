@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -43,18 +42,15 @@ const AddBookPage: React.FC = () => {
   const { currentStore } = useStallContext();
 
   useEffect(() => {
-    // Load metadata
     setAuthors(getAuthors());
     setCategories(getCategories());
     setInstitutes(getPrintingInstitutes() || []);
     
-    // Load author percentages
     const percentages = getAuthorSalePercentage();
     console.log("Loaded author percentages:", percentages);
     setAuthorPercentages(percentages);
   }, []);
 
-  // Calculate sale price whenever original price or author changes
   useEffect(() => {
     if (originalPrice && author && authorPercentages[author]) {
       const original = parseFloat(originalPrice);
@@ -132,13 +128,11 @@ const AddBookPage: React.FC = () => {
             variant: "destructive",
           });
           
-          // Still save to local storage as backup
           const books = getBooks();
           setBooks([...books, newBook]);
         } else {
           console.log("Book added to Supabase successfully:", data);
           
-          // Also save to local storage for offline support
           const books = getBooks();
           setBooks([...books, newBook]);
           
@@ -153,14 +147,13 @@ const AddBookPage: React.FC = () => {
       } catch (supabaseError) {
         console.error("Exception when adding book to Supabase:", supabaseError);
         
-        // Still save to local storage as backup
         const books = getBooks();
         setBooks([...books, newBook]);
         
         toast({
           title: t("common.warning"),
           description: t("common.savedLocallyOnly"),
-          variant: "warning",
+          variant: "default",
         });
       }
     } catch (error) {
