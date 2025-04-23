@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import StatsCard from "@/components/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +22,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import {
   Select,
@@ -98,7 +99,7 @@ const DashboardPage: React.FC = () => {
           setBooks(booksData || []);
         }
 
-        // Sales
+        // Sales - Make sure we're getting all columns needed
         const { data: salesData, error: salesError } = await supabase
           .from("sales")
           .select("*")
@@ -109,7 +110,7 @@ const DashboardPage: React.FC = () => {
           console.error("Error fetching sales:", salesError);
           setSales([]);
         } else {
-          console.log(`Fetched ${salesData?.length || 0} sales for store ${currentStore}`);
+          console.log(`Fetched ${salesData?.length || 0} sales for store ${currentStore}`, salesData);
           setSales(salesData || []);
         }
       } catch (err) {
@@ -123,16 +124,25 @@ const DashboardPage: React.FC = () => {
   }, [currentStore]);
 
   useEffect(() => {
-    const revenue = sales.reduce((sum, sale) => sum + (sale.totalamount ?? 0), 0);
+    // Calculate total revenue from sales
+    const revenue = sales.reduce((sum, sale) => {
+      const amount = parseFloat(String(sale.totalamount || 0));
+      return sum + (isNaN(amount) ? 0 : amount);
+    }, 0);
     setTotalRevenue(revenue);
 
+    // Calculate low stock books
     const lowStock = books.filter(book => (book.quantity ?? 0) < 5);
     setLowStockCount(lowStock.length);
     setLowStockBooks(lowStock);
     setShowLowStockNotification(lowStock.length > 0);
 
+    // Calculate top selling books
     const bookSalesMap: Record<string, { id: string, name: string, count: number }> = {};
+    
     sales.forEach(sale => {
+      if (!sale.bookid) return;
+      
       const book = books.find(b => b.id === sale.bookid);
       if (book) {
         if (!bookSalesMap[book.id]) {
@@ -141,7 +151,13 @@ const DashboardPage: React.FC = () => {
         bookSalesMap[book.id].count += sale.quantity ?? 0;
       }
     });
-    setTopSellingBooks(Object.values(bookSalesMap).sort((a, b) => b.count - a.count).slice(0, 3));
+    
+    const sortedBooks = Object.values(bookSalesMap)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
+    
+    console.log("Top selling books:", sortedBooks);
+    setTopSellingBooks(sortedBooks);
   }, [books, sales]);
 
   const handleCodeScanned = (code: string) => {
@@ -175,11 +191,18 @@ const DashboardPage: React.FC = () => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todaySales = sales.filter(
-    sale => new Date(sale.createdat).getTime() >= today.getTime()
+    sale => {
+      const saleDate = sale.createdat ? new Date(sale.createdat) : null;
+      return saleDate && saleDate.getTime() >= today.getTime();
+    }
   );
 
   const recentSales = [...sales]
-    .sort((a, b) => new Date(b.createdat).getTime() - new Date(a.createdat).getTime())
+    .sort((a, b) => {
+      const dateA = new Date(a.createdat || 0).getTime();
+      const dateB = new Date(b.createdat || 0).getTime();
+      return dateB - dateA;
+    })
     .slice(0, 5);
 
   return (

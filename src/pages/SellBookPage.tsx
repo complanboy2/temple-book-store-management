@@ -81,7 +81,7 @@ const SellBookPage: React.FC = () => {
             salePrice: supabaseBook.saleprice,
             quantity: supabaseBook.quantity,
             stallId: supabaseBook.stallid,
-            imageUrl: undefined,
+            imageUrl: supabaseBook.imageurl || undefined,
             createdAt: supabaseBook.createdat ? new Date(supabaseBook.createdat) : new Date(),
             updatedAt: supabaseBook.updatedat ? new Date(supabaseBook.updatedat) : new Date()
           };
@@ -165,7 +165,10 @@ const SellBookPage: React.FC = () => {
       const newQuantity = book.quantity - quantity;
       const { error: updateError } = await supabase
         .from('books')
-        .update({ quantity: newQuantity, updatedat: new Date().toISOString() })
+        .update({ 
+          quantity: newQuantity, 
+          updatedat: new Date().toISOString() 
+        })
         .eq('id', book.id);
       
       if (updateError) {
@@ -178,7 +181,7 @@ const SellBookPage: React.FC = () => {
       // Add sale to Supabase
       const { error: saleError } = await supabase
         .from('sales')
-        .insert([{
+        .insert({
           id: sale.id,
           bookid: sale.bookId,
           quantity: sale.quantity,
@@ -188,9 +191,9 @@ const SellBookPage: React.FC = () => {
           buyerphone: sale.buyerPhone || null,
           personnelid: sale.personnelId,
           stallid: sale.stallId,
-          createdat: new Date().toISOString(),
+          createdat: sale.createdAt.toISOString(),
           synced: true
-        }]);
+        });
         
       if (saleError) {
         console.error("Error adding sale to Supabase:", saleError);
