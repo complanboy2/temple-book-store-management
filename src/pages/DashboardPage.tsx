@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import StatsCard from "@/components/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -69,7 +68,6 @@ const DashboardPage: React.FC = () => {
     },
   });
 
-  // Open add store dialog when no stores are available (for admin)
   useEffect(() => {
     if (!isLoading && stores.length === 0 && isAdmin) {
       console.log("No stores available, opening add store dialog");
@@ -80,7 +78,6 @@ const DashboardPage: React.FC = () => {
     }
   }, [stores, isLoading, isAdmin]);
 
-  // Fetch books and sales from Supabase
   useEffect(() => {
     async function fetchBooksAndSales() {
       if (!currentStore) return;
@@ -126,7 +123,6 @@ const DashboardPage: React.FC = () => {
   }, [currentStore]);
 
   useEffect(() => {
-    // Calculate analytics from fetched data
     const revenue = sales.reduce((sum, sale) => sum + (sale.totalamount ?? 0), 0);
     setTotalRevenue(revenue);
 
@@ -135,7 +131,6 @@ const DashboardPage: React.FC = () => {
     setLowStockBooks(lowStock);
     setShowLowStockNotification(lowStock.length > 0);
 
-    // Top selling books
     const bookSalesMap: Record<string, { id: string, name: string, count: number }> = {};
     sales.forEach(sale => {
       const book = books.find(b => b.id === sale.bookid);
@@ -149,7 +144,6 @@ const DashboardPage: React.FC = () => {
     setTopSellingBooks(Object.values(bookSalesMap).sort((a, b) => b.count - a.count).slice(0, 3));
   }, [books, sales]);
 
-  // Handle scan
   const handleCodeScanned = (code: string) => {
     const book = books.find(b => b.id === code || b.barcode === code);
     if (book) {
@@ -163,7 +157,6 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  // Handle add store form submission
   const onSubmit = async (data: StoreFormValues) => {
     const result = await addStore(data.name, data.location);
     if (result) {
@@ -172,7 +165,6 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  // Card click handlers for analytics
   const analyticsLinks = {
     books: () => navigate(`/books`),
     sales: () => navigate(`/sales?today=1`),
@@ -180,7 +172,6 @@ const DashboardPage: React.FC = () => {
     lowStock: () => navigate(`/books?lowStock=1`),
   };
 
-  // Quick: today's sales
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todaySales = sales.filter(
@@ -201,7 +192,6 @@ const DashboardPage: React.FC = () => {
         onSearch={() => navigate("/search")}
       />
 
-      {/* Store Selection & Add */}
       <div className="mobile-container flex flex-col md:flex-row md:items-center gap-2 mt-3">
         <div className="flex-1">
           {stores.length > 0 ? (
@@ -239,7 +229,6 @@ const DashboardPage: React.FC = () => {
         )}
       </div>
 
-      {/* Add Store Dialog */}
       {isAddStoreDialogOpen && (
         <div className="fixed top-0 left-0 w-full h-full bg-black/40 z-30 flex items-center justify-center">
           <div className="bg-white p-5 rounded shadow-lg min-w-[320px]">
@@ -298,7 +287,6 @@ const DashboardPage: React.FC = () => {
       <main className="mobile-container">
         {currentStore ? (
           <>
-            {/* Low Stock Notification */}
             {showLowStockNotification && lowStockBooks.length > 0 && (
               <div className="mb-4 p-4 rounded-lg bg-yellow-50 border-l-4 border-yellow-400 shadow-sm">
                 <div className="flex items-start">

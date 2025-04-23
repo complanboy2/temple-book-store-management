@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { BookStall } from "@/types";
 import { useAuth } from "./AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { getBookStalls, setBookStalls } from "@/services/storageService";
 
 interface StoreContextType {
@@ -28,6 +28,7 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [currentStore, setCurrentStoreState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { currentUser, isAdmin } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (currentUser) {
@@ -128,7 +129,7 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       localStorage.removeItem('currentStore');
       setIsLoading(false);
     }
-  }, [currentUser, isAdmin]);
+  }, [currentUser, isAdmin, toast]);
 
   const setCurrentStore = (storeId: string) => {
     setCurrentStoreState(storeId);
@@ -158,10 +159,14 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       
       console.log("Adding store to Supabase:", { name, location, instituteId: currentUser.instituteId });
       
+      // Create a unique ID for the store
+      const storeId = crypto.randomUUID();
+      
       // Try to save to Supabase first
       const { data, error } = await supabase
         .from("book_stalls")
         .insert([{
+          id: storeId,
           name,
           location: location || null,
           instituteid: currentUser.instituteId,
@@ -171,15 +176,10 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       
       if (error) {
         console.error("Error adding store to Supabase:", error);
-        toast({
-          title: "Error adding store to Supabase",
-          description: error.message,
-          variant: "destructive",
-        });
         
         // Fall back to local storage only
         const newStore: BookStall = {
-          id: Date.now().toString(), // Simple ID for local storage
+          id: storeId, 
           name,
           location,
           instituteId: currentUser.instituteId,
@@ -197,6 +197,7 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         toast({
           title: "Store Added (Locally)",
           description: `${name} has been added to local storage only`,
+          variant: "default",
         });
         
         return newStore;
@@ -232,6 +233,7 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       toast({
         title: "Store Added",
         description: `${name} has been added successfully`,
+        variant: "default",
       });
       
       return newStore;

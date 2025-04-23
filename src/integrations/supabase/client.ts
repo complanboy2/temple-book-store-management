@@ -14,5 +14,24 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true
+  },
+  global: {
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }
+});
+
+// Add debug log for monitoring connection status
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('Supabase auth state changed:', event, session?.user?.id);
+});
+
+// Log the current session to help with debugging
+supabase.auth.getSession().then(({ data, error }) => {
+  if (error) {
+    console.error('Error getting session:', error);
+  } else {
+    console.log('Current session:', data?.session?.user?.id ? 'Authenticated' : 'Not authenticated');
   }
 });

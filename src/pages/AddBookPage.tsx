@@ -1,44 +1,64 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
-  getBooks, 
-  setBooks, 
-  generateId, 
-  getBookStalls, 
-  getAuthors, 
-  getCategories,
-  getPrintingInstitutes,
-  getAuthorSalePercentage
-} from "@/services/storageService";
-import { Book } from "@/types";
+  Form, 
+  FormControl, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import MobileHeader from "@/components/MobileHeader";
 import { useTranslation } from "react-i18next";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Book } from "@/types";
+import MobileHeader from "@/components/MobileHeader";
 import { useStallContext } from "@/contexts/StallContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  getAuthors, 
+  getBooks, 
+  setBooks, 
+  getCategories, 
+  getPrintingInstitutes, 
+  getAuthorSalePercentage 
+} from "@/services/storageService";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+
+// Form schema definition
+const bookFormSchema = z.object({
+  name: z.string().min(1, "Book name is required"),
+  author: z.string().min(1, "Author name is required"),
+  category: z.string().optional(),
+  printingInstitute: z.string().optional(),
+  quantity: z.coerce.number().int().min(1, "Quantity must be at least 1"),
+  originalPrice: z.coerce.number().positive("Price must be positive"),
+  salePrice: z.coerce.number().positive("Sale price must be positive"),
+  barcode: z.string().optional(),
+});
+
+type BookFormValues = z.infer<typeof bookFormSchema>;
 
 const AddBookPage: React.FC = () => {
-  const [name, setName] = useState("");
-  const [author, setAuthor] = useState("");
-  const [category, setCategory] = useState("");
-  const [printingInstitute, setPrintingInstitute] = useState("");
-  const [originalPrice, setOriginalPrice] = useState("");
-  const [salePrice, setSalePrice] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [barcode, setBarcode] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [authors, setAuthors] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [institutes, setInstitutes] = useState<string[]>([]);
   const [authorPercentages, setAuthorPercentages] = useState<Record<string, number>>({});
-  
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { t } = useTranslation();
+  const [originalPrice, setOriginalPrice] = useState<string>("");
+  const [author, setAuthor] = useState<string>("");
   const { currentStore } = useStallContext();
 
   useEffect(() => {
@@ -55,93 +75,108 @@ const AddBookPage: React.FC = () => {
     if (originalPrice && author && authorPercentages[author]) {
       const original = parseFloat(originalPrice);
       if (!isNaN(original)) {
-        console.log(`Calculating sale price: Original: ${original}, Author: ${author}, Percentage: ${authorPercentages[author]}%`);
-        const percentage = authorPercentages[author] / 100;
-        const calculatedSalePrice = original + (original * percentage);
-        console.log(`Calculated sale price: ${calculatedSalePrice}`);
-        setSalePrice(calculatedSalePrice.toFixed(2));
+        const percentage = authorPercentages[author] || 0;
+        const calculatedSalePrice = original * (1 + percentage / 100);
+        console.log(`Calculating sale price: ${original} * (1 + ${percentage}/100) = ${calculatedSalePrice}`);
+        form.setValue("salePrice", parseFloat(calculatedSalePrice.toFixed(2)));
       }
     }
   }, [originalPrice, author, authorPercentages]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-    
-    setIsLoading(true);
-    
+  const form = useForm<BookFormValues>({
+    resolver: zodResolver(bookFormSchema),
+    defaultValues: {
+      name: "",
+      author: "",
+      category: "",
+      printingInstitute: "",
+      quantity: 1,
+      originalPrice: 0,
+      salePrice: 0,
+      barcode: "",
+    },
+  });
+
+  const handleOriginalPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOriginalPrice(e.target.value);
+    form.setValue("originalPrice", parseFloat(e.target.value) || 0);
+  };
+
+  const handleAuthorChange = (value: string) => {
+    setAuthor(value);
+    form.setValue("author", value);
+  };
+
+  const onSubmit = async (data: BookFormValues) => {
+    if (!currentStore) {
+      toast({
+        title: "Error",
+        description: "No store is selected. Please select a store first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      if (!currentStore) {
-        toast({
-          title: t("common.error"),
-          description: t("common.noStoreSelected"),
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-      
-      const bookId = generateId();
-      
       const newBook: Book = {
-        id: bookId,
-        barcode: barcode || undefined,
-        name,
-        author,
-        category,
-        printingInstitute,
-        originalPrice: parseFloat(originalPrice),
-        salePrice: parseFloat(salePrice),
-        quantity: parseInt(quantity),
+        id: crypto.randomUUID(),
+        barcode: data.barcode,
+        name: data.name,
+        author: data.author,
+        category: data.category || "",
+        printingInstitute: data.printingInstitute || "",
+        originalPrice: data.originalPrice,
+        salePrice: data.salePrice,
+        quantity: data.quantity,
         stallId: currentStore,
         createdAt: new Date(),
-        updatedAt: new Date(),
+        updatedAt: new Date()
       };
-      
-      console.log("Saving new book to Supabase:", newBook);
-      
+
+      console.log("Adding book to Supabase:", newBook);
+
       try {
-        const { data, error } = await supabase
+        const { data: insertedData, error } = await supabase
           .from("books")
           .insert([{
             id: newBook.id,
+            barcode: newBook.barcode,
             name: newBook.name,
             author: newBook.author,
-            category: newBook.category || null,
-            printinginstitute: newBook.printingInstitute || null,
+            category: newBook.category,
+            printinginstitute: newBook.printingInstitute,
             originalprice: newBook.originalPrice,
             saleprice: newBook.salePrice,
             quantity: newBook.quantity,
             stallid: newBook.stallId,
-            barcode: newBook.barcode || null,
-            createdat: new Date().toISOString(),
-            updatedat: new Date().toISOString()
+            createdat: newBook.createdAt.toISOString(),
+            updatedat: newBook.updatedAt.toISOString(),
           }])
           .select();
         
         if (error) {
           console.error("Error adding book to Supabase:", error);
           toast({
-            title: t("common.supabaseError"),
-            description: error.message,
+            title: "Error",
+            description: "Error saving book to database. Saved locally only.",
             variant: "destructive",
           });
           
           const books = getBooks();
           setBooks([...books, newBook]);
         } else {
-          console.log("Book added to Supabase successfully:", data);
+          console.log("Book added to Supabase successfully:", insertedData);
           
           const books = getBooks();
           setBooks([...books, newBook]);
           
           toast({
-            title: t("common.bookAdded"),
-            description: `"${name}" ${t("common.addedToInventory")}`,
+            title: "Success",
+            description: "Book added successfully!",
+            variant: "default",
           });
           
-          resetForm();
+          form.reset();
           navigate("/books");
         }
       } catch (supabaseError) {
@@ -157,252 +192,168 @@ const AddBookPage: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error("Error adding book:", error);
+      console.error("Error in form submission:", error);
       toast({
-        title: t("common.error"),
-        description: t("common.failedToAddBook"),
+        title: "Error",
+        description: "Error adding book. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
-  };
-
-  const validateForm = () => {
-    if (!name || !author || !printingInstitute || !originalPrice || !salePrice || !quantity) {
-      toast({
-        title: t("common.validationError"),
-        description: t("common.fillRequiredFields"),
-        variant: "destructive",
-      });
-      return false;
-    }
-    
-    if (isNaN(parseFloat(originalPrice)) || isNaN(parseFloat(salePrice)) || isNaN(parseInt(quantity))) {
-      toast({
-        title: t("common.validationError"),
-        description: t("common.priceQuantityMustBeNumbers"),
-        variant: "destructive",
-      });
-      return false;
-    }
-    
-    return true;
-  };
-
-  const resetForm = () => {
-    setName("");
-    setAuthor("");
-    setCategory("");
-    setPrintingInstitute("");
-    setOriginalPrice("");
-    setSalePrice("");
-    setQuantity("");
-    setBarcode("");
-  };
-
-  const handleManageMetadata = () => {
-    navigate("/metadata-manager");
-  };
-
-  const getAuthorPercentageDisplay = () => {
-    if (author && authorPercentages[author]) {
-      return `(${authorPercentages[author]}% ${t("common.authorRoyalty")})`;
-    }
-    return '';
   };
 
   return (
     <div className="min-h-screen bg-temple-background pb-20">
-      <MobileHeader 
-        title={t("common.addBook")} 
-        showBackButton={true}
-        backTo="/books"
-        showStallSelector={true}
-      />
+      <MobileHeader title={t("common.addBook")} showBackButton={true} backTo="/books" />
       
-      <main className="container mx-auto px-4 py-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-temple-maroon">{t("common.addNewBook")}</h1>
-          <Button 
-            variant="outline" 
-            onClick={handleManageMetadata}
-            className="text-temple-maroon border-temple-maroon hover:bg-temple-maroon/10"
-          >
-            {t("common.manageMetadata")}
-          </Button>
-        </div>
-        
-        <Card className="temple-card max-w-2xl mx-auto">
-          <CardContent className="pt-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="name" className="text-lg font-medium">
-                  {t("common.bookName")}*
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="temple-input w-full"
-                  placeholder={t("common.enterBookName")}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-lg font-medium">
-                  {t("common.author")}* {getAuthorPercentageDisplay()}
-                </label>
-                <Select value={author} onValueChange={setAuthor}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder={t("common.selectAuthor")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {authors.length === 0 ? (
-                      <div className="p-2 text-center text-muted-foreground">
-                        {t("common.noAuthors")}
-                      </div>
-                    ) : (
-                      authors.map((a) => (
-                        <SelectItem key={a} value={a}>
-                          {a} {authorPercentages[a] ? `(${authorPercentages[a]}%)` : ''}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-lg font-medium">
-                  {t("common.category")}{" "}
-                  <span className="text-[12px] text-gray-400">({t("common.optional")})</span>
-                </label>
-                <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder={t("common.selectCategory")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.length === 0 ? (
-                      <div className="p-2 text-center text-muted-foreground">
-                        {t("common.noCategories")}
-                      </div>
-                    ) : (
-                      categories.map((c) => (
-                        <SelectItem key={c} value={c}>
-                          {c}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-lg font-medium">
-                  {t("common.printingInstitute")}*
-                </label>
-                <Select value={printingInstitute} onValueChange={setPrintingInstitute}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder={t("common.selectInstitute")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {institutes.length === 0 ? (
-                      <div className="p-2 text-center text-muted-foreground">
-                        {t("common.noInstitutes")}
-                      </div>
-                    ) : (
-                      institutes.map((i) => (
-                        <SelectItem key={i} value={i}>
-                          {i}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor="originalPrice" className="text-lg font-medium">
-                    {t("common.originalPrice")} (₹)*
-                  </label>
-                  <input
-                    id="originalPrice"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={originalPrice}
-                    onChange={(e) => setOriginalPrice(e.target.value)}
-                    required
-                    className="temple-input w-full"
-                    placeholder="0.00"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label htmlFor="salePrice" className="text-lg font-medium">
-                    {t("common.salePrice")} (₹)*
-                  </label>
-                  <input
-                    id="salePrice"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={salePrice}
-                    onChange={(e) => setSalePrice(e.target.value)}
-                    required
-                    className="temple-input w-full"
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="quantity" className="text-lg font-medium">
-                  {t("common.quantity")}*
-                </label>
-                <input
-                  id="quantity"
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  required
-                  className="temple-input w-full"
-                  placeholder={t("common.enterQuantity")}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="barcode" className="text-lg font-medium">
-                  {t("common.barcode")} ({t("common.optional")})
-                </label>
-                <input
-                  id="barcode"
-                  type="text"
-                  value={barcode}
-                  onChange={(e) => setBarcode(e.target.value)}
-                  className="temple-input w-full"
-                  placeholder={t("common.enterBarcode")}
-                />
-              </div>
-              
-              <div className="pt-4">
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="temple-button w-full"
-                >
-                  {isLoading ? t("common.addingBook") : t("common.addBookToInventory")}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </main>
+      <div className="mobile-container">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("common.bookName")}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t("common.bookName")} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="author"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("common.authorName")}</FormLabel>
+                  <Select onValueChange={handleAuthorChange} defaultValue={form.getValues("author")}>
+                    <FormControl>
+                      <SelectTrigger className="temple-input">
+                        <SelectValue placeholder={t("common.selectAuthor")} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {authors.map(author => (
+                        <SelectItem key={author} value={author}>{author}</SelectItem>
+                      ))}
+                      <SelectItem key="add-new" value="add-new">{t("common.addNew")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("common.category")}</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={form.getValues("category")}>
+                    <FormControl>
+                      <SelectTrigger className="temple-input">
+                        <SelectValue placeholder={t("common.selectCategory")} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {categories.map(category => (
+                        <SelectItem key={category} value={category}>{category}</SelectItem>
+                      ))}
+                      <SelectItem key="add-new" value="add-new">{t("common.addNew")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="printingInstitute"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("common.printingInstitute")}</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={form.getValues("printingInstitute")}>
+                    <FormControl>
+                      <SelectTrigger className="temple-input">
+                        <SelectValue placeholder={t("common.selectInstitute")} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {institutes.map(institute => (
+                        <SelectItem key={institute} value={institute}>{institute}</SelectItem>
+                      ))}
+                      <SelectItem key="add-new" value="add-new">{t("common.addNew")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="quantity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("common.quantity")}</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="1" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="originalPrice"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("common.originalPrice")}</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="0.00" value={originalPrice} onChange={handleOriginalPriceChange} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="salePrice"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("common.salePrice")}</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="0.00" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="barcode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("common.barcode")}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t("common.barcode")} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="pt-4">
+              <Button 
+                type="submit" 
+                className="w-full bg-temple-saffron hover:bg-temple-saffron/90"
+              >
+                {t("common.addBook")}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 };
