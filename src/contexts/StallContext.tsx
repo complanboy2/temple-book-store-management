@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { BookStall } from "@/types";
 import { useAuth } from "./AuthContext";
@@ -66,7 +67,7 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               localStorage.removeItem('currentStore');
             }
           }
-        } else {
+        } else if (data && Array.isArray(data)) {
           console.log("Successfully fetched stores from Supabase:", data);
           
           // Filter stores by the user's institute if user has an instituteId
@@ -172,18 +173,19 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       
       console.log("Successfully added store to Supabase:", data);
       
-      if (!data || data.length === 0) {
+      if (!data || !Array.isArray(data) || data.length === 0) {
         console.error("No data returned from Supabase insert");
         return null;
       }
       
       // Map the response to our BookStall type
+      const storeData = data[0];
       const newStore: BookStall = {
-        id: data[0].id,
-        name: data[0].name,
-        location: data[0].location || undefined,
-        instituteId: data[0].instituteid,
-        createdAt: new Date(data[0].createdat)
+        id: storeData.id,
+        name: storeData.name,
+        location: storeData.location || undefined,
+        instituteId: storeData.instituteid,
+        createdAt: new Date(storeData.createdat)
       };
       
       // Also save to local storage for offline support
@@ -222,7 +224,7 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ...(data.location !== undefined && { location: data.location }),
       };
       
-      const { data: updatedStore, error } = await supabase
+      const { data: updatedData, error } = await supabase
         .from("book_stalls")
         .update(updateData)
         .eq("id", id)
@@ -239,12 +241,17 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return null;
       }
       
+      if (!updatedData) {
+        console.error("No data returned from update");
+        return null;
+      }
+      
       const mappedStore: BookStall = {
-        id: updatedStore.id,
-        name: updatedStore.name,
-        location: updatedStore.location || undefined,
-        instituteId: updatedStore.instituteid,
-        createdAt: new Date(updatedStore.createdat)
+        id: updatedData.id,
+        name: updatedData.name,
+        location: updatedData.location || undefined,
+        instituteId: updatedData.instituteid,
+        createdAt: new Date(updatedData.createdat)
       };
       
       setStores(prevStores => 
@@ -255,7 +262,7 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       
       toast({
         title: "Store Updated",
-        description: `${updatedStore.name} has been updated`,
+        description: `${updatedData.name} has been updated`,
       });
       
       return mappedStore;

@@ -25,9 +25,8 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
     params: {
       eventsPerSecond: 10
     }
-  },
-  maxRetryCount: 5,
-  retryInterval: 1000
+  }
+  // Removed maxRetryCount and retryInterval as they aren't supported options
 });
 
 // Add debug log for monitoring connection status

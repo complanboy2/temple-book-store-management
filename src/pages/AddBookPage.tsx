@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -83,20 +82,26 @@ const AddBookPage: React.FC = () => {
           .select("category, author, printinginstitute")
           .not("category", "is", null);
           
-        if (!booksError && booksData) {
+        if (!booksError && booksData && Array.isArray(booksData)) {
           // Extract unique categories
           const uniqueCategories = Array.from(new Set(
-            booksData.map(b => b.category).filter(Boolean)
+            booksData
+              .map(b => b.category)
+              .filter(Boolean)
           )).sort() as string[];
           
           // Extract unique authors
           const uniqueAuthors = Array.from(new Set(
-            booksData.map(b => b.author).filter(Boolean)
+            booksData
+              .map(b => b.author)
+              .filter(Boolean)
           )).sort() as string[];
           
           // Extract unique printing institutes
           const uniquePrintingInstitutes = Array.from(new Set(
-            booksData.map(b => b.printinginstitute).filter(Boolean)
+            booksData
+              .map(b => b.printinginstitute)
+              .filter(Boolean)
           )).sort() as string[];
           
           console.log("Loaded from Supabase:", { 
@@ -271,22 +276,29 @@ const AddBookPage: React.FC = () => {
 
       console.log("Adding book to Supabase:", newBook);
 
+      // Save to local storage first for offline resilience
+      const books = getBooks();
+      setBooks([...books, newBook]);
+
+      // Now try to save to Supabase
+      const insertData = {
+        id: newBook.id,
+        barcode: newBook.barcode || null,
+        name: newBook.name,
+        author: newBook.author,
+        category: newBook.category || null,
+        printinginstitute: newBook.printingInstitute || null,
+        originalprice: newBook.originalPrice,
+        saleprice: newBook.salePrice,
+        quantity: newBook.quantity,
+        stallid: newBook.stallId,
+        createdat: newBook.createdAt.toISOString(),
+        updatedat: newBook.updatedAt.toISOString(),
+      };
+
       const { data: insertedData, error } = await supabase
         .from("books")
-        .insert([{
-          id: newBook.id,
-          barcode: newBook.barcode,
-          name: newBook.name,
-          author: newBook.author,
-          category: newBook.category,
-          printinginstitute: newBook.printingInstitute,
-          originalprice: newBook.originalPrice,
-          saleprice: newBook.salePrice,
-          quantity: newBook.quantity,
-          stallid: newBook.stallId,
-          createdat: newBook.createdAt.toISOString(),
-          updatedat: newBook.updatedAt.toISOString(),
-        }])
+        .insert([insertData])
         .select();
       
       if (error) {
@@ -296,17 +308,8 @@ const AddBookPage: React.FC = () => {
           description: "Error saving book to database. Saved locally only.",
           variant: "destructive",
         });
-        
-        // Fallback to local storage
-        const books = getBooks();
-        setBooks([...books, newBook]);
       } else {
         console.log("Book added to Supabase successfully:", insertedData);
-        
-        // Also update local storage to maintain data consistency
-        const books = getBooks();
-        setBooks([...books, newBook]);
-        
         toast({
           title: "Success",
           description: "Book added successfully!",
@@ -318,27 +321,6 @@ const AddBookPage: React.FC = () => {
       }
     } catch (supabaseError) {
       console.error("Exception when adding book to Supabase:", supabaseError);
-      
-      // Create the book object again in the catch block to make it available
-      const errorBook: Book = {
-        id: crypto.randomUUID(),
-        barcode: data.barcode,
-        name: data.name,
-        author: data.author,
-        category: data.category || "",
-        printingInstitute: data.printingInstitute || "",
-        originalPrice: data.originalPrice,
-        salePrice: data.salePrice,
-        quantity: data.quantity,
-        stallId: currentStore,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      
-      // Fallback to local storage
-      const books = getBooks();
-      setBooks([...books, errorBook]);
-      
       toast({
         title: t("common.warning"),
         description: t("common.savedLocallyOnly"),

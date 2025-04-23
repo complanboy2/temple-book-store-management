@@ -69,25 +69,27 @@ const BooksPage: React.FC = () => {
 
         console.log("Supabase returned books data:", data);
 
-        // Transform API result to local Book type
-        const result: Book[] = (data || []).map((row: any) => ({
-          id: row.id,
-          barcode: row.barcode ?? undefined,
-          name: row.name,
-          author: row.author,
-          category: row.category ?? "",
-          printingInstitute: row.printinginstitute ?? "",
-          originalPrice: row.originalprice,
-          salePrice: row.saleprice,
-          quantity: row.quantity,
-          stallId: row.stallid,
-          createdAt: row.createdat ? new Date(row.createdat) : new Date(),
-          updatedAt: row.updatedat ? new Date(row.updatedat) : new Date()
-        }));
+        if (data && Array.isArray(data)) {
+          // Transform API result to local Book type
+          const result: Book[] = data.map((row: any) => ({
+            id: row.id,
+            barcode: row.barcode ?? undefined,
+            name: row.name,
+            author: row.author,
+            category: row.category ?? "",
+            printingInstitute: row.printinginstitute ?? "",
+            originalPrice: row.originalprice,
+            salePrice: row.saleprice,
+            quantity: row.quantity,
+            stallId: row.stallid,
+            createdAt: row.createdat ? new Date(row.createdat) : new Date(),
+            updatedAt: row.updatedat ? new Date(row.updatedat) : new Date()
+          }));
 
-        console.log(`Fetched ${result.length} books for store ${currentStore}`);
-        setBooks(result);
-        setFilteredBooks(result);
+          console.log(`Fetched ${result.length} books for store ${currentStore}`);
+          setBooks(result);
+          setFilteredBooks(result);
+        }
       } catch (err) {
         console.error("Unexpected error fetching books:", err);
         toast({
@@ -143,6 +145,11 @@ const BooksPage: React.FC = () => {
         variant: "destructive",
       });
     }
+  };
+
+  // Handle back button navigation
+  const handleBackNavigation = () => {
+    navigate("/");
   };
 
   return (
