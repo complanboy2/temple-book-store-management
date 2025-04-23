@@ -17,3 +17,22 @@ ON public.book_stalls FOR UPDATE USING (true);
 -- Create policy to allow authenticated users to delete their own book_stalls
 CREATE POLICY IF NOT EXISTS "Allow authenticated users to delete own book_stalls" 
 ON public.book_stalls FOR DELETE USING (true);
+
+-- Enable Row Level Security for books table and add necessary policies
+ALTER TABLE IF EXISTS public.books ENABLE ROW LEVEL SECURITY;
+
+-- Create policy to allow all users to read all books
+CREATE POLICY IF NOT EXISTS "Allow users to read all books" 
+ON public.books FOR SELECT USING (true);
+
+-- Create policy to allow authenticated users to insert books
+CREATE POLICY IF NOT EXISTS "Allow authenticated users to insert books" 
+ON public.books FOR INSERT WITH CHECK (true);
+
+-- Create policy to allow authenticated users to update books
+CREATE POLICY IF NOT EXISTS "Allow authenticated users to update books" 
+ON public.books FOR UPDATE USING (true);
+
+-- Create policy to allow authenticated users to delete books
+CREATE POLICY IF NOT EXISTS "Allow authenticated users to delete books" 
+ON public.books FOR DELETE USING (true);

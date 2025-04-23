@@ -130,6 +130,7 @@ const AddBookPage: React.FC = () => {
     }
 
     try {
+      // Create a book object from form data
       const newBook: Book = {
         id: crypto.randomUUID(),
         barcode: data.barcode,
@@ -195,9 +196,25 @@ const AddBookPage: React.FC = () => {
     } catch (supabaseError) {
       console.error("Exception when adding book to Supabase:", supabaseError);
       
+      // Create the book object again in the catch block to make it available
+      const errorBook: Book = {
+        id: crypto.randomUUID(),
+        barcode: data.barcode,
+        name: data.name,
+        author: data.author,
+        category: data.category || "",
+        printingInstitute: data.printingInstitute || "",
+        originalPrice: data.originalPrice,
+        salePrice: data.salePrice,
+        quantity: data.quantity,
+        stallId: currentStore,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
       // Fallback to local storage
       const books = getBooks();
-      setBooks([...books, newBook]);
+      setBooks([...books, errorBook]);
       
       toast({
         title: t("common.warning"),
