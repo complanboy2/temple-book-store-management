@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -42,18 +43,26 @@ const AddBookPage: React.FC = () => {
   const { currentStore } = useStallContext();
 
   useEffect(() => {
+    // Load metadata
     setAuthors(getAuthors());
     setCategories(getCategories());
     setInstitutes(getPrintingInstitutes() || []);
-    setAuthorPercentages(getAuthorSalePercentage());
+    
+    // Load author percentages
+    const percentages = getAuthorSalePercentage();
+    console.log("Loaded author percentages:", percentages);
+    setAuthorPercentages(percentages);
   }, []);
 
+  // Calculate sale price whenever original price or author changes
   useEffect(() => {
     if (originalPrice && author && authorPercentages[author]) {
       const original = parseFloat(originalPrice);
       if (!isNaN(original)) {
+        console.log(`Calculating sale price: Original: ${original}, Author: ${author}, Percentage: ${authorPercentages[author]}%`);
         const percentage = authorPercentages[author] / 100;
         const calculatedSalePrice = original + (original * percentage);
+        console.log(`Calculated sale price: ${calculatedSalePrice}`);
         setSalePrice(calculatedSalePrice.toFixed(2));
       }
     }
@@ -94,27 +103,12 @@ const AddBookPage: React.FC = () => {
         updatedAt: new Date(),
       };
       
-      console.log("Saving new book:", newBook);
+      console.log("Saving new book to Supabase:", newBook);
       
       try {
-        console.log("Saving book to Supabase:", {
-          id: newBook.id,
-          name: newBook.name,
-          author: newBook.author,
-          category: newBook.category || null,
-          printinginstitute: newBook.printingInstitute || null,
-          originalprice: newBook.originalPrice,
-          saleprice: newBook.salePrice,
-          quantity: newBook.quantity,
-          stallid: newBook.stallId,
-          barcode: newBook.barcode || null,
-          createdat: new Date().toISOString(),
-          updatedat: new Date().toISOString()
-        });
-        
         const { data, error } = await supabase
           .from("books")
-          .insert({
+          .insert([{
             id: newBook.id,
             name: newBook.name,
             author: newBook.author,
@@ -127,7 +121,7 @@ const AddBookPage: React.FC = () => {
             barcode: newBook.barcode || null,
             createdat: new Date().toISOString(),
             updatedat: new Date().toISOString()
-          })
+          }])
           .select();
         
         if (error) {
@@ -137,31 +131,38 @@ const AddBookPage: React.FC = () => {
             description: error.message,
             variant: "destructive",
           });
+          
+          // Still save to local storage as backup
+          const books = getBooks();
+          setBooks([...books, newBook]);
         } else {
           console.log("Book added to Supabase successfully:", data);
+          
+          // Also save to local storage for offline support
+          const books = getBooks();
+          setBooks([...books, newBook]);
+          
+          toast({
+            title: t("common.bookAdded"),
+            description: `"${name}" ${t("common.addedToInventory")}`,
+          });
+          
+          resetForm();
+          navigate("/books");
         }
       } catch (supabaseError) {
         console.error("Exception when adding book to Supabase:", supabaseError);
+        
+        // Still save to local storage as backup
+        const books = getBooks();
+        setBooks([...books, newBook]);
+        
+        toast({
+          title: t("common.warning"),
+          description: t("common.savedLocallyOnly"),
+          variant: "warning",
+        });
       }
-      
-      const books = getBooks();
-      setBooks([...books, newBook]);
-      
-      toast({
-        title: t("common.bookAdded"),
-        description: `"${name}" ${t("common.addedToInventory")}`,
-      });
-      
-      setName("");
-      setAuthor("");
-      setCategory("");
-      setPrintingInstitute("");
-      setOriginalPrice("");
-      setSalePrice("");
-      setQuantity("");
-      setBarcode("");
-      
-      navigate("/books");
     } catch (error) {
       console.error("Error adding book:", error);
       toast({
@@ -194,6 +195,17 @@ const AddBookPage: React.FC = () => {
     }
     
     return true;
+  };
+
+  const resetForm = () => {
+    setName("");
+    setAuthor("");
+    setCategory("");
+    setPrintingInstitute("");
+    setOriginalPrice("");
+    setSalePrice("");
+    setQuantity("");
+    setBarcode("");
   };
 
   const handleManageMetadata = () => {

@@ -161,14 +161,13 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Try to save to Supabase first
       const { data, error } = await supabase
         .from("book_stalls")
-        .insert({
+        .insert([{
           name,
           location: location || null,
           instituteid: currentUser.instituteId,
           createdat: new Date().toISOString()
-        })
-        .select()
-        .single();
+        }])
+        .select();
       
       if (error) {
         console.error("Error adding store to Supabase:", error);
@@ -205,13 +204,18 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       
       console.log("Successfully added store to Supabase:", data);
       
+      if (!data || data.length === 0) {
+        console.error("No data returned from Supabase insert");
+        return null;
+      }
+      
       // Map the response to our BookStall type
       const newStore: BookStall = {
-        id: data.id,
-        name: data.name,
-        location: data.location || undefined,
-        instituteId: data.instituteid,
-        createdAt: new Date(data.createdat)
+        id: data[0].id,
+        name: data[0].name,
+        location: data[0].location || undefined,
+        instituteId: data[0].instituteid,
+        createdAt: new Date(data[0].createdat)
       };
       
       // Also save to local storage for offline support

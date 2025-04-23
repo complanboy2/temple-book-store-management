@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useStallContext } from "@/contexts/StallContext";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import MobileHeader from "@/components/MobileHeader";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +17,7 @@ const SettingsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const [currentLanguage, setCurrentLanguage] = useState(i18n.language || 'en');
   const navigate = useNavigate();
+  const [isAdding, setIsAdding] = useState(false);
 
   useEffect(() => {
     setCurrentLanguage(i18n.language);
@@ -32,14 +33,29 @@ const SettingsPage: React.FC = () => {
       return;
     }
     
-    const result = await addStore(newStoreName, newStoreLocation);
-    if (result) {
+    setIsAdding(true);
+    
+    try {
+      console.log("Adding store:", newStoreName, newStoreLocation);
+      const result = await addStore(newStoreName, newStoreLocation);
+      
+      if (result) {
+        toast({
+          title: t("common.success"),
+          description: `${newStoreName} ${t("common.addedSuccessfully")}`,
+        });
+        setNewStoreName("");
+        setNewStoreLocation("");
+      }
+    } catch (error) {
+      console.error("Error adding store:", error);
       toast({
-        title: t("common.store") + " " + t("common.addStore"),
-        description: `${newStoreName} ${t("common.addStore")}`,
+        title: t("common.error"),
+        description: t("common.errorAddingStore"),
+        variant: "destructive",
       });
-      setNewStoreName("");
-      setNewStoreLocation("");
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -146,10 +162,10 @@ const SettingsPage: React.FC = () => {
               />
               <Button 
                 onClick={handleAddStore} 
-                disabled={!newStoreName.trim()} 
+                disabled={!newStoreName.trim() || isAdding} 
                 className="bg-temple-saffron hover:bg-temple-saffron/90"
               >
-                {t("common.addStore")}
+                {isAdding ? t("common.adding") : t("common.addStore")}
               </Button>
             </div>
             

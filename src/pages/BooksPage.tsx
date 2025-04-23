@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Book } from "@/types";
 import { useNavigate } from "react-router-dom";
@@ -7,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import ScannerButton from "@/components/ScannerButton";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import {
   Select,
   SelectContent,
@@ -29,6 +30,7 @@ const BooksPage: React.FC = () => {
   const navigate = useNavigate();
   const { currentStore } = useStallContext();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -86,6 +88,18 @@ const BooksPage: React.FC = () => {
         console.log(`Fetched ${result.length} books for store ${currentStore}`);
         setBooks(result);
         setFilteredBooks(result);
+        
+        // Check for low stock
+        const lowStockBooks = result.filter(book => book.quantity < 5);
+        if (lowStockBooks.length > 0) {
+          lowStockBooks.forEach(book => {
+            toast({
+              title: t("common.lowStock"),
+              description: `${book.name}: ${book.quantity} ${t("common.left")}`,
+              variant: "warning",
+            });
+          });
+        }
       } catch (err) {
         console.error("Unexpected error fetching books:", err);
         toast({
@@ -101,7 +115,7 @@ const BooksPage: React.FC = () => {
     };
 
     fetchBooks();
-  }, [currentStore]);
+  }, [currentStore, toast, t]);
 
   useEffect(() => {
     let results = books;
