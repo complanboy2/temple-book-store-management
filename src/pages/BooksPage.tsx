@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Book } from "@/types";
 import { useNavigate } from "react-router-dom";
@@ -47,11 +48,11 @@ const BooksPage: React.FC = () => {
       console.log(`Fetching books for store ID: ${currentStore}`);
 
       try {
+        console.log("Making Supabase query for books");
         const { data, error } = await supabase
           .from("books")
           .select("*")
-          .eq("stallid", currentStore)
-          .order("createdat", { ascending: false });
+          .eq("stallid", currentStore);
           
         if (error) {
           console.error("Error fetching books from Supabase:", error);
@@ -87,18 +88,6 @@ const BooksPage: React.FC = () => {
         console.log(`Fetched ${result.length} books for store ${currentStore}`);
         setBooks(result);
         setFilteredBooks(result);
-        
-        // Check for low stock
-        const lowStockBooks = result.filter(book => book.quantity < 5);
-        if (lowStockBooks.length > 0) {
-          lowStockBooks.forEach(book => {
-            toast({
-              title: t("common.lowStock"),
-              description: `${book.name}: ${book.quantity} ${t("common.left")}`,
-              variant: "default",
-            });
-          });
-        }
       } catch (err) {
         console.error("Unexpected error fetching books:", err);
         toast({
@@ -131,6 +120,14 @@ const BooksPage: React.FC = () => {
     setFilteredBooks(results);
   }, [searchTerm, selectedCategory, books]);
 
+  // Get unique categories from actual books for dropdown
+  const categories = Array.from(new Set(books
+    .map(book => book.category)
+    .filter(Boolean)
+  )).sort();
+
+  console.log("Available categories:", categories);
+
   const handleBookSelect = (book: Book) => {
     navigate(`/sell/${book.id}`);
   };
@@ -147,9 +144,6 @@ const BooksPage: React.FC = () => {
       });
     }
   };
-
-  // Get unique categories
-  const categories = Array.from(new Set(books.map(book => book.category).filter(Boolean)));
 
   return (
     <div className="min-h-screen bg-temple-background pb-20">

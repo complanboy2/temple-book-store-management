@@ -6,9 +6,6 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://pijhrmuamnwdgucfnycl.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpamhybXVhbW53ZGd1Y2ZueWNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNDk1NTAsImV4cCI6MjA2MDgyNTU1MH0.qf5P5eWDSLRmFKxIwtqBygxNAvIFtqGxJN3J4nX7ocE";
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
-
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
@@ -22,7 +19,15 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
   },
   db: {
     schema: 'public'
-  }
+  },
+  // Add retries for more robust connection
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
+  },
+  maxRetryCount: 5,
+  retryInterval: 1000
 });
 
 // Add debug log for monitoring connection status
@@ -42,9 +47,19 @@ supabase.auth.getSession().then(({ data, error }) => {
 // Test Supabase connection
 (async () => {
   try {
+    console.log('Testing Supabase connection...');
     const { data, error } = await supabase.from('book_stalls').select('count').limit(1);
+    
     if (error) {
       console.error('Supabase connection test failed:', error);
+      
+      // Try a simpler query to see if it's a permissions issue
+      const { data: healthCheck, error: healthError } = await supabase.from('book_stalls').select('id').limit(1);
+      if (healthError) {
+        console.error('Second connection test also failed:', healthError);
+      } else {
+        console.log('Basic connection successful, but count query failed');
+      }
     } else {
       console.log('Supabase connection successful:', data);
     }

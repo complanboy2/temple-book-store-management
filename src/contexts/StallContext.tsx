@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { BookStall } from "@/types";
 import { useAuth } from "./AuthContext";
@@ -31,104 +30,88 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const { toast } = useToast();
 
   useEffect(() => {
-    if (currentUser) {
-      const fetchStores = async () => {
-        setIsLoading(true);
-        try {
-          console.log("Fetching stalls for user:", currentUser);
+    const fetchStores = async () => {
+      setIsLoading(true);
+      try {
+        console.log("Fetching stalls for user:", currentUser);
+        
+        // First try to fetch from Supabase
+        const { data, error } = await supabase
+          .from("book_stalls")
+          .select("*")
+          .order('createdat', { ascending: false });
+        
+        if (error) {
+          console.error("Error fetching stores from Supabase:", error);
+          // Fall back to local storage if Supabase fails
+          const localStores = getBookStalls();
+          console.log("Falling back to local stores:", localStores);
           
-          // First try to fetch from Supabase
-          const { data, error } = await supabase
-            .from("book_stalls")
-            .select("*")
-            .order('createdat', { ascending: false });
-          
-          if (error) {
-            console.error("Error fetching stores from Supabase:", error);
-            // Fall back to local storage if Supabase fails
-            const localStores = getBookStalls();
-            console.log("Falling back to local stores:", localStores);
-            
-            if (localStores.length > 0) {
-              // Filter stores by the user's institute
-              const filteredStores = localStores.filter(store => 
-                store.instituteId === currentUser.instituteId
-              );
-              
-              setStores(filteredStores);
-              
-              const savedStore = localStorage.getItem('currentStore');
-              if (savedStore && filteredStores.some(store => store.id === savedStore)) {
-                setCurrentStoreState(savedStore);
-              } else if (filteredStores.length > 0) {
-                setCurrentStoreState(filteredStores[0].id);
-                localStorage.setItem('currentStore', filteredStores[0].id);
-              } else {
-                setCurrentStoreState(null);
-                localStorage.removeItem('currentStore');
-              }
-            }
-          } else {
-            console.log("Successfully fetched stores from Supabase:", data);
-            
-            // Safety check - ensure instituteid exists in the user object
-            if (!currentUser.instituteId) {
-              console.error("User has no institute ID");
-              setStores([]);
-              setIsLoading(false);
-              return;
-            }
-            
+          if (localStores.length > 0) {
             // Filter stores by the user's institute
-            const filteredStores = data.filter(store => 
-              store.instituteid === currentUser.instituteId
-            );
+            const filteredStores = currentUser?.instituteId 
+              ? localStores.filter(store => store.instituteId === currentUser.instituteId)
+              : localStores;
             
-            console.log("Filtered stores for institute:", filteredStores);
-            
-            const mappedStores: BookStall[] = filteredStores.map(store => ({
-              id: store.id,
-              name: store.name,
-              location: store.location || undefined,
-              instituteId: store.instituteid,
-              createdAt: new Date(store.createdat)
-            }));
-            
-            // Update local storage with fetched stores
-            setBookStalls(mappedStores);
-            setStores(mappedStores);
+            setStores(filteredStores);
             
             const savedStore = localStorage.getItem('currentStore');
-            if (savedStore && mappedStores.some(store => store.id === savedStore)) {
+            if (savedStore && filteredStores.some(store => store.id === savedStore)) {
               setCurrentStoreState(savedStore);
-            } else if (mappedStores.length > 0) {
-              setCurrentStoreState(mappedStores[0].id);
-              localStorage.setItem('currentStore', mappedStores[0].id);
+            } else if (filteredStores.length > 0) {
+              setCurrentStoreState(filteredStores[0].id);
+              localStorage.setItem('currentStore', filteredStores[0].id);
             } else {
               setCurrentStoreState(null);
               localStorage.removeItem('currentStore');
             }
           }
-        } catch (err) {
-          console.error("Failed to fetch stores:", err);
-          toast({
-            title: "Error",
-            description: "Failed to fetch stores. Please refresh the page.",
-            variant: "destructive",
-          });
-        } finally {
-          setIsLoading(false);
+        } else {
+          console.log("Successfully fetched stores from Supabase:", data);
+          
+          // Filter stores by the user's institute if user has an instituteId
+          const filteredStores = currentUser?.instituteId 
+            ? data.filter(store => store.instituteid === currentUser.instituteId)
+            : data;
+          
+          console.log("Filtered stores:", filteredStores);
+          
+          const mappedStores: BookStall[] = filteredStores.map(store => ({
+            id: store.id,
+            name: store.name,
+            location: store.location || undefined,
+            instituteId: store.instituteid,
+            createdAt: new Date(store.createdat)
+          }));
+          
+          // Update local storage with fetched stores
+          setBookStalls(mappedStores);
+          setStores(mappedStores);
+          
+          const savedStore = localStorage.getItem('currentStore');
+          if (savedStore && mappedStores.some(store => store.id === savedStore)) {
+            setCurrentStoreState(savedStore);
+          } else if (mappedStores.length > 0) {
+            setCurrentStoreState(mappedStores[0].id);
+            localStorage.setItem('currentStore', mappedStores[0].id);
+          } else {
+            setCurrentStoreState(null);
+            localStorage.removeItem('currentStore');
+          }
         }
-      };
-      
-      fetchStores();
-    } else {
-      // Clear stores when user logs out
-      setStores([]);
-      setCurrentStoreState(null);
-      localStorage.removeItem('currentStore');
-      setIsLoading(false);
-    }
+      } catch (err) {
+        console.error("Failed to fetch stores:", err);
+        toast({
+          title: "Error",
+          description: "Failed to fetch stores. Please refresh the page.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchStores();
   }, [currentUser, isAdmin, toast]);
 
   const setCurrentStore = (storeId: string) => {
@@ -137,27 +120,11 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const addStore = async (name: string, location?: string): Promise<BookStall | null> => {
-    if (!currentUser) {
-      toast({
-        title: "Authentication required",
-        description: "You must be logged in to add a store",
-        variant: "destructive",
-      });
-      return null;
-    }
-    
     try {
-      // Validate institute ID
-      if (!currentUser.instituteId) {
-        toast({
-          title: "Institute Error",
-          description: "No institute associated with your account",
-          variant: "destructive",
-        });
-        return null;
-      }
+      // Validate institute ID for logged in users
+      const instituteId = currentUser?.instituteId || "default";
       
-      console.log("Adding store to Supabase:", { name, location, instituteId: currentUser.instituteId });
+      console.log("Adding store to Supabase:", { name, location, instituteId });
       
       // Create a unique ID for the store
       const storeId = crypto.randomUUID();
@@ -169,7 +136,7 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           id: storeId,
           name,
           location: location || null,
-          instituteid: currentUser.instituteId,
+          instituteid: instituteId,
           createdat: new Date().toISOString()
         }])
         .select();
@@ -182,7 +149,7 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           id: storeId, 
           name,
           location,
-          instituteId: currentUser.instituteId,
+          instituteId,
           createdAt: new Date()
         };
         
