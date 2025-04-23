@@ -242,7 +242,7 @@ export const initializeSampleData = (): void => {
   setUsers(users);
   
   // Create sample institutes
-  const instituteEntities: Institute[] = [
+  const institutes: Institute[] = [
     {
       id: "inst-1",
       name: "Temple Institute",
@@ -251,7 +251,7 @@ export const initializeSampleData = (): void => {
       createdAt: new Date()
     }
   ];
-  setInstitutes(instituteEntities);
+  setInstitutes(institutes);
   
   // Create sample book stalls
   const bookStalls: BookStall[] = [

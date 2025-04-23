@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { BookStall } from "@/types";
 import { getBookStalls, setBookStalls } from "@/services/storageService";
@@ -12,12 +11,12 @@ interface StallContextType {
   currentStore: string | null;
   setCurrentStore: (storeId: string | null) => void;
   selectedStoreName: string | null;
-  addBookStall: (name: string, location: string) => Promise<void>;
-  updateBookStall: (id: string, name: string, location: string) => Promise<void>;
-  deleteBookStall: (id: string) => Promise<void>;
+  addBookStall: (name: string, location: string) => Promise<boolean>;
+  updateBookStall: (id: string, name: string, location: string) => Promise<boolean>;
+  deleteBookStall: (id: string) => Promise<boolean>;
   // Adding these properties to match what other components expect
   stores: BookStall[];
-  addStore: (name: string, location: string) => Promise<void>;
+  addStore: (name: string, location: string) => Promise<boolean>;
   isLoading: boolean;
 }
 
@@ -27,12 +26,12 @@ const StallContext = createContext<StallContextType>({
   currentStore: null,
   setCurrentStore: () => {},
   selectedStoreName: null,
-  addBookStall: async () => {},
-  updateBookStall: async () => {},
-  deleteBookStall: async () => {},
+  addBookStall: async () => false,
+  updateBookStall: async () => false,
+  deleteBookStall: async () => false,
   // Adding these properties to match what other components expect
   stores: [],
-  addStore: async () => {},
+  addStore: async () => false,
   isLoading: false,
 });
 
@@ -113,7 +112,7 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         description: "You must be logged in to add a book stall",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
     try {
@@ -167,6 +166,8 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setCurrentStore(newBookStall.id);
         setSelectedStoreName(newBookStall.name);
       }
+      
+      return true;
     } catch (error) {
       console.error("Error adding book stall:", error);
       toast({
@@ -174,13 +175,14 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         description: "Failed to add book stall",
         variant: "destructive",
       });
+      return false;
     }
   };
 
   const updateBookStall = async (id: string, name: string, location: string) => {
     try {
       const stallIndex = bookStalls.findIndex((s) => s.id === id);
-      if (stallIndex === -1) return;
+      if (stallIndex === -1) return false;
 
       const updatedStall = {
         ...bookStalls[stallIndex],
@@ -227,6 +229,8 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           variant: "default",
         });
       }
+      
+      return true;
     } catch (error) {
       console.error("Error updating book stall:", error);
       toast({
@@ -234,6 +238,7 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         description: "Failed to update book stall",
         variant: "destructive",
       });
+      return false;
     }
   };
 
@@ -277,6 +282,8 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           variant: "default",
         });
       }
+      
+      return true;
     } catch (error) {
       console.error("Error deleting book stall:", error);
       toast({
@@ -284,6 +291,7 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         description: "Failed to delete book stall",
         variant: "destructive",
       });
+      return false;
     }
   };
 

@@ -158,8 +158,8 @@ const DashboardPage: React.FC = () => {
   };
 
   const onSubmit = async (data: StoreFormValues) => {
-    const result = await addStore(data.name, data.location);
-    if (result) {
+    const success = await addStore(data.name, data.location);
+    if (success) {
       setIsAddStoreDialogOpen(false);
       form.reset();
     }

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -82,7 +81,7 @@ const SellBookPage: React.FC = () => {
             salePrice: supabaseBook.saleprice,
             quantity: supabaseBook.quantity,
             stallId: supabaseBook.stallid,
-            imageUrl: supabaseBook.imageurl || undefined, // Fixed field name here
+            imageUrl: undefined,
             createdAt: supabaseBook.createdat ? new Date(supabaseBook.createdat) : new Date(),
             updatedAt: supabaseBook.updatedat ? new Date(supabaseBook.updatedat) : new Date()
           };

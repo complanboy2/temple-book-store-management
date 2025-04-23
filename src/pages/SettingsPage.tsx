@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,9 +36,9 @@ const SettingsPage: React.FC = () => {
     
     try {
       console.log("Adding store:", newStoreName, newStoreLocation);
-      const result = await addStore(newStoreName, newStoreLocation);
+      const success = await addStore(newStoreName, newStoreLocation);
       
-      if (result) {
+      if (success) {
         toast({
           title: t("common.success"),
           description: `${newStoreName} ${t("common.addedSuccessfully")}`,
