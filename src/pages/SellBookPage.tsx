@@ -27,7 +27,7 @@ const SellBookPage: React.FC = () => {
   const params = useParams();
   const navigate = useNavigate();
   const { currentStore } = useStallContext();
-  const { user } = useAuth();
+  const { currentUser } = useAuth(); // Changed from user to currentUser
   const { t } = useTranslation();
   const isMobile = useIsMobile();
 
@@ -114,7 +114,7 @@ const SellBookPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!book || !currentStore || !user) {
+    if (!book || !currentStore || !currentUser) { // Changed from user to currentUser
       toast({
         title: "Error",
         description: "Missing required information",
@@ -149,7 +149,7 @@ const SellBookPage: React.FC = () => {
           paymentmethod: paymentMethod,
           buyername: buyerName || null,
           buyerphone: buyerPhone || null,
-          personnelid: user.id,
+          personnelid: currentUser.id, // Changed from user.id to currentUser.id
           stallid: currentStore,
           synced: true
         });
