@@ -19,6 +19,9 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
     headers: {
       'Content-Type': 'application/json'
     }
+  },
+  db: {
+    schema: 'public'
   }
 });
 
@@ -35,3 +38,17 @@ supabase.auth.getSession().then(({ data, error }) => {
     console.log('Current session:', data?.session?.user?.id ? 'Authenticated' : 'Not authenticated');
   }
 });
+
+// Test Supabase connection
+(async () => {
+  try {
+    const { data, error } = await supabase.from('book_stalls').select('count').limit(1);
+    if (error) {
+      console.error('Supabase connection test failed:', error);
+    } else {
+      console.log('Supabase connection successful:', data);
+    }
+  } catch (err) {
+    console.error('Unexpected error testing Supabase connection:', err);
+  }
+})();

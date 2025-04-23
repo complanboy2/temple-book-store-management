@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -105,6 +106,17 @@ const AddBookPage: React.FC = () => {
   const handleAuthorChange = (value: string) => {
     setAuthor(value);
     form.setValue("author", value);
+    
+    // Recalculate sale price when author changes
+    if (originalPrice && authorPercentages[value]) {
+      const original = parseFloat(originalPrice);
+      if (!isNaN(original)) {
+        const percentage = authorPercentages[value] || 0;
+        const calculatedSalePrice = original * (1 + percentage / 100);
+        console.log(`Recalculating sale price due to author change: ${original} * (1 + ${percentage}/100) = ${calculatedSalePrice}`);
+        form.setValue("salePrice", parseFloat(calculatedSalePrice.toFixed(2)));
+      }
+    }
   };
 
   const onSubmit = async (data: BookFormValues) => {
@@ -135,68 +147,62 @@ const AddBookPage: React.FC = () => {
 
       console.log("Adding book to Supabase:", newBook);
 
-      try {
-        const { data: insertedData, error } = await supabase
-          .from("books")
-          .insert([{
-            id: newBook.id,
-            barcode: newBook.barcode,
-            name: newBook.name,
-            author: newBook.author,
-            category: newBook.category,
-            printinginstitute: newBook.printingInstitute,
-            originalprice: newBook.originalPrice,
-            saleprice: newBook.salePrice,
-            quantity: newBook.quantity,
-            stallid: newBook.stallId,
-            createdat: newBook.createdAt.toISOString(),
-            updatedat: newBook.updatedAt.toISOString(),
-          }])
-          .select();
+      const { data: insertedData, error } = await supabase
+        .from("books")
+        .insert([{
+          id: newBook.id,
+          barcode: newBook.barcode,
+          name: newBook.name,
+          author: newBook.author,
+          category: newBook.category,
+          printinginstitute: newBook.printingInstitute,
+          originalprice: newBook.originalPrice,
+          saleprice: newBook.salePrice,
+          quantity: newBook.quantity,
+          stallid: newBook.stallId,
+          createdat: newBook.createdAt.toISOString(),
+          updatedat: newBook.updatedAt.toISOString(),
+        }])
+        .select();
+      
+      if (error) {
+        console.error("Error adding book to Supabase:", error);
+        toast({
+          title: "Error",
+          description: "Error saving book to database. Saved locally only.",
+          variant: "destructive",
+        });
         
-        if (error) {
-          console.error("Error adding book to Supabase:", error);
-          toast({
-            title: "Error",
-            description: "Error saving book to database. Saved locally only.",
-            variant: "destructive",
-          });
-          
-          const books = getBooks();
-          setBooks([...books, newBook]);
-        } else {
-          console.log("Book added to Supabase successfully:", insertedData);
-          
-          const books = getBooks();
-          setBooks([...books, newBook]);
-          
-          toast({
-            title: "Success",
-            description: "Book added successfully!",
-            variant: "default",
-          });
-          
-          form.reset();
-          navigate("/books");
-        }
-      } catch (supabaseError) {
-        console.error("Exception when adding book to Supabase:", supabaseError);
+        // Fallback to local storage
+        const books = getBooks();
+        setBooks([...books, newBook]);
+      } else {
+        console.log("Book added to Supabase successfully:", insertedData);
         
+        // Also update local storage to maintain data consistency
         const books = getBooks();
         setBooks([...books, newBook]);
         
         toast({
-          title: t("common.warning"),
-          description: t("common.savedLocallyOnly"),
+          title: "Success",
+          description: "Book added successfully!",
           variant: "default",
         });
+        
+        form.reset();
+        navigate("/books");
       }
-    } catch (error) {
-      console.error("Error in form submission:", error);
+    } catch (supabaseError) {
+      console.error("Exception when adding book to Supabase:", supabaseError);
+      
+      // Fallback to local storage
+      const books = getBooks();
+      setBooks([...books, newBook]);
+      
       toast({
-        title: "Error",
-        description: "Error adding book. Please try again.",
-        variant: "destructive",
+        title: t("common.warning"),
+        description: t("common.savedLocallyOnly"),
+        variant: "default",
       });
     }
   };
