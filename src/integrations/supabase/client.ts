@@ -2,9 +2,9 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from './types'
 
-// Store Supabase credentials in constants - in a real app, these should be environment variables
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://bwzjbgrvywjtcnhwkglk.supabase.co'
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3empiZ3J2eXdqdGNuaHdrZ2xrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDc3OTIyMjUsImV4cCI6MjAyMzM2ODIyNX0.RPWHvO0NqpJ12f9oIShZfNAlkOmODTjvfA9R_RGqa78'
+// Store Supabase credentials in constants
+const SUPABASE_URL = 'https://pijhrmuamnwdgucfnycl.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpamhybXVhbW53ZGd1Y2ZueWNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNDk1NTAsImV4cCI6MjA2MDgyNTU1MH0.qf5P5eWDSLRmFKxIwtqBygxNAvIFtqGxJN3J4nX7ocE'
 
 /**
  * Checks if Supabase is accessible

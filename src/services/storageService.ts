@@ -1,4 +1,3 @@
-
 import { Book, Sale, RestockEntry, Institute, BookStall, User } from "../types";
 
 // Local storage keys
@@ -242,7 +241,7 @@ export const initializeSampleData = (): void => {
   setUsers(users);
   
   // Create sample institutes
-  const institutes: Institute[] = [
+  const institutesList: Institute[] = [
     {
       id: "inst-1",
       name: "Temple Institute",
@@ -251,7 +250,7 @@ export const initializeSampleData = (): void => {
       createdAt: new Date()
     }
   ];
-  setInstitutes(institutes);
+  setInstitutes(institutesList);
   
   // Create sample book stalls
   const bookStalls: BookStall[] = [

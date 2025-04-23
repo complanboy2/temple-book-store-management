@@ -52,7 +52,8 @@ const BooksPage: React.FC = () => {
         const { data, error } = await supabase
           .from("books")
           .select("*")
-          .eq("stallid", currentStore);
+          .eq("stallid", currentStore)
+          .order('createdat', { ascending: false });
           
         if (error) {
           console.error("Error fetching books from Supabase:", error);
