@@ -15,15 +15,41 @@ const KEYS = {
   PRINTING_INSTITUTES: "printingInstitutes"
 };
 
+// Enable debug mode for logging
+const DEBUG = true;
+
+// Debug logger
+const logDebug = (message: string, data?: any) => {
+  if (DEBUG) {
+    if (data) {
+      console.log(`[StorageService] ${message}`, data);
+    } else {
+      console.log(`[StorageService] ${message}`);
+    }
+  }
+};
+
 // Generic function to get items from local storage
 const getItems = <T>(key: string): T[] => {
-  const items = localStorage.getItem(key);
-  return items ? JSON.parse(items) : [];
+  try {
+    const items = localStorage.getItem(key);
+    const result = items ? JSON.parse(items) : [];
+    logDebug(`Retrieved ${result.length} items from ${key}`);
+    return result;
+  } catch (error) {
+    console.error(`Error getting items from ${key}:`, error);
+    return [];
+  }
 };
 
 // Generic function to set items in local storage
 const setItems = <T>(key: string, items: T[]): void => {
-  localStorage.setItem(key, JSON.stringify(items));
+  try {
+    logDebug(`Storing ${items.length} items to ${key}`);
+    localStorage.setItem(key, JSON.stringify(items));
+  } catch (error) {
+    console.error(`Error setting items to ${key}:`, error);
+  }
 };
 
 // User related functions

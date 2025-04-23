@@ -39,6 +39,14 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
     }
   };
   
+  console.log("MobileHeader rendering with:", { 
+    title, 
+    showBackButton, 
+    showStallSelector, 
+    stores: stores.length,
+    currentStore 
+  });
+  
   return (
     <div className="sticky top-0 z-40 bg-temple-background border-b border-temple-gold/20 pt-safe">
       <div className="flex items-center justify-between h-14 px-4">
@@ -87,7 +95,10 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
           )}
           
           {showNotification && (
-            <button className="p-1 rounded-full hover:bg-temple-gold/10">
+            <button 
+              className="p-1 rounded-full hover:bg-temple-gold/10"
+              onClick={() => navigate("/notifications")}
+            >
               <Bell size={20} className="text-temple-maroon" />
             </button>
           )}

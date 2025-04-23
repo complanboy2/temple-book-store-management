@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Book } from "@/types";
 import { useNavigate } from "react-router-dom";
@@ -65,6 +64,8 @@ const BooksPage: React.FC = () => {
           setIsLoading(false);
           return;
         }
+
+        console.log("Supabase returned books data:", data);
 
         // Transform API result to local Book type
         const result: Book[] = (data || []).map((row: any) => ({

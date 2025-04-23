@@ -34,86 +34,79 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const fetchStores = async () => {
         setIsLoading(true);
         try {
-          // First check if we have stores in localStorage (offline mode)
-          const localStores = getBookStalls();
+          console.log("Fetching stalls for user:", currentUser);
           
-          if (localStores.length > 0) {
-            console.log("Using local stores from storage:", localStores);
-            
-            // Filter stores by the user's institute
-            const filteredStores = localStores.filter(store => 
-              store.instituteId === currentUser.instituteId
-            );
-            
-            setStores(filteredStores);
-            
-            const savedStore = localStorage.getItem('currentStore');
-            if (savedStore && filteredStores.some(store => store.id === savedStore)) {
-              setCurrentStoreState(savedStore);
-            } else if (filteredStores.length > 0) {
-              setCurrentStoreState(filteredStores[0].id);
-              localStorage.setItem('currentStore', filteredStores[0].id);
-            } else {
-              setCurrentStoreState(null);
-              localStorage.removeItem('currentStore');
-            }
-            
-            setIsLoading(false);
-            return;
-          }
-          
-          // If no local stores, try to fetch from Supabase
+          // First try to fetch from Supabase
           const { data, error } = await supabase
             .from("book_stalls")
             .select("*")
             .order('createdat', { ascending: false });
           
           if (error) {
-            console.error("Error fetching stores:", error);
-            toast({
-              title: "Error fetching stores",
-              description: error.message,
-              variant: "destructive",
-            });
-            setStores([]);
-            setIsLoading(false);
-            return;
-          }
-          
-          // Safety check - ensure instituteid exists in the user object
-          if (!currentUser.instituteId) {
-            console.error("User has no institute ID");
-            setStores([]);
-            setIsLoading(false);
-            return;
-          }
-          
-          // Filter stores by the user's institute
-          const filteredStores = data.filter(store => 
-            store.instituteid === currentUser.instituteId
-          );
-          
-          const mappedStores: BookStall[] = filteredStores.map(store => ({
-            id: store.id,
-            name: store.name,
-            location: store.location || undefined,
-            instituteId: store.instituteid,
-            createdAt: new Date(store.createdat)
-          }));
-          
-          // Update local storage with fetched stores
-          setBookStalls(mappedStores);
-          setStores(mappedStores);
-          
-          const savedStore = localStorage.getItem('currentStore');
-          if (savedStore && mappedStores.some(store => store.id === savedStore)) {
-            setCurrentStoreState(savedStore);
-          } else if (mappedStores.length > 0) {
-            setCurrentStoreState(mappedStores[0].id);
-            localStorage.setItem('currentStore', mappedStores[0].id);
+            console.error("Error fetching stores from Supabase:", error);
+            // Fall back to local storage if Supabase fails
+            const localStores = getBookStalls();
+            console.log("Falling back to local stores:", localStores);
+            
+            if (localStores.length > 0) {
+              // Filter stores by the user's institute
+              const filteredStores = localStores.filter(store => 
+                store.instituteId === currentUser.instituteId
+              );
+              
+              setStores(filteredStores);
+              
+              const savedStore = localStorage.getItem('currentStore');
+              if (savedStore && filteredStores.some(store => store.id === savedStore)) {
+                setCurrentStoreState(savedStore);
+              } else if (filteredStores.length > 0) {
+                setCurrentStoreState(filteredStores[0].id);
+                localStorage.setItem('currentStore', filteredStores[0].id);
+              } else {
+                setCurrentStoreState(null);
+                localStorage.removeItem('currentStore');
+              }
+            }
           } else {
-            setCurrentStoreState(null);
-            localStorage.removeItem('currentStore');
+            console.log("Successfully fetched stores from Supabase:", data);
+            
+            // Safety check - ensure instituteid exists in the user object
+            if (!currentUser.instituteId) {
+              console.error("User has no institute ID");
+              setStores([]);
+              setIsLoading(false);
+              return;
+            }
+            
+            // Filter stores by the user's institute
+            const filteredStores = data.filter(store => 
+              store.instituteid === currentUser.instituteId
+            );
+            
+            console.log("Filtered stores for institute:", filteredStores);
+            
+            const mappedStores: BookStall[] = filteredStores.map(store => ({
+              id: store.id,
+              name: store.name,
+              location: store.location || undefined,
+              instituteId: store.instituteid,
+              createdAt: new Date(store.createdat)
+            }));
+            
+            // Update local storage with fetched stores
+            setBookStalls(mappedStores);
+            setStores(mappedStores);
+            
+            const savedStore = localStorage.getItem('currentStore');
+            if (savedStore && mappedStores.some(store => store.id === savedStore)) {
+              setCurrentStoreState(savedStore);
+            } else if (mappedStores.length > 0) {
+              setCurrentStoreState(mappedStores[0].id);
+              localStorage.setItem('currentStore', mappedStores[0].id);
+            } else {
+              setCurrentStoreState(null);
+              localStorage.removeItem('currentStore');
+            }
           }
         } catch (err) {
           console.error("Failed to fetch stores:", err);
@@ -163,46 +156,69 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return null;
       }
       
-      // First add to local storage for offline support
-      const newStore: BookStall = {
-        id: Date.now().toString(), // Simple ID for local storage
-        name,
-        location,
-        instituteId: currentUser.instituteId,
-        createdAt: new Date()
-      };
+      console.log("Adding store to Supabase:", { name, location, instituteId: currentUser.instituteId });
       
-      const currentStores = getBookStalls();
-      setBookStalls([...currentStores, newStore]);
-      
-      // Also try to save to Supabase if online
-      try {
-        const supabaseData = {
+      // Try to save to Supabase first
+      const { data, error } = await supabase
+        .from("book_stalls")
+        .insert({
           name,
           location: location || null,
           instituteid: currentUser.instituteId,
           createdat: new Date().toISOString()
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Error adding store to Supabase:", error);
+        toast({
+          title: "Error adding store to Supabase",
+          description: error.message,
+          variant: "destructive",
+        });
+        
+        // Fall back to local storage only
+        const newStore: BookStall = {
+          id: Date.now().toString(), // Simple ID for local storage
+          name,
+          location,
+          instituteId: currentUser.instituteId,
+          createdAt: new Date()
         };
         
-        const { data, error } = await supabase
-          .from("book_stalls")
-          .insert(supabaseData)
-          .select()
-          .single();
+        const currentStores = getBookStalls();
+        setBookStalls([...currentStores, newStore]);
+        setStores(prevStores => [newStore, ...prevStores]);
         
-        if (!error && data) {
-          // Update the local store with the Supabase ID
-          newStore.id = data.id;
-          
-          // Update local storage
-          const updatedStores = getBookStalls().filter(s => s.id !== newStore.id);
-          setBookStalls([...updatedStores, newStore]);
+        if (stores.length === 0) {
+          setCurrentStore(newStore.id);
         }
-      } catch (supabaseErr) {
-        console.log("Supabase error (will use local store):", supabaseErr);
-        // Continue with local store only
+        
+        toast({
+          title: "Store Added (Locally)",
+          description: `${name} has been added to local storage only`,
+        });
+        
+        return newStore;
       }
       
+      console.log("Successfully added store to Supabase:", data);
+      
+      // Map the response to our BookStall type
+      const newStore: BookStall = {
+        id: data.id,
+        name: data.name,
+        location: data.location || undefined,
+        instituteId: data.instituteid,
+        createdAt: new Date(data.createdat)
+      };
+      
+      // Also save to local storage for offline support
+      const currentStores = getBookStalls();
+      setBookStalls([...currentStores, newStore]);
+      
+      // Update state
       setStores(prevStores => [newStore, ...prevStores]);
       
       if (stores.length === 0) {
