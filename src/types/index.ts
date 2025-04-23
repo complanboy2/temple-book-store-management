@@ -39,6 +39,7 @@ export interface Book {
   salePrice: number;
   quantity: number;
   stallId: string;
+  imageUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }

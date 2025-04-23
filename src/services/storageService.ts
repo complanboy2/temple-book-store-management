@@ -1,3 +1,4 @@
+
 import { Book, Sale, RestockEntry, Institute, BookStall, User } from "../types";
 
 // Local storage keys
@@ -12,7 +13,8 @@ const KEYS = {
   AUTHORS: "temple_authors",
   CATEGORIES: "temple_categories",
   SALE_PERCENTAGE: "temple_author_sale_percent",
-  PRINTING_INSTITUTES: "printingInstitutes"
+  PRINTING_INSTITUTES: "printingInstitutes",
+  INSTITUTE_PERCENTAGE: "printing_institute_percentage"
 };
 
 // Enable debug mode for logging
@@ -112,6 +114,15 @@ export const getAuthorSalePercentage = (): Record<string, number> => {
 };
 export const setAuthorSalePercentage = (obj: Record<string, number>) => {
   localStorage.setItem(KEYS.SALE_PERCENTAGE, JSON.stringify(obj));
+};
+
+// Sale percentage by printing institute
+export const getInstituteSalePercentage = (): Record<string, number> => {
+  const val = localStorage.getItem(KEYS.INSTITUTE_PERCENTAGE);
+  return val ? JSON.parse(val) : {};
+};
+export const setInstituteSalePercentage = (obj: Record<string, number>) => {
+  localStorage.setItem(KEYS.INSTITUTE_PERCENTAGE, JSON.stringify(obj));
 };
 
 // Book operations
@@ -257,9 +268,11 @@ export const initializeSampleData = (): void => {
   // Create sample authors and categories
   const authors = ["Vyasa", "Valmiki", "A.C. Bhaktivedanta Swami", "Satyarth Nath", "Ramesh Kumar"];
   const categories = ["Bhagavad Gita", "Ramayana", "Vedic Literature", "Philosophy", "Children's Books"];
+  const institutes = ["Vedic Press", "Bhakti Publications", "Temple Trust", "Spiritual Books Inc."];
   
   setAuthors(authors);
   setCategories(categories);
+  setPrintingInstitutes(institutes);
   
   // Set sample author sale percentages
   const authorPercentages: Record<string, number> = {};
@@ -268,11 +281,19 @@ export const initializeSampleData = (): void => {
   });
   setAuthorSalePercentage(authorPercentages);
   
+  // Set sample printing institute percentages
+  const institutePercentages: Record<string, number> = {};
+  institutes.forEach(institute => {
+    institutePercentages[institute] = Math.floor(Math.random() * 16) + 5; // 5% to 20%
+  });
+  setInstituteSalePercentage(institutePercentages);
+  
   // Create sample books
   const books: Book[] = [];
   for (let i = 0; i < 15; i++) {
     const author = authors[Math.floor(Math.random() * authors.length)];
     const category = categories[Math.floor(Math.random() * categories.length)];
+    const institute = institutes[Math.floor(Math.random() * institutes.length)];
     const originalPrice = Math.floor(Math.random() * 500) + 100; // 100 to 600
     const salePrice = Math.floor(originalPrice * (1 - Math.random() * 0.3)); // 0-30% discount
     
@@ -281,7 +302,7 @@ export const initializeSampleData = (): void => {
       name: `${category} - Volume ${i + 1}`,
       author,
       category,
-      printingInstitute: "Vedic Press",
+      printingInstitute: institute,
       originalPrice,
       salePrice,
       quantity: Math.floor(Math.random() * 20) + 5, // 5 to 25 copies

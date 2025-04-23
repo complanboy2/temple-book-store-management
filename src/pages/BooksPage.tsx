@@ -82,6 +82,7 @@ const BooksPage: React.FC = () => {
             salePrice: row.saleprice,
             quantity: row.quantity,
             stallId: row.stallid,
+            imageUrl: row.imageurl,
             createdAt: row.createdat ? new Date(row.createdat) : new Date(),
             updatedAt: row.updatedat ? new Date(row.updatedat) : new Date()
           }));

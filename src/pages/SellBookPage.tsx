@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { getBooks, addSale, updateBookQuantity, generateId, getAuthorSalePercentage } from "@/services/storageService";
 import { Book, Sale } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import MobileHeader from "@/components/MobileHeader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslation } from "react-i18next";
 import { useStallContext } from "@/contexts/StallContext";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 const SellBookPage: React.FC = () => {
   const { bookId } = useParams<{ bookId: string }>();
@@ -28,33 +30,108 @@ const SellBookPage: React.FC = () => {
   const { t } = useTranslation();
 
   useEffect(() => {
-    if (bookId) {
-      const books = getBooks();
-      // Filter books by current stall if available
-      let filteredBooks = books;
-      if (currentStore) {
-        filteredBooks = books.filter(b => b.stallId === currentStore);
-      }
-      
-      const foundBook = filteredBooks.find(b => b.id === bookId);
-      if (foundBook) {
-        setBook(foundBook);
+    const fetchBook = async () => {
+      if (!bookId) return;
+
+      try {
+        console.log(`Fetching book with ID: ${bookId}`);
         
-        // Get author percentage if available
-        const percentages = getAuthorSalePercentage();
-        if (percentages[foundBook.author]) {
-          setAuthorPercentage(percentages[foundBook.author]);
+        // Try to fetch from Supabase first
+        const { data: supabaseBook, error } = await supabase
+          .from("books")
+          .select("*")
+          .eq("id", bookId)
+          .maybeSingle();
+          
+        if (error) {
+          console.error("Error fetching book from Supabase:", error);
+          // Fall back to local storage
+          const books = getBooks();
+          const foundBook = books.find(b => b.id === bookId);
+          
+          if (foundBook) {
+            console.log("Found book in local storage:", foundBook);
+            setBook(foundBook);
+            
+            // Get author percentage if available
+            const percentages = getAuthorSalePercentage();
+            if (percentages[foundBook.author]) {
+              setAuthorPercentage(percentages[foundBook.author]);
+            }
+          } else {
+            console.error("Book not found in local storage either");
+            toast({
+              title: t("common.error"),
+              description: t("common.bookNotFound"),
+              variant: "destructive",
+            });
+            navigate("/books");
+          }
+        } else if (supabaseBook) {
+          console.log("Found book in Supabase:", supabaseBook);
+          
+          // Transform supabase book to local Book type
+          const bookData: Book = {
+            id: supabaseBook.id,
+            barcode: supabaseBook.barcode || undefined,
+            name: supabaseBook.name,
+            author: supabaseBook.author,
+            category: supabaseBook.category || "",
+            printingInstitute: supabaseBook.printinginstitute || "",
+            originalPrice: supabaseBook.originalprice,
+            salePrice: supabaseBook.saleprice,
+            quantity: supabaseBook.quantity,
+            stallId: supabaseBook.stallid,
+            imageUrl: supabaseBook.imageurl,
+            createdAt: supabaseBook.createdat ? new Date(supabaseBook.createdat) : new Date(),
+            updatedAt: supabaseBook.updatedat ? new Date(supabaseBook.updatedat) : new Date()
+          };
+          
+          setBook(bookData);
+          
+          // Get author percentage if available
+          const percentages = getAuthorSalePercentage();
+          if (percentages[bookData.author]) {
+            setAuthorPercentage(percentages[bookData.author]);
+          }
+        } else {
+          console.error("Book not found in Supabase");
+          // Fall back to local storage
+          const books = getBooks();
+          const foundBook = books.find(b => b.id === bookId);
+          
+          if (foundBook) {
+            console.log("Found book in local storage:", foundBook);
+            setBook(foundBook);
+            
+            // Get author percentage if available
+            const percentages = getAuthorSalePercentage();
+            if (percentages[foundBook.author]) {
+              setAuthorPercentage(percentages[foundBook.author]);
+            }
+          } else {
+            console.error("Book not found in local storage either");
+            toast({
+              title: t("common.error"),
+              description: t("common.bookNotFound"),
+              variant: "destructive",
+            });
+            navigate("/books");
+          }
         }
-      } else {
+      } catch (err) {
+        console.error("Unexpected error fetching book:", err);
         toast({
           title: t("common.error"),
-          description: t("common.bookNotFound"),
+          description: t("common.unexpectedError"),
           variant: "destructive",
         });
         navigate("/books");
       }
-    }
-  }, [bookId, currentStore, navigate, toast, t]);
+    };
+    
+    fetchBook();
+  }, [bookId, navigate, toast, t]);
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
@@ -63,15 +140,16 @@ const SellBookPage: React.FC = () => {
     }
   };
 
-  const handleSell = () => {
+  const handleSell = async () => {
     if (!book || !currentUser) return;
     
     setIsLoading(true);
     
     try {
       // Create sale record
+      const saleId = crypto.randomUUID();
       const sale: Sale = {
-        id: generateId(),
+        id: saleId,
         bookId: book.id,
         quantity,
         totalAmount: book.salePrice * quantity,
@@ -84,10 +162,50 @@ const SellBookPage: React.FC = () => {
         synced: false,
       };
       
-      // Add sale to storage
+      // Update book quantity in Supabase
+      const newQuantity = book.quantity - quantity;
+      const { error: updateError } = await supabase
+        .from('books')
+        .update({ quantity: newQuantity, updatedat: new Date().toISOString() })
+        .eq('id', book.id);
+      
+      if (updateError) {
+        console.error("Error updating book quantity in Supabase:", updateError);
+        // Continue with local storage as fallback
+      } else {
+        console.log(`Updated book quantity in Supabase to ${newQuantity}`);
+      }
+      
+      // Add sale to Supabase
+      const { error: saleError } = await supabase
+        .from('sales')
+        .insert([{
+          id: sale.id,
+          bookid: sale.bookId,
+          quantity: sale.quantity,
+          totalamount: sale.totalAmount,
+          paymentmethod: sale.paymentMethod,
+          buyername: sale.buyerName || null,
+          buyerphone: sale.buyerPhone || null,
+          personnelid: sale.personnelId,
+          stallid: sale.stallId,
+          createdat: new Date().toISOString(),
+          synced: true
+        }]);
+        
+      if (saleError) {
+        console.error("Error adding sale to Supabase:", saleError);
+        // Fall back to local storage
+        sale.synced = false;
+      } else {
+        console.log("Sale added to Supabase successfully");
+        sale.synced = true;
+      }
+      
+      // Add sale to local storage
       addSale(sale);
       
-      // Update book quantity
+      // Update book quantity locally
       updateBookQuantity(book.id, -quantity);
       
       // Show success toast
@@ -99,6 +217,7 @@ const SellBookPage: React.FC = () => {
       // Navigate to dashboard
       navigate("/");
     } catch (error) {
+      console.error("Error processing sale:", error);
       toast({
         title: t("common.saleFailed"),
         description: t("common.errorProcessingSale"),
@@ -125,6 +244,7 @@ const SellBookPage: React.FC = () => {
   }
 
   const totalAmount = book.salePrice * quantity;
+  const placeholderImage = "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=300&h=400&fit=crop";
 
   return (
     <div className="min-h-screen bg-temple-background pb-20">
@@ -141,6 +261,22 @@ const SellBookPage: React.FC = () => {
               <CardTitle className="text-2xl text-temple-maroon">{book.name}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Book Image */}
+              {(book.imageUrl || true) && (
+                <div className="mb-4 rounded-md overflow-hidden bg-gray-100 max-w-[200px] mx-auto">
+                  <AspectRatio ratio={3/4} className="bg-muted">
+                    <img 
+                      src={book.imageUrl || placeholderImage} 
+                      alt={book.name}
+                      className="object-cover w-full h-full rounded-md"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = placeholderImage;
+                      }}
+                    />
+                  </AspectRatio>
+                </div>
+              )}
+            
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">{t("common.author")}</p>

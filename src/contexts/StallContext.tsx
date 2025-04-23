@@ -1,350 +1,267 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { BookStall } from "@/types";
-import { useAuth } from "./AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { getBookStalls, setBookStalls } from "@/services/storageService";
+import { useAuth } from "./AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-interface StoreContextType {
-  stores: BookStall[];
+interface StallContextType {
+  bookStalls: BookStall[];
+  setBookStalls: (stalls: BookStall[]) => void;
   currentStore: string | null;
-  setCurrentStore: (storeId: string) => void;
-  addStore: (name: string, location?: string) => Promise<BookStall | null>;
-  updateStore: (id: string, data: Partial<BookStall>) => Promise<BookStall | null>;
-  deleteStore: (id: string) => Promise<void>;
-  isLoading: boolean;
-  // For backward compatibility with components still using "stall" naming
-  stalls: BookStall[];
-  currentStall: string | null;
-  setCurrentStall: (stallId: string) => void;
-  addStall: (name: string, location?: string) => Promise<BookStall | null>;
+  setCurrentStore: (storeId: string | null) => void;
+  selectedStoreName: string | null;
+  addBookStall: (name: string, location: string) => Promise<void>;
+  updateBookStall: (id: string, name: string, location: string) => Promise<void>;
+  deleteBookStall: (id: string) => Promise<void>;
 }
 
-const StoreContext = createContext<StoreContextType | undefined>(undefined);
+const StallContext = createContext<StallContextType>({
+  bookStalls: [],
+  setBookStalls: () => {},
+  currentStore: null,
+  setCurrentStore: () => {},
+  selectedStoreName: null,
+  addBookStall: async () => {},
+  updateBookStall: async () => {},
+  deleteBookStall: async () => {},
+});
+
+export const useStallContext = () => useContext(StallContext);
 
 export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [stores, setStores] = useState<BookStall[]>([]);
-  const [currentStore, setCurrentStoreState] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { currentUser, isAdmin } = useAuth();
+  const [bookStalls, setBookStallsState] = useState<BookStall[]>([]);
+  const [currentStore, setCurrentStore] = useState<string | null>(null);
+  const [selectedStoreName, setSelectedStoreName] = useState<string | null>(null);
+  const { currentUser } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchStores = async () => {
-      setIsLoading(true);
+    const fetchBookStalls = async () => {
       try {
-        console.log("Fetching stalls for user:", currentUser);
-        
-        // First try to fetch from Supabase
         const { data, error } = await supabase
           .from("book_stalls")
-          .select("*")
-          .order('createdat', { ascending: false });
-        
+          .select("*");
+
         if (error) {
-          console.error("Error fetching stores from Supabase:", error);
-          // Fall back to local storage if Supabase fails
-          const localStores = getBookStalls();
-          console.log("Falling back to local stores:", localStores);
-          
-          if (localStores.length > 0) {
-            // Filter stores by the user's institute
-            const filteredStores = currentUser?.instituteId 
-              ? localStores.filter(store => store.instituteId === currentUser.instituteId)
-              : localStores;
-            
-            setStores(filteredStores);
-            
-            const savedStore = localStorage.getItem('currentStore');
-            if (savedStore && filteredStores.some(store => store.id === savedStore)) {
-              setCurrentStoreState(savedStore);
-            } else if (filteredStores.length > 0) {
-              setCurrentStoreState(filteredStores[0].id);
-              localStorage.setItem('currentStore', filteredStores[0].id);
-            } else {
-              setCurrentStoreState(null);
-              localStorage.removeItem('currentStore');
-            }
-          }
-        } else if (data && Array.isArray(data)) {
-          console.log("Successfully fetched stores from Supabase:", data);
-          
-          // Filter stores by the user's institute if user has an instituteId
-          const filteredStores = currentUser?.instituteId 
-            ? data.filter(store => store.instituteid === currentUser.instituteId)
-            : data;
-          
-          console.log("Filtered stores:", filteredStores);
-          
-          const mappedStores: BookStall[] = filteredStores.map(store => ({
-            id: store.id,
-            name: store.name,
-            location: store.location || undefined,
-            instituteId: store.instituteid,
-            createdAt: new Date(store.createdat)
+          throw error;
+        }
+
+        if (data && Array.isArray(data)) {
+          const stalls: BookStall[] = data.map(item => ({
+            id: item.id,
+            name: item.name,
+            location: item.location || undefined,
+            instituteId: item.instituteid,
+            createdAt: item.createdat ? new Date(item.createdat) : new Date()
           }));
           
-          // Update local storage with fetched stores
-          setBookStalls(mappedStores);
-          setStores(mappedStores);
+          setBookStallsState(stalls);
+          setBookStalls(stalls);
           
-          const savedStore = localStorage.getItem('currentStore');
-          if (savedStore && mappedStores.some(store => store.id === savedStore)) {
-            setCurrentStoreState(savedStore);
-          } else if (mappedStores.length > 0) {
-            setCurrentStoreState(mappedStores[0].id);
-            localStorage.setItem('currentStore', mappedStores[0].id);
-          } else {
-            setCurrentStoreState(null);
-            localStorage.removeItem('currentStore');
+          console.log(`Loaded ${stalls.length} book stalls from Supabase`);
+          
+          if (stalls.length > 0 && !currentStore) {
+            setCurrentStore(stalls[0].id);
+            setSelectedStoreName(stalls[0].name);
           }
         }
-      } catch (err) {
-        console.error("Failed to fetch stores:", err);
-        toast({
-          title: "Error",
-          description: "Failed to fetch stores. Please refresh the page.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching book stalls from Supabase:", error);
+        
+        const stalls = getBookStalls();
+        setBookStallsState(stalls);
+        
+        if (stalls.length > 0 && !currentStore) {
+          setCurrentStore(stalls[0].id);
+          setSelectedStoreName(stalls[0].name);
+        }
       }
     };
-    
-    fetchStores();
-  }, [currentUser, isAdmin, toast]);
 
-  const setCurrentStore = (storeId: string) => {
-    setCurrentStoreState(storeId);
-    localStorage.setItem('currentStore', storeId);
-  };
+    fetchBookStalls();
+  }, [currentUser]);
 
-  const addStore = async (name: string, location?: string): Promise<BookStall | null> => {
+  useEffect(() => {
+    if (currentStore) {
+      const store = bookStalls.find((s) => s.id === currentStore);
+      if (store) {
+        setSelectedStoreName(store.name);
+      }
+    } else {
+      setSelectedStoreName(null);
+    }
+  }, [currentStore, bookStalls]);
+
+  const addBookStall = async (name: string, location: string) => {
+    if (!currentUser) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to add a book stall",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      // Validate institute ID for logged in users
-      const instituteId = currentUser?.instituteId || "default";
-      
-      console.log("Adding store to Supabase:", { name, location, instituteId });
-      
-      // Create a unique ID for the store
-      const storeId = crypto.randomUUID();
-      
-      // Try to save to Supabase first
-      const { data, error } = await supabase
+      const newBookStall: BookStall = {
+        id: crypto.randomUUID(),
+        name,
+        location,
+        instituteId: currentUser.instituteId,
+        createdAt: new Date(),
+      };
+
+      const updatedStalls = [...bookStalls, newBookStall];
+      setBookStallsState(updatedStalls);
+      setBookStalls(updatedStalls);
+
+      const { error } = await supabase
         .from("book_stalls")
-        .insert([{
-          id: storeId,
-          name,
-          location: location || null,
-          instituteid: instituteId,
-          createdat: new Date().toISOString()
-        }])
-        .select();
-      
+        .insert([
+          {
+            id: newBookStall.id,
+            name: newBookStall.name,
+            location: newBookStall.location,
+            instituteid: newBookStall.instituteId,
+            createdat: newBookStall.createdAt.toISOString(),
+          },
+        ]);
+
       if (error) {
-        console.error("Error adding store to Supabase:", error);
-        
-        // Fall back to local storage only
-        const newStore: BookStall = {
-          id: storeId, 
-          name,
-          location,
-          instituteId,
-          createdAt: new Date()
-        };
-        
-        const currentStores = getBookStalls();
-        setBookStalls([...currentStores, newStore]);
-        setStores(prevStores => [newStore, ...prevStores]);
-        
-        if (stores.length === 0) {
-          setCurrentStore(newStore.id);
-        }
-        
+        console.error("Error adding book stall to Supabase:", error);
         toast({
-          title: "Store Added (Locally)",
-          description: `${name} has been added to local storage only`,
+          title: "Warning",
+          description: "Book stall saved locally but not synced with server",
           variant: "default",
         });
-        
-        return newStore;
-      }
-      
-      console.log("Successfully added store to Supabase:", data);
-      
-      if (!data || !Array.isArray(data) || data.length === 0) {
-        console.error("No data returned from Supabase insert");
-        return null;
-      }
-      
-      // Map the response to our BookStall type
-      const storeData = data[0];
-      const newStore: BookStall = {
-        id: storeData.id,
-        name: storeData.name,
-        location: storeData.location || undefined,
-        instituteId: storeData.instituteid,
-        createdAt: new Date(storeData.createdat)
-      };
-      
-      // Also save to local storage for offline support
-      const currentStores = getBookStalls();
-      setBookStalls([...currentStores, newStore]);
-      
-      // Update state
-      setStores(prevStores => [newStore, ...prevStores]);
-      
-      if (stores.length === 0) {
-        setCurrentStore(newStore.id);
-      }
-      
-      toast({
-        title: "Store Added",
-        description: `${name} has been added successfully`,
-        variant: "default",
-      });
-      
-      return newStore;
-    } catch (err: any) {
-      console.error("Failed to add store:", err);
-      toast({
-        title: "Error",
-        description: "Failed to add store. Please try again.",
-        variant: "destructive",
-      });
-      return null;
-    }
-  };
-
-  const updateStore = async (id: string, data: Partial<BookStall>): Promise<BookStall | null> => {
-    try {
-      const updateData: any = {
-        ...(data.name !== undefined && { name: data.name }),
-        ...(data.location !== undefined && { location: data.location }),
-      };
-      
-      const { data: updatedData, error } = await supabase
-        .from("book_stalls")
-        .update(updateData)
-        .eq("id", id)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error("Error updating store:", error);
+      } else {
         toast({
-          title: "Error updating store",
-          description: error.message,
-          variant: "destructive",
+          title: "Success",
+          description: "Book stall added successfully",
         });
-        return null;
       }
-      
-      if (!updatedData) {
-        console.error("No data returned from update");
-        return null;
+
+      if (updatedStalls.length === 1) {
+        setCurrentStore(newBookStall.id);
+        setSelectedStoreName(newBookStall.name);
       }
-      
-      const mappedStore: BookStall = {
-        id: updatedData.id,
-        name: updatedData.name,
-        location: updatedData.location || undefined,
-        instituteId: updatedData.instituteid,
-        createdAt: new Date(updatedData.createdat)
-      };
-      
-      setStores(prevStores => 
-        prevStores.map(store => 
-          store.id === id ? { ...store, ...data } : store
-        )
-      );
-      
-      toast({
-        title: "Store Updated",
-        description: `${updatedData.name} has been updated`,
-      });
-      
-      return mappedStore;
-    } catch (err) {
-      console.error("Failed to update store:", err);
+    } catch (error) {
+      console.error("Error adding book stall:", error);
       toast({
         title: "Error",
-        description: "Failed to update store. Please try again.",
+        description: "Failed to add book stall",
         variant: "destructive",
       });
-      return null;
     }
   };
 
-  const deleteStore = async (id: string): Promise<void> => {
+  const updateBookStall = async (id: string, name: string, location: string) => {
     try {
+      const stallIndex = bookStalls.findIndex((s) => s.id === id);
+      if (stallIndex === -1) return;
+
+      const updatedStall = {
+        ...bookStalls[stallIndex],
+        name,
+        location,
+      };
+
+      const updatedStalls = [...bookStalls];
+      updatedStalls[stallIndex] = updatedStall;
+      setBookStallsState(updatedStalls);
+      setBookStalls(updatedStalls);
+
+      if (currentStore === id) {
+        setSelectedStoreName(name);
+      }
+
+      const { error } = await supabase
+        .from("book_stalls")
+        .update({
+          name: updatedStall.name,
+          location: updatedStall.location,
+        })
+        .eq("id", id);
+
+      if (error) {
+        console.error("Error updating book stall in Supabase:", error);
+        toast({
+          title: "Warning",
+          description: "Book stall updated locally but not synced with server",
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Book stall updated successfully",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating book stall:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update book stall",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteBookStall = async (id: string) => {
+    try {
+      const updatedStalls = bookStalls.filter((s) => s.id !== id);
+      setBookStallsState(updatedStalls);
+      setBookStalls(updatedStalls);
+
+      if (currentStore === id) {
+        const newCurrentStore = updatedStalls.length > 0 ? updatedStalls[0].id : null;
+        const newStoreName = updatedStalls.length > 0 ? updatedStalls[0].name : null;
+        setCurrentStore(newCurrentStore);
+        setSelectedStoreName(newStoreName);
+      }
+
       const { error } = await supabase
         .from("book_stalls")
         .delete()
         .eq("id", id);
-      
+
       if (error) {
-        console.error("Error deleting store:", error);
+        console.error("Error deleting book stall from Supabase:", error);
         toast({
-          title: "Error deleting store",
-          description: error.message,
-          variant: "destructive",
+          title: "Warning",
+          description: "Book stall deleted locally but not synced with server",
+          variant: "default",
         });
-        return;
+      } else {
+        toast({
+          title: "Success",
+          description: "Book stall deleted successfully",
+        });
       }
-      
-      setStores(prevStores => prevStores.filter(store => store.id !== id));
-      
-      if (currentStore === id) {
-        const remaining = stores.filter(store => store.id !== id);
-        if (remaining.length > 0) {
-          setCurrentStore(remaining[0].id);
-        } else {
-          setCurrentStoreState(null);
-          localStorage.removeItem('currentStore');
-        }
-      }
-      
-      toast({
-        title: "Store Deleted",
-        description: "Store has been removed successfully",
-      });
-    } catch (err) {
-      console.error("Failed to delete store:", err);
+    } catch (error) {
+      console.error("Error deleting book stall:", error);
       toast({
         title: "Error",
-        description: "Failed to delete store. Please try again.",
+        description: "Failed to delete book stall",
         variant: "destructive",
       });
     }
   };
 
   return (
-    <StoreContext.Provider 
-      value={{ 
-        stores, 
-        currentStore, 
+    <StallContext.Provider
+      value={{
+        bookStalls,
+        setBookStalls: setBookStallsState,
+        currentStore,
         setCurrentStore,
-        addStore,
-        updateStore,
-        deleteStore,
-        isLoading,
-        stalls: stores,
-        currentStall: currentStore,
-        setCurrentStall: setCurrentStore,
-        addStall: addStore
+        selectedStoreName,
+        addBookStall,
+        updateBookStall,
+        deleteBookStall,
       }}
     >
       {children}
-    </StoreContext.Provider>
+    </StallContext.Provider>
   );
-};
-
-export const useStallContext = () => {
-  const context = useContext(StoreContext);
-  if (context === undefined) {
-    throw new Error("useStallContext must be used within a StallProvider");
-  }
-  return context;
 };
