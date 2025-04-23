@@ -82,7 +82,7 @@ const SellBookPage: React.FC = () => {
             salePrice: supabaseBook.saleprice,
             quantity: supabaseBook.quantity,
             stallId: supabaseBook.stallid,
-            imageUrl: supabaseBook.imageurl,
+            imageUrl: supabaseBook.imageurl || undefined, // Fixed field name here
             createdAt: supabaseBook.createdat ? new Date(supabaseBook.createdat) : new Date(),
             updatedAt: supabaseBook.updatedat ? new Date(supabaseBook.updatedat) : new Date()
           };

@@ -188,8 +188,8 @@ export const clearLocalStorage = (): void => {
 // Get printing institutes
 export const getPrintingInstitutes = (): string[] => {
   try {
-    const institutes = localStorage.getItem('printingInstitutes');
-    return institutes ? JSON.parse(institutes) : [];
+    const storedInstitutes = localStorage.getItem('printingInstitutes');
+    return storedInstitutes ? JSON.parse(storedInstitutes) : [];
   } catch (error) {
     console.error('Error getting printing institutes:', error);
     return [];
@@ -197,9 +197,9 @@ export const getPrintingInstitutes = (): string[] => {
 };
 
 // Set printing institutes
-export const setPrintingInstitutes = (institutes: string[]): void => {
+export const setPrintingInstitutes = (printingInstitutes: string[]): void => {
   try {
-    localStorage.setItem('printingInstitutes', JSON.stringify(institutes));
+    localStorage.setItem('printingInstitutes', JSON.stringify(printingInstitutes));
   } catch (error) {
     console.error('Error setting printing institutes:', error);
   }
@@ -242,7 +242,7 @@ export const initializeSampleData = (): void => {
   setUsers(users);
   
   // Create sample institutes
-  const institutes: Institute[] = [
+  const instituteEntities: Institute[] = [
     {
       id: "inst-1",
       name: "Temple Institute",
@@ -251,7 +251,7 @@ export const initializeSampleData = (): void => {
       createdAt: new Date()
     }
   ];
-  setInstitutes(institutes);
+  setInstitutes(instituteEntities);
   
   // Create sample book stalls
   const bookStalls: BookStall[] = [
@@ -268,11 +268,11 @@ export const initializeSampleData = (): void => {
   // Create sample authors and categories
   const authors = ["Vyasa", "Valmiki", "A.C. Bhaktivedanta Swami", "Satyarth Nath", "Ramesh Kumar"];
   const categories = ["Bhagavad Gita", "Ramayana", "Vedic Literature", "Philosophy", "Children's Books"];
-  const institutes = ["Vedic Press", "Bhakti Publications", "Temple Trust", "Spiritual Books Inc."];
+  const printingInstitutes = ["Vedic Press", "Bhakti Publications", "Temple Trust", "Spiritual Books Inc."];
   
   setAuthors(authors);
   setCategories(categories);
-  setPrintingInstitutes(institutes);
+  setPrintingInstitutes(printingInstitutes);
   
   // Set sample author sale percentages
   const authorPercentages: Record<string, number> = {};
@@ -283,7 +283,7 @@ export const initializeSampleData = (): void => {
   
   // Set sample printing institute percentages
   const institutePercentages: Record<string, number> = {};
-  institutes.forEach(institute => {
+  printingInstitutes.forEach(institute => {
     institutePercentages[institute] = Math.floor(Math.random() * 16) + 5; // 5% to 20%
   });
   setInstituteSalePercentage(institutePercentages);
@@ -293,7 +293,7 @@ export const initializeSampleData = (): void => {
   for (let i = 0; i < 15; i++) {
     const author = authors[Math.floor(Math.random() * authors.length)];
     const category = categories[Math.floor(Math.random() * categories.length)];
-    const institute = institutes[Math.floor(Math.random() * institutes.length)];
+    const institute = printingInstitutes[Math.floor(Math.random() * printingInstitutes.length)];
     const originalPrice = Math.floor(Math.random() * 500) + 100; // 100 to 600
     const salePrice = Math.floor(originalPrice * (1 - Math.random() * 0.3)); // 0-30% discount
     

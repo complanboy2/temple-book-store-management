@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -96,22 +95,22 @@ const AddBookPage: React.FC = () => {
           // Extract unique categories
           const uniqueCategories = Array.from(new Set(
             booksData
-              .map(b => b.category)
-              .filter(Boolean)
+              .filter(book => book && book.category)
+              .map(book => book.category)
           )).sort() as string[];
           
           // Extract unique authors
           const uniqueAuthors = Array.from(new Set(
             booksData
-              .map(b => b.author)
-              .filter(Boolean)
+              .filter(book => book && book.author)
+              .map(book => book.author)
           )).sort() as string[];
           
           // Extract unique printing institutes
           const uniquePrintingInstitutes = Array.from(new Set(
             booksData
-              .map(b => b.printinginstitute)
-              .filter(Boolean)
+              .filter(book => book && book.printinginstitute)
+              .map(book => book.printinginstitute)
           )).sort() as string[];
           
           console.log("Loaded from Supabase:", { 
@@ -313,51 +312,57 @@ const AddBookPage: React.FC = () => {
       setBooks([...books, newBook]);
 
       // Now try to save to Supabase
-      const insertData = {
-        id: newBook.id,
-        barcode: newBook.barcode || null,
-        name: newBook.name,
-        author: newBook.author,
-        category: newBook.category || null,
-        printinginstitute: newBook.printingInstitute || null,
-        originalprice: newBook.originalPrice,
-        saleprice: newBook.salePrice,
-        quantity: newBook.quantity,
-        imageurl: newBook.imageUrl || null,
-        stallid: newBook.stallId,
-        createdat: newBook.createdAt.toISOString(),
-        updatedat: newBook.updatedAt.toISOString(),
-      };
-
-      const { data: insertedData, error } = await supabase
-        .from("books")
-        .insert([insertData])
-        .select();
-      
-      if (error) {
-        console.error("Error adding book to Supabase:", error);
+      try {
+        const { error } = await supabase
+          .from("books")
+          .insert({
+            id: newBook.id,
+            barcode: newBook.barcode || null,
+            name: newBook.name,
+            author: newBook.author,
+            category: newBook.category || null,
+            printinginstitute: newBook.printingInstitute || null,
+            originalprice: newBook.originalPrice,
+            saleprice: newBook.salePrice,
+            quantity: newBook.quantity,
+            imageurl: newBook.imageUrl || null,
+            stallid: newBook.stallId,
+            createdat: newBook.createdAt.toISOString(),
+            updatedat: newBook.updatedAt.toISOString(),
+          });
+        
+        if (error) {
+          console.error("Error adding book to Supabase:", error);
+          toast({
+            title: "Error",
+            description: "Error saving book to database. Saved locally only.",
+            variant: "destructive",
+          });
+        } else {
+          console.log("Book added to Supabase successfully");
+          toast({
+            title: "Success",
+            description: "Book added successfully!",
+            variant: "default",
+          });
+          
+          form.reset();
+          navigate("/books");
+        }
+      } catch (supabaseError) {
+        console.error("Exception when adding book to Supabase:", supabaseError);
         toast({
-          title: "Error",
-          description: "Error saving book to database. Saved locally only.",
-          variant: "destructive",
-        });
-      } else {
-        console.log("Book added to Supabase successfully:", insertedData);
-        toast({
-          title: "Success",
-          description: "Book added successfully!",
+          title: t("common.warning"),
+          description: t("common.savedLocallyOnly"),
           variant: "default",
         });
-        
-        form.reset();
-        navigate("/books");
       }
-    } catch (supabaseError) {
-      console.error("Exception when adding book to Supabase:", supabaseError);
+    } catch (error) {
+      console.error("Error creating book:", error);
       toast({
-        title: t("common.warning"),
-        description: t("common.savedLocallyOnly"),
-        variant: "default",
+        title: "Error",
+        description: "Failed to create book",
+        variant: "destructive",
       });
     }
   };
@@ -376,7 +381,6 @@ const AddBookPage: React.FC = () => {
           <TabsContent value="add-book">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                {/* Image Upload */}
                 <ImageUpload 
                   initialImageUrl={imageUrl}
                   onImageUploaded={handleImageUploaded}

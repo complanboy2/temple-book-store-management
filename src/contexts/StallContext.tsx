@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { BookStall } from "@/types";
 import { getBookStalls, setBookStalls } from "@/services/storageService";
@@ -14,6 +15,10 @@ interface StallContextType {
   addBookStall: (name: string, location: string) => Promise<void>;
   updateBookStall: (id: string, name: string, location: string) => Promise<void>;
   deleteBookStall: (id: string) => Promise<void>;
+  // Adding these properties to match what other components expect
+  stores: BookStall[];
+  addStore: (name: string, location: string) => Promise<void>;
+  isLoading: boolean;
 }
 
 const StallContext = createContext<StallContextType>({
@@ -25,6 +30,10 @@ const StallContext = createContext<StallContextType>({
   addBookStall: async () => {},
   updateBookStall: async () => {},
   deleteBookStall: async () => {},
+  // Adding these properties to match what other components expect
+  stores: [],
+  addStore: async () => {},
+  isLoading: false,
 });
 
 export const useStallContext = () => useContext(StallContext);
@@ -33,11 +42,13 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [bookStalls, setBookStallsState] = useState<BookStall[]>([]);
   const [currentStore, setCurrentStore] = useState<string | null>(null);
   const [selectedStoreName, setSelectedStoreName] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const { currentUser } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchBookStalls = async () => {
+      setIsLoading(true);
       try {
         const { data, error } = await supabase
           .from("book_stalls")
@@ -76,6 +87,8 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           setCurrentStore(stalls[0].id);
           setSelectedStoreName(stalls[0].name);
         }
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -116,29 +129,37 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setBookStallsState(updatedStalls);
       setBookStalls(updatedStalls);
 
-      const { error } = await supabase
-        .from("book_stalls")
-        .insert([
-          {
+      // First insert into Supabase
+      try {
+        const { error } = await supabase
+          .from("book_stalls")
+          .insert({
             id: newBookStall.id,
             name: newBookStall.name,
             location: newBookStall.location,
             instituteid: newBookStall.instituteId,
             createdat: newBookStall.createdAt.toISOString(),
-          },
-        ]);
+          });
 
-      if (error) {
-        console.error("Error adding book stall to Supabase:", error);
+        if (error) {
+          console.error("Error adding book stall to Supabase:", error);
+          toast({
+            title: "Warning",
+            description: "Book stall saved locally but not synced with server",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "Success",
+            description: "Book stall added successfully",
+          });
+        }
+      } catch (error) {
+        console.error("Exception adding book stall to Supabase:", error);
         toast({
           title: "Warning",
           description: "Book stall saved locally but not synced with server",
           variant: "default",
-        });
-      } else {
-        toast({
-          title: "Success",
-          description: "Book stall added successfully",
         });
       }
 
@@ -176,25 +197,34 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setSelectedStoreName(name);
       }
 
-      const { error } = await supabase
-        .from("book_stalls")
-        .update({
-          name: updatedStall.name,
-          location: updatedStall.location,
-        })
-        .eq("id", id);
+      try {
+        const { error } = await supabase
+          .from("book_stalls")
+          .update({
+            name: updatedStall.name,
+            location: updatedStall.location,
+          })
+          .eq("id", id);
 
-      if (error) {
-        console.error("Error updating book stall in Supabase:", error);
+        if (error) {
+          console.error("Error updating book stall in Supabase:", error);
+          toast({
+            title: "Warning",
+            description: "Book stall updated locally but not synced with server",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "Success",
+            description: "Book stall updated successfully",
+          });
+        }
+      } catch (error) {
+        console.error("Exception updating book stall in Supabase:", error);
         toast({
           title: "Warning",
           description: "Book stall updated locally but not synced with server",
           variant: "default",
-        });
-      } else {
-        toast({
-          title: "Success",
-          description: "Book stall updated successfully",
         });
       }
     } catch (error) {
@@ -220,22 +250,31 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setSelectedStoreName(newStoreName);
       }
 
-      const { error } = await supabase
-        .from("book_stalls")
-        .delete()
-        .eq("id", id);
+      try {
+        const { error } = await supabase
+          .from("book_stalls")
+          .delete()
+          .eq("id", id);
 
-      if (error) {
-        console.error("Error deleting book stall from Supabase:", error);
+        if (error) {
+          console.error("Error deleting book stall from Supabase:", error);
+          toast({
+            title: "Warning",
+            description: "Book stall deleted locally but not synced with server",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "Success",
+            description: "Book stall deleted successfully",
+          });
+        }
+      } catch (error) {
+        console.error("Exception deleting book stall from Supabase:", error);
         toast({
           title: "Warning",
           description: "Book stall deleted locally but not synced with server",
           variant: "default",
-        });
-      } else {
-        toast({
-          title: "Success",
-          description: "Book stall deleted successfully",
         });
       }
     } catch (error) {
@@ -259,6 +298,10 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         addBookStall,
         updateBookStall,
         deleteBookStall,
+        // Adding aliases to match what other components expect
+        stores: bookStalls,
+        addStore: addBookStall,
+        isLoading,
       }}
     >
       {children}
