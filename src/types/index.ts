@@ -1,3 +1,4 @@
+
 export type UserRole = "super_admin" | "admin" | "personnel";
 
 export interface User {
@@ -115,7 +116,7 @@ export interface OrderItem {
   fulfilled: number;
 }
 
-export type OrderStatus = "pending" | "processing" | "fulfilled" | "cancelled";
+export type OrderStatus = "pending" | "processing" | "fulfilled" | "cancelled" | "confirmed" | "partially_fulfilled";
 
 export type PaymentStatus = 
   | "pending" 

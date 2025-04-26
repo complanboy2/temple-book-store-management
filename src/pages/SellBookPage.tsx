@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -27,9 +26,10 @@ const SellBookPage: React.FC = () => {
   const params = useParams();
   const navigate = useNavigate();
   const { currentStore } = useStallContext();
-  const { currentUser } = useAuth(); // Changed from user to currentUser
+  const { currentUser } = useAuth();
   const { t } = useTranslation();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -47,7 +47,6 @@ const SellBookPage: React.FC = () => {
 
       setIsLoading(true);
       try {
-        // Fetch book from Supabase
         const { data: supabaseBook, error } = await supabase
           .from('books')
           .select('*')
@@ -66,7 +65,6 @@ const SellBookPage: React.FC = () => {
           return;
         }
 
-        // Transform Supabase data to match our Book type
         const formattedBook: Book = {
           id: supabaseBook.id,
           barcode: supabaseBook.barcode || undefined,
@@ -98,7 +96,7 @@ const SellBookPage: React.FC = () => {
     };
 
     fetchBook();
-  }, [params.bookId, currentStore, navigate]);
+  }, [params.bookId, currentStore, navigate, toast]);
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
@@ -139,7 +137,6 @@ const SellBookPage: React.FC = () => {
       const saleId = generateId();
       const totalAmount = book.salePrice * quantity;
       
-      // Insert sale record to Supabase
       const { data: saleData, error: saleError } = await supabase
         .from('sales')
         .insert({
@@ -163,7 +160,6 @@ const SellBookPage: React.FC = () => {
       
       console.log("Sale recorded successfully:", saleData);
       
-      // Update book quantity in Supabase
       const newQuantity = book.quantity - quantity;
       const { data: bookData, error: updateError } = await supabase
         .from('books')
