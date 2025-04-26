@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,6 +22,7 @@ import NotFound from "./pages/NotFound";
 import SearchPage from "./pages/SearchPage";
 import ProfilePage from "./pages/ProfilePage";
 import AdminPage from "./pages/AdminPage";
+import SuperAdminPage from "./pages/SuperAdminPage";
 import CompleteSignupPage from "./pages/CompleteSignupPage";
 import SettingsPage from "./pages/SettingsPage";
 import MetadataManagerPage from "./pages/MetadataManagerPage";
@@ -49,6 +49,21 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   }
   
   if (!isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
+// SuperAdmin route component
+const SuperAdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, currentUser } = useAuth();
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  if (!currentUser || currentUser.role !== 'super_admin') {
     return <Navigate to="/" replace />;
   }
   
@@ -137,6 +152,12 @@ const AppContent = () => {
           <AdminRoute>
             <MetadataManagerPage />
           </AdminRoute>
+        } />
+        
+        <Route path="/super-admin" element={
+          <SuperAdminRoute>
+            <SuperAdminPage />
+          </SuperAdminRoute>
         } />
         
         <Route path="*" element={<NotFound />} />
