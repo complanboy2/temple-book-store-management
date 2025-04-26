@@ -1,787 +1,526 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Header from "@/components/Header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { OrderStatus, PaymentStatus, Book, Order } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useStallContext } from "@/contexts/StallContext";
-import MobileHeader from "@/components/MobileHeader";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  getBooks,
-  getOrders,
-  addOrder,
-  generateId,
-  updateOrder,
-  fulfillOrder,
-  updateBookQuantity
-} from "@/services/storageService";
+import { Book } from "@/types";
+import { Loader2, CheckCircle, AlertTriangle, Plus, Trash } from "lucide-react";
+import { generateId } from "@/services/storageService";
 import { useTranslation } from "react-i18next";
-import { 
-  Calendar, 
-  CalendarPlus,
-  FileText,
-  Check,
-  X,
-  Plus,
-  Trash,
-  Search
-} from "lucide-react";
+
+// Define OrderStatus type
+type OrderStatus = "pending" | "processing" | "fulfilled" | "cancelled";
+
+// Define Order type
+interface Order {
+  id: string;
+  customerName: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  status: OrderStatus;
+  items: OrderItem[];
+  totalAmount: number;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  stallId: string;
+  personnelId: string;
+}
+
+// Define OrderItem type
+interface OrderItem {
+  id: string;
+  bookId: string;
+  quantity: number;
+  price: number;
+  orderId: string;
+}
 
 const OrderManagementPage = () => {
-  const { currentStore } = useStallContext();
-  const [books, setBooks] = useState<Book[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
-  const [activeFilter, setActiveFilter] = useState<string>("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const navigate = useNavigate();
+  const [books, setBooks] = useState<Book[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [orderItems, setOrderItems] = useState<{bookId: string, quantity: number}[]>([
+    { bookId: "", quantity: 1 }
+  ]);
+  const [notes, setNotes] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { currentStore } = useStallContext();
+  const { currentUser } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { t } = useTranslation();
-  const [isAddingOrder, setIsAddingOrder] = useState(false);
-  const [newOrder, setNewOrder] = useState<Partial<Order>>({
-    customerName: "",
-    customerPhone: "",
-    customerEmail: "",
-    status: "pending",
-    paymentStatus: "pending",
-    items: [],
-    totalAmount: 0,
-    notes: ""
-  });
-  const [selectedBookId, setSelectedBookId] = useState<string>("");
-  const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
-  const [fulfillmentItems, setFulfillmentItems] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    if (currentStore) {
-      loadBooks();
-      loadOrders();
-    }
-  }, [currentStore]);
-
-  useEffect(() => {
-    applyFilters();
-  }, [orders, activeFilter, searchQuery]);
-
-  const loadBooks = async () => {
-    try {
-      const storeBooks = getBooks().filter(book => book.stallId === currentStore);
-      setBooks(storeBooks);
-    } catch (err) {
-      console.error("Error loading books:", err);
-      toast({
-        title: "Error",
-        description: "Failed to load books",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const loadOrders = async () => {
-    try {
-      const allOrders = getOrders().filter(order => order.stallId === currentStore);
-      setOrders(allOrders);
-      setFilteredOrders(allOrders);
-    } catch (err) {
-      console.error("Error loading orders:", err);
-      toast({
-        title: "Error",
-        description: "Failed to load orders",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const applyFilters = () => {
-    let result = [...orders];
-
-    // Apply status filter
-    if (activeFilter) {
-      result = result.filter(order => order.status === activeFilter);
-    }
-
-    // Apply search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(order =>
-        order.customerName.toLowerCase().includes(query) ||
-        (order.customerPhone && order.customerPhone.includes(query)) ||
-        (order.customerEmail && order.customerEmail.toLowerCase().includes(query))
-      );
-    }
-
-    // Sort by date, newest first
-    result.sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
-    
-    setFilteredOrders(result);
-  };
-
-  const handleAddItem = () => {
-    if (!selectedBookId || selectedQuantity <= 0) return;
-
-    const book = books.find(b => b.id === selectedBookId);
-    if (!book) return;
-
-    // Check if we already have this book in the order
-    const existingItemIndex = newOrder.items?.findIndex(item => item.bookId === selectedBookId);
-    
-    let updatedItems = [...(newOrder.items || [])];
-    let updatedTotalAmount = newOrder.totalAmount || 0;
-
-    if (existingItemIndex !== undefined && existingItemIndex >= 0) {
-      // Update existing item
-      const existingItem = updatedItems[existingItemIndex];
-      const newQuantity = existingItem.quantity + selectedQuantity;
-      updatedItems[existingItemIndex] = {
-        ...existingItem,
-        quantity: newQuantity,
-      };
-      updatedTotalAmount += selectedQuantity * book.salePrice;
-    } else {
-      // Add new item
-      updatedItems.push({
-        id: generateId(),
-        bookId: book.id,
-        quantity: selectedQuantity,
-        priceAtOrder: book.salePrice,
-        fulfilled: 0
-      });
-      updatedTotalAmount += selectedQuantity * book.salePrice;
-    }
-
-    setNewOrder({
-      ...newOrder,
-      items: updatedItems,
-      totalAmount: updatedTotalAmount
-    });
-
-    // Reset selection
-    setSelectedBookId("");
-    setSelectedQuantity(1);
-  };
-
-  const handleRemoveItem = (itemId: string) => {
-    const item = newOrder.items?.find(item => item.id === itemId);
-    if (!item) return;
-
-    const book = books.find(b => b.id === item.bookId);
-    if (!book) return;
-
-    const updatedItems = newOrder.items?.filter(i => i.id !== itemId) || [];
-    const updatedTotalAmount = (newOrder.totalAmount || 0) - (item.quantity * (book.salePrice));
-
-    setNewOrder({
-      ...newOrder,
-      items: updatedItems,
-      totalAmount: updatedTotalAmount
-    });
-  };
-
-  const handleCreateOrder = () => {
-    if (!currentStore) {
-      toast({
-        title: "Error",
-        description: "No store selected",
-        variant: "destructive",
-      });
+    if (!currentUser || !currentUser.canrestock) {
+      navigate("/");
       return;
     }
 
-    if (!newOrder.customerName || !newOrder.items?.length) {
-      toast({
-        title: "Error",
-        description: "Customer name and at least one item are required",
-        variant: "destructive",
-      });
-      return;
-    }
+    const fetchData = async () => {
+      setIsLoading(true);
 
-    const order: Order = {
-      id: generateId(),
-      customerName: newOrder.customerName || "",
-      customerPhone: newOrder.customerPhone,
-      customerEmail: newOrder.customerEmail,
-      orderDate: new Date(),
-      status: "pending",
-      items: newOrder.items || [],
-      totalAmount: newOrder.totalAmount || 0,
-      paymentStatus: newOrder.paymentStatus as PaymentStatus || "pending",
-      paymentMethod: newOrder.paymentMethod,
-      notes: newOrder.notes,
-      adminId: "current-admin", // Replace with actual admin ID when available
-      stallId: currentStore,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      synced: false
+      if (!currentStore) {
+        setBooks([]);
+        setOrders([]);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Fetch books
+        const { data: booksData, error: booksError } = await supabase
+          .from("books")
+          .select("*")
+          .eq("stallid", currentStore)
+          .order('name', { ascending: true });
+
+        if (booksError) {
+          console.error("Error fetching books:", booksError);
+          toast({
+            title: "Error",
+            description: "Failed to load books",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Transform to Book type
+        const formattedBooks: Book[] = booksData.map(book => ({
+          id: book.id,
+          barcode: book.barcode || undefined,
+          name: book.name,
+          author: book.author,
+          category: book.category || "",
+          printingInstitute: book.printinginstitute || "",
+          originalPrice: book.originalprice,
+          salePrice: book.saleprice,
+          quantity: book.quantity,
+          stallId: book.stallid,
+          imageUrl: book.imageurl,
+          createdAt: book.createdat ? new Date(book.createdat) : new Date(),
+          updatedAt: book.updatedat ? new Date(book.updatedat) : new Date()
+        }));
+
+        setBooks(formattedBooks);
+
+        // Fetch orders - for now using a placeholder as we need to create the orders table
+        // This will be replaced with actual data once we have the orders table
+        setOrders([]);
+
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load data",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+      }
     };
 
-    addOrder(order);
-    
-    toast({
-      title: "Success",
-      description: "Order created successfully",
-    });
+    fetchData();
+  }, [currentStore, currentUser, navigate, toast, t]);
 
-    // Reset form and reload orders
-    setIsAddingOrder(false);
-    setNewOrder({
-      customerName: "",
-      customerPhone: "",
-      customerEmail: "",
-      status: "pending",
-      paymentStatus: "pending",
-      items: [],
-      totalAmount: 0,
-      notes: ""
-    });
-    loadOrders();
+  const handleAddItemField = () => {
+    setOrderItems([...orderItems, { bookId: "", quantity: 1 }]);
   };
 
-  const handleFulfillOrder = (orderId: string) => {
-    if (!fulfillmentItems[orderId]) {
+  const handleRemoveItemField = (index: number) => {
+    const newItems = [...orderItems];
+    newItems.splice(index, 1);
+    setOrderItems(newItems);
+  };
+
+  const handleItemChange = (index: number, field: "bookId" | "quantity", value: string | number) => {
+    const newItems = [...orderItems];
+    newItems[index][field] = value;
+    setOrderItems(newItems);
+  };
+
+  const calculateTotal = () => {
+    return orderItems.reduce((total, item) => {
+      const book = books.find(b => b.id === item.bookId);
+      return total + (book ? book.salePrice * item.quantity : 0);
+    }, 0);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!currentStore || !currentUser) {
       toast({
         title: "Error",
-        description: "Please fill in fulfillment quantities",
+        description: "Missing store or user information",
         variant: "destructive",
       });
       return;
     }
 
-    const success = fulfillOrder(orderId, fulfillmentItems);
-    if (success) {
+    // Validate form
+    if (!customerName) {
       toast({
-        title: "Success",
-        description: "Order fulfillment updated",
-      });
-      loadOrders();
-      loadBooks();
-      setFulfillmentItems({});
-    } else {
-      toast({
-        title: "Error",
-        description: "Failed to update order fulfillment",
+        title: "Missing Information",
+        description: "Customer name is required",
         variant: "destructive",
       });
+      return;
     }
-  };
 
-  const handleUpdateFulfillmentQuantity = (orderId: string, itemId: string, value: string) => {
-    const numValue = parseInt(value) || 0;
-    setFulfillmentItems(prev => ({
-      ...prev,
-      [itemId]: numValue
-    }));
-  };
+    if (orderItems.length === 0 || !orderItems.every(item => item.bookId && item.quantity > 0)) {
+      toast({
+        title: "Invalid Order Items",
+        description: "Please select books and quantities for all items",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  const handleUpdateOrderStatus = (orderId: string, status: OrderStatus) => {
-    const updatedOrder = updateOrder(orderId, { status, updatedAt: new Date() });
-    if (updatedOrder) {
+    // Check if books are in stock
+    for (const item of orderItems) {
+      const book = books.find(b => b.id === item.bookId);
+      if (!book || book.quantity < item.quantity) {
+        toast({
+          title: "Insufficient Stock",
+          description: `Not enough copies of "${book?.name || 'Unknown book'}" available`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const orderId = generateId();
+      const totalAmount = calculateTotal();
+      const now = new Date().toISOString();
+
+      // In a production environment, we would insert into an orders table
+      // For now, we'll just update the book quantities and create sales records
+
+      // Update book quantities
+      for (const item of orderItems) {
+        const book = books.find(b => b.id === item.bookId);
+        if (book) {
+          const newQuantity = book.quantity - item.quantity;
+          
+          const { error: updateError } = await supabase
+            .from('books')
+            .update({ 
+              quantity: newQuantity, 
+              updatedat: now 
+            })
+            .eq('id', book.id);
+            
+          if (updateError) {
+            console.error(`Error updating quantity for book ${book.id}:`, updateError);
+            throw new Error("Failed to update inventory");
+          }
+
+          // Create a sale record for this item
+          const { error: saleError } = await supabase
+            .from('sales')
+            .insert({
+              id: generateId(),
+              bookid: book.id,
+              quantity: item.quantity,
+              totalamount: book.salePrice * item.quantity,
+              paymentmethod: "order",
+              buyername: customerName,
+              buyerphone: customerPhone || null,
+              personnelid: currentUser.id,
+              stallid: currentStore,
+              synced: true
+            });
+            
+          if (saleError) {
+            console.error(`Error creating sale for book ${book.id}:`, saleError);
+            throw new Error("Failed to record sale");
+          }
+        }
+      }
+
       toast({
         title: "Success",
-        description: `Order status updated to ${status}`,
+        description: "Order processed successfully",
       });
-      loadOrders();
-    }
-  };
 
-  const handleUpdatePaymentStatus = (orderId: string, paymentStatus: PaymentStatus) => {
-    const updatedOrder = updateOrder(orderId, { paymentStatus, updatedAt: new Date() });
-    if (updatedOrder) {
+      // Reset form
+      setCustomerName("");
+      setCustomerPhone("");
+      setCustomerEmail("");
+      setOrderItems([{ bookId: "", quantity: 1 }]);
+      setNotes("");
+
+      // Refresh book data
+      const { data: refreshedBooks, error: refreshError } = await supabase
+        .from("books")
+        .select("*")
+        .eq("stallid", currentStore)
+        .order('name', { ascending: true });
+
+      if (!refreshError && refreshedBooks) {
+        const formattedBooks: Book[] = refreshedBooks.map(book => ({
+          id: book.id,
+          barcode: book.barcode || undefined,
+          name: book.name,
+          author: book.author,
+          category: book.category || "",
+          printingInstitute: book.printinginstitute || "",
+          originalPrice: book.originalprice,
+          salePrice: book.saleprice,
+          quantity: book.quantity,
+          stallId: book.stallid,
+          imageUrl: book.imageurl,
+          createdAt: book.createdat ? new Date(book.createdat) : new Date(),
+          updatedAt: book.updatedat ? new Date(book.updatedat) : new Date()
+        }));
+        
+        setBooks(formattedBooks);
+      }
+    } catch (error) {
+      console.error("Order submission error:", error);
       toast({
-        title: "Success",
-        description: `Payment status updated to ${paymentStatus}`,
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to process order",
+        variant: "destructive",
       });
-      loadOrders();
+    } finally {
+      setIsSubmitting(false);
     }
-  };
-
-  const getBookNameById = (bookId: string) => {
-    const book = books.find(b => b.id === bookId);
-    return book ? book.name : "Unknown Book";
-  };
-
-  const renderStatusBadge = (status: OrderStatus) => {
-    let color = "";
-    switch (status) {
-      case "pending":
-        color = "bg-yellow-100 text-yellow-800";
-        break;
-      case "confirmed":
-        color = "bg-blue-100 text-blue-800";
-        break;
-      case "processing":
-        color = "bg-purple-100 text-purple-800";
-        break;
-      case "partially_fulfilled":
-        color = "bg-orange-100 text-orange-800";
-        break;
-      case "fulfilled":
-        color = "bg-green-100 text-green-800";
-        break;
-      case "cancelled":
-        color = "bg-red-100 text-red-800";
-        break;
-      default:
-        color = "bg-gray-100 text-gray-800";
-    }
-    return (
-      <span className={`px-2 py-1 rounded text-xs font-medium ${color}`}>
-        {status.replace('_', ' ')}
-      </span>
-    );
-  };
-
-  const renderPaymentBadge = (status: PaymentStatus) => {
-    let color = "";
-    switch (status) {
-      case "pending":
-        color = "bg-yellow-100 text-yellow-800";
-        break;
-      case "partially_paid":
-        color = "bg-orange-100 text-orange-800";
-        break;
-      case "paid":
-        color = "bg-green-100 text-green-800";
-        break;
-      case "refunded":
-        color = "bg-blue-100 text-blue-800";
-        break;
-      default:
-        color = "bg-gray-100 text-gray-800";
-    }
-    return (
-      <span className={`px-2 py-1 rounded text-xs font-medium ${color}`}>
-        {status.replace('_', ' ')}
-      </span>
-    );
-  };
-
-  const calculateFulfillmentPercentage = (order: Order) => {
-    const totalItems = order.items.reduce((acc, item) => acc + item.quantity, 0);
-    const fulfilledItems = order.items.reduce((acc, item) => acc + (item.fulfilled || 0), 0);
-    return totalItems > 0 ? Math.round((fulfilledItems / totalItems) * 100) : 0;
   };
 
   return (
     <div className="min-h-screen bg-temple-background pb-20">
-      <MobileHeader
-        title="Order Management"
-        showBackButton={true}
-        backTo="/"
-        showSearchButton={false}
-        showStallSelector={true}
-      />
+      <Header />
       
       <main className="container mx-auto px-4 py-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-temple-maroon mb-4 md:mb-0">Order Management</h1>
-          
-          {!isAddingOrder && (
-            <Button
-              onClick={() => setIsAddingOrder(true)}
-              className="bg-temple-saffron hover:bg-temple-saffron/90 flex items-center gap-2"
-            >
-              <CalendarPlus className="h-4 w-4" />
-              Create New Order
-            </Button>
-          )}
-        </div>
+        <h1 className="text-2xl font-bold text-temple-maroon mb-6">Order Management</h1>
         
-        {isAddingOrder ? (
-          <Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* New Order Form */}
+          <Card className="temple-card">
             <CardHeader>
-              <CardTitle>Create New Order</CardTitle>
-              <CardDescription>Enter customer and order details below</CardDescription>
+              <CardTitle className="text-lg text-temple-maroon">New Order</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="customerName">Customer Name *</Label>
                     <Input 
-                      id="customerName" 
-                      value={newOrder.customerName || ''} 
-                      onChange={(e) => setNewOrder({...newOrder, customerName: e.target.value})}
+                      id="customerName"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      required
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="customerPhone">Phone Number</Label>
+                    <Label htmlFor="customerPhone">Customer Phone</Label>
                     <Input 
-                      id="customerPhone" 
-                      value={newOrder.customerPhone || ''} 
-                      onChange={(e) => setNewOrder({...newOrder, customerPhone: e.target.value})}
+                      id="customerPhone"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
                     />
                   </div>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="customerEmail">Email</Label>
+                  <Label htmlFor="customerEmail">Customer Email</Label>
                   <Input 
-                    id="customerEmail" 
+                    id="customerEmail"
                     type="email"
-                    value={newOrder.customerEmail || ''} 
-                    onChange={(e) => setNewOrder({...newOrder, customerEmail: e.target.value})}
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
                   />
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="paymentStatus">Payment Status</Label>
-                    <Select 
-                      value={newOrder.paymentStatus || 'pending'} 
-                      onValueChange={(value) => setNewOrder({...newOrder, paymentStatus: value as PaymentStatus})}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label>Order Items *</Label>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleAddItemField}
+                      className="flex items-center gap-1"
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select payment status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="partially_paid">Partially Paid</SelectItem>
-                        <SelectItem value="paid">Paid</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      <Plus className="h-4 w-4" /> Add Item
+                    </Button>
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="paymentMethod">Payment Method</Label>
-                    <Select 
-                      value={newOrder.paymentMethod || ''} 
-                      onValueChange={(value) => setNewOrder({...newOrder, paymentMethod: value})}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select payment method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cash">Cash</SelectItem>
-                        <SelectItem value="upi">UPI</SelectItem>
-                        <SelectItem value="card">Card</SelectItem>
-                        <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {orderItems.map((item, index) => (
+                    <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
+                      <div className="md:col-span-7">
+                        <Label htmlFor={`book-${index}`} className="sr-only">Book</Label>
+                        <Select
+                          value={item.bookId}
+                          onValueChange={(value) => handleItemChange(index, "bookId", value)}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select book" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {books
+                              .filter(book => book.quantity > 0)
+                              .map((book) => (
+                                <SelectItem key={book.id} value={book.id}>
+                                  {book.name} ({book.quantity} available)
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="md:col-span-3">
+                        <Label htmlFor={`quantity-${index}`} className="sr-only">Quantity</Label>
+                        <Input
+                          id={`quantity-${index}`}
+                          type="number"
+                          min="1"
+                          value={item.quantity}
+                          onChange={(e) => handleItemChange(index, "quantity", parseInt(e.target.value) || 1)}
+                          className="w-full"
+                        />
+                      </div>
+                      
+                      <div className="md:col-span-2 flex justify-center">
+                        {orderItems.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveItemField(index)}
+                            className="h-10 p-0 w-10"
+                          >
+                            <Trash className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
+                      
+                      {item.bookId && (
+                        <div className="md:col-span-12 text-sm text-muted-foreground">
+                          {(() => {
+                            const book = books.find(b => b.id === item.bookId);
+                            if (book) {
+                              return `${book.author} - ₹${book.salePrice.toFixed(2)} × ${item.quantity} = ₹${(book.salePrice * item.quantity).toFixed(2)}`;
+                            }
+                            return null;
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="notes">Notes</Label>
                   <Input 
-                    id="notes" 
-                    value={newOrder.notes || ''} 
-                    onChange={(e) => setNewOrder({...newOrder, notes: e.target.value})}
+                    id="notes"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
                   />
                 </div>
                 
-                <div className="border-t border-gray-200 pt-4">
-                  <h3 className="font-medium text-lg mb-2">Order Items</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="bookSelect">Select Book</Label>
-                      <Select value={selectedBookId} onValueChange={setSelectedBookId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a book" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {books.map(book => (
-                            <SelectItem key={book.id} value={book.id}>
-                              {book.name} (₹{book.salePrice})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="quantity">Quantity</Label>
-                      <Input 
-                        id="quantity" 
-                        type="number" 
-                        min="1" 
-                        value={selectedQuantity} 
-                        onChange={(e) => setSelectedQuantity(parseInt(e.target.value) || 1)}
-                      />
-                    </div>
-                    
-                    <div className="flex items-end">
-                      <Button 
-                        onClick={handleAddItem}
-                        className="w-full flex items-center gap-2"
-                      >
-                        <Plus className="h-4 w-4" />
-                        Add Item
-                      </Button>
-                    </div>
+                <div className="border-t pt-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <p className="font-medium">Total Amount</p>
+                    <p className="font-bold text-xl text-temple-maroon">₹{calculateTotal().toFixed(2)}</p>
                   </div>
                   
-                  {newOrder.items && newOrder.items.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Book</TableHead>
-                          <TableHead className="text-right">Price</TableHead>
-                          <TableHead className="text-right">Qty</TableHead>
-                          <TableHead className="text-right">Total</TableHead>
-                          <TableHead className="text-right">Action</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {newOrder.items.map((item) => {
-                          const book = books.find(b => b.id === item.bookId);
-                          return (
-                            <TableRow key={item.id}>
-                              <TableCell>{book ? book.name : 'Unknown Book'}</TableCell>
-                              <TableCell className="text-right">₹{item.priceAtOrder.toFixed(2)}</TableCell>
-                              <TableCell className="text-right">{item.quantity}</TableCell>
-                              <TableCell className="text-right">₹{(item.priceAtOrder * item.quantity).toFixed(2)}</TableCell>
-                              <TableCell className="text-right">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleRemoveItem(item.id)}
-                                >
-                                  <Trash className="h-4 w-4 text-red-500" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                        <TableRow>
-                          <TableCell colSpan={3} className="text-right font-bold">Total:</TableCell>
-                          <TableCell className="text-right font-bold">₹{newOrder.totalAmount?.toFixed(2)}</TableCell>
-                          <TableCell></TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  ) : (
-                    <p className="text-muted-foreground text-center py-4">No items added yet</p>
-                  )}
-                </div>
-                
-                <div className="flex justify-end gap-2 pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsAddingOrder(false)}
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={isSubmitting}
                   >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleCreateOrder}
-                    className="bg-temple-saffron hover:bg-temple-saffron/90"
-                  >
-                    Create Order
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      "Process Order"
+                    )}
                   </Button>
                 </div>
-              </div>
+              </form>
             </CardContent>
           </Card>
-        ) : (
-          <>
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
-              <div className="w-full md:w-1/3 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search orders..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              
-              <Select
-                value={activeFilter}
-                onValueChange={setActiveFilter}
-              >
-                <SelectTrigger className="w-full md:w-[200px]">
-                  <SelectValue placeholder="All orders" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">All orders</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="processing">Processing</SelectItem>
-                  <SelectItem value="partially_fulfilled">Partially Fulfilled</SelectItem>
-                  <SelectItem value="fulfilled">Fulfilled</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {filteredOrders.length > 0 ? (
-              <div className="space-y-4">
-                {filteredOrders.map((order) => (
-                  <Card key={order.id} className="overflow-hidden">
-                    <CardHeader className="bg-muted/50 py-4">
-                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-                        <div>
-                          <CardTitle className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4" />
-                            Order #{order.id.substring(0, 8)}
-                          </CardTitle>
-                          <CardDescription className="mt-1">
-                            {new Date(order.orderDate).toLocaleDateString()} • {order.customerName}
-                            {order.customerPhone && ` • ${order.customerPhone}`}
-                          </CardDescription>
-                        </div>
-                        <div className="flex gap-2 mt-2 md:mt-0">
-                          {renderStatusBadge(order.status)}
-                          {renderPaymentBadge(order.paymentStatus)}
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-4">
-                      <div className="mb-4">
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-green-500 h-2 rounded-full"
-                            style={{ width: `${calculateFulfillmentPercentage(order)}%` }}
-                          ></div>
-                        </div>
-                        <div className="flex justify-between text-xs mt-1">
-                          <span>Fulfillment: {calculateFulfillmentPercentage(order)}%</span>
-                          <span>
-                            {order.items.reduce((acc, item) => acc + (item.fulfilled || 0), 0)} of {order.items.reduce((acc, item) => acc + item.quantity, 0)} items fulfilled
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Item</TableHead>
-                            <TableHead className="text-right">Price</TableHead>
-                            <TableHead className="text-right">Qty</TableHead>
-                            <TableHead className="text-right">Fulfilled</TableHead>
-                            <TableHead className="text-right">Total</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {order.items.map((item) => (
-                            <TableRow key={item.id}>
-                              <TableCell>{getBookNameById(item.bookId)}</TableCell>
-                              <TableCell className="text-right">₹{item.priceAtOrder.toFixed(2)}</TableCell>
-                              <TableCell className="text-right">{item.quantity}</TableCell>
-                              <TableCell className="text-right">
-                                {order.status !== "fulfilled" ? (
-                                  <div className="flex justify-end">
-                                    <Input
-                                      type="number"
-                                      min="0"
-                                      max={item.quantity - (item.fulfilled || 0)}
-                                      className="w-16 text-right"
-                                      placeholder="0"
-                                      onChange={(e) => handleUpdateFulfillmentQuantity(order.id, item.id, e.target.value)}
-                                    />
-                                  </div>
-                                ) : (
-                                  item.fulfilled || 0
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right">₹{(item.priceAtOrder * item.quantity).toFixed(2)}</TableCell>
-                            </TableRow>
-                          ))}
-                          <TableRow>
-                            <TableCell colSpan={4} className="text-right font-bold">Total:</TableCell>
-                            <TableCell className="text-right font-bold">₹{order.totalAmount.toFixed(2)}</TableCell>
-                          </TableRow>
-                        </TableBody>
-                      </Table>
-                      
-                      {order.notes && (
-                        <div className="mt-4 p-3 bg-muted/30 rounded-md">
-                          <p className="text-sm font-medium">Notes:</p>
-                          <p className="text-sm">{order.notes}</p>
-                        </div>
-                      )}
-                      
-                      <div className="flex justify-between mt-6">
-                        <div className="space-x-2">
-                          <Select
-                            value={order.status}
-                            onValueChange={(value) => handleUpdateOrderStatus(order.id, value as OrderStatus)}
-                          >
-                            <SelectTrigger className="w-[180px]">
-                              <SelectValue placeholder="Update Status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="confirmed">Confirmed</SelectItem>
-                              <SelectItem value="processing">Processing</SelectItem>
-                              <SelectItem value="partially_fulfilled">Partially Fulfilled</SelectItem>
-                              <SelectItem value="fulfilled">Fulfilled</SelectItem>
-                              <SelectItem value="cancelled">Cancelled</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          
-                          <Select
-                            value={order.paymentStatus}
-                            onValueChange={(value) => handleUpdatePaymentStatus(order.id, value as PaymentStatus)}
-                          >
-                            <SelectTrigger className="w-[180px]">
-                              <SelectValue placeholder="Update Payment" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="partially_paid">Partially Paid</SelectItem>
-                              <SelectItem value="paid">Paid</SelectItem>
-                              <SelectItem value="refunded">Refunded</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        {order.status !== "fulfilled" && order.status !== "cancelled" && (
-                          <Button
-                            onClick={() => handleFulfillOrder(order.id)}
-                            className="bg-temple-maroon hover:bg-temple-maroon/90"
-                          >
-                            Update Fulfillment
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-lg text-muted-foreground">No orders found</p>
-                {activeFilter && (
-                  <Button
-                    onClick={() => setActiveFilter("")}
-                    variant="link"
-                    className="mt-2 text-temple-saffron"
-                  >
-                    Clear filters
-                  </Button>
-                )}
-              </div>
-            )}
-          </>
-        )}
+          
+          {/* Recent Orders */}
+          <Card className="temple-card">
+            <CardHeader>
+              <CardTitle className="text-lg text-temple-maroon">Recent Orders</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="h-60 flex items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-temple-maroon" />
+                </div>
+              ) : orders.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {orders.map((order) => (
+                      <TableRow key={order.id}>
+                        <TableCell>{order.createdAt.toLocaleDateString()}</TableCell>
+                        <TableCell>{order.customerName}</TableCell>
+                        <TableCell>
+                          {order.status === "fulfilled" ? (
+                            <span className="flex items-center text-green-600">
+                              <CheckCircle className="h-4 w-4 mr-1" /> Fulfilled
+                            </span>
+                          ) : order.status === "cancelled" ? (
+                            <span className="flex items-center text-red-600">
+                              <AlertTriangle className="h-4 w-4 mr-1" /> Cancelled
+                            </span>
+                          ) : (
+                            <span className="flex items-center text-amber-600">
+                              <Loader2 className="h-4 w-4 mr-1" /> {order.status}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">₹{order.totalAmount.toFixed(2)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="h-60 flex items-center justify-center">
+                  <p className="text-muted-foreground">No recent orders</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </main>
     </div>
   );

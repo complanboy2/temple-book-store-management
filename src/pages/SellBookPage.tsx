@@ -6,7 +6,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Book } from "@/types";
 import { generateId } from "@/services/storageService";
 import { useStallContext } from "@/contexts/StallContext";
@@ -114,7 +114,7 @@ const SellBookPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!book || !currentStore || !currentUser) { // Changed from user to currentUser
+    if (!book || !currentStore || !currentUser) {
       toast({
         title: "Error",
         description: "Missing required information",
@@ -135,11 +135,12 @@ const SellBookPage: React.FC = () => {
     setIsSubmitting(true);
     
     try {
+      console.log("Starting sale process for book:", book.id);
       const saleId = generateId();
       const totalAmount = book.salePrice * quantity;
       
       // Insert sale record to Supabase
-      const { error: saleError } = await supabase
+      const { data: saleData, error: saleError } = await supabase
         .from('sales')
         .insert({
           id: saleId,
@@ -149,34 +150,43 @@ const SellBookPage: React.FC = () => {
           paymentmethod: paymentMethod,
           buyername: buyerName || null,
           buyerphone: buyerPhone || null,
-          personnelid: currentUser.id, // Changed from user.id to currentUser.id
+          personnelid: currentUser.id,
           stallid: currentStore,
           synced: true
-        });
+        })
+        .select();
       
       if (saleError) {
         console.error("Error creating sale:", saleError);
         throw new Error("Failed to record sale");
       }
       
+      console.log("Sale recorded successfully:", saleData);
+      
       // Update book quantity in Supabase
       const newQuantity = book.quantity - quantity;
-      const { error: updateError } = await supabase
+      const { data: bookData, error: updateError } = await supabase
         .from('books')
-        .update({ quantity: newQuantity, updatedat: new Date().toISOString() })
-        .eq('id', book.id);
+        .update({ 
+          quantity: newQuantity, 
+          updatedat: new Date().toISOString() 
+        })
+        .eq('id', book.id)
+        .select();
         
       if (updateError) {
         console.error("Error updating book quantity:", updateError);
         throw new Error("Failed to update inventory");
       }
+      
+      console.log("Book inventory updated:", bookData);
 
       toast({
         title: "Success",
         description: "Sale completed successfully",
       });
       
-      navigate('/books');
+      navigate('/sales');
     } catch (error) {
       console.error("Sale submission error:", error);
       toast({
