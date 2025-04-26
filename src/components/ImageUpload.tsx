@@ -1,10 +1,10 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { generateImageHash, findExistingImage, recordImageHash } from "@/services/imageService";
+import { getImageUrl } from "@/services/imageService";
 
 interface ImageUploadProps {
   initialImageUrl?: string;
@@ -48,93 +48,20 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ initialImageUrl, onImageUploa
     try {
       setIsUploading(true);
       
-      // Generate hash for the image file
-      const imageHash = await generateImageHash(file);
+      // Use our enhanced image service function
+      const uploadUrl = await getImageUrl(file);
       
-      // Check if the image already exists
-      const existingImageUrl = await findExistingImage(imageHash);
-      
-      if (existingImageUrl) {
-        console.log("Found existing image with same hash:", existingImageUrl);
-        setImageUrl(existingImageUrl);
-        onImageUploaded(existingImageUrl);
+      if (uploadUrl) {
+        setImageUrl(uploadUrl);
+        onImageUploaded(uploadUrl);
         
         toast({
-          title: "Image Reused",
-          description: "This image already exists and has been linked to your book",
+          title: "Success",
+          description: "Image uploaded successfully",
         });
-        
-        setIsUploading(false);
-        return;
+      } else {
+        throw new Error("Failed to upload image");
       }
-      
-      // If image doesn't exist, proceed with upload to Supabase Storage
-      let uploadUrl = "";
-      const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
-      
-      try {
-        const { data: bucketData, error: bucketError } = await supabase
-          .storage
-          .getBucket('book-images');
-          
-        // If bucket doesn't exist, create it
-        if (bucketError) {
-          const { data, error } = await supabase
-            .storage
-            .createBucket('book-images', { public: true });
-            
-          if (error) throw error;
-          console.log("Created bucket 'book-images'");
-        }
-        
-        // Upload the file
-        const { data, error } = await supabase
-          .storage
-          .from('book-images')
-          .upload(fileName, file);
-          
-        if (error) throw error;
-        
-        // Get public URL
-        const { data: urlData } = supabase
-          .storage
-          .from('book-images')
-          .getPublicUrl(fileName);
-          
-        uploadUrl = urlData.publicUrl;
-        console.log("Image uploaded to Supabase:", uploadUrl);
-        
-        // Record the hash and URL to our database
-        await recordImageHash(imageHash, uploadUrl);
-        
-      } catch (storageError) {
-        console.error("Failed to upload to Supabase Storage:", storageError);
-        
-        // Fallback: Convert to data URL
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          if (e.target?.result) {
-            uploadUrl = e.target.result as string;
-            setImageUrl(uploadUrl);
-            onImageUploaded(uploadUrl);
-            
-            // Also record the data URL hash for future reference
-            await recordImageHash(imageHash, uploadUrl);
-          }
-        };
-        reader.readAsDataURL(file);
-        return;
-      }
-      
-      // Set the URL
-      setImageUrl(uploadUrl);
-      onImageUploaded(uploadUrl);
-      
-      toast({
-        title: "Success",
-        description: "Image uploaded successfully",
-      });
-      
     } catch (error) {
       console.error("Error in image upload:", error);
       toast({

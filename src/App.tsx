@@ -1,193 +1,80 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { StallProvider } from "@/contexts/StallContext";
-import { useEffect } from "react";
-import { initializeSampleData } from "@/services/storageService";
-import MobileNavBar from "@/components/MobileNavBar";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { Route, Routes } from "react-router-dom";
+import React, { Suspense, lazy, useEffect } from "react";
+import { useStallContext } from "./contexts/StallContext";
+import { useToast } from "./hooks/use-toast";
 
-// Pages
-import DashboardPage from "./pages/DashboardPage";
+import "./App.css";
+import { Toaster } from "./components/ui/toaster";
 import LoginPage from "./pages/LoginPage";
-import BooksPage from "./pages/BooksPage";
-import SellBookPage from "./pages/SellBookPage";
-import AddBookPage from "./pages/AddBookPage";
-import SalesPage from "./pages/SalesPage";
-import ReportsPage from "./pages/ReportsPage";
-import NotFound from "./pages/NotFound";
-import SearchPage from "./pages/SearchPage";
-import ProfilePage from "./pages/ProfilePage";
-import AdminPage from "./pages/AdminPage";
-import SuperAdminPage from "./pages/SuperAdminPage";
 import CompleteSignupPage from "./pages/CompleteSignupPage";
-import SettingsPage from "./pages/SettingsPage";
-import MetadataManagerPage from "./pages/MetadataManagerPage";
-import OrdersPage from "./pages/OrdersPage";
+import SearchPage from "./pages/SearchPage";
 
-const queryClient = new QueryClient();
+// Lazy load routes to improve initial load performance
+const Index = lazy(() => import("./pages/Index"));
+const BooksPage = lazy(() => import("./pages/BooksPage"));
+const SellBookPage = lazy(() => import("./pages/SellBookPage"));
+const AddBookPage = lazy(() => import("./pages/AddBookPage"));
+const SalesPage = lazy(() => import("./pages/SalesPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const MetadataManagerPage = lazy(() => import("./pages/MetadataManagerPage"));
+const ReportsPage = lazy(() => import("./pages/ReportsPage"));
+const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const AdminPage = lazy(() => import("./pages/AdminPage"));
+const SuperAdminPage = lazy(() => import("./pages/SuperAdminPage"));
+const OrdersPage = lazy(() => import("./pages/OrdersPage"));
+const OrderManagementPage = lazy(() => import("./pages/OrderManagementPage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
-// Protected route component
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth();
-  
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  return <>{children}</>;
-};
+// Import service to initialize sample data
+import { initializeSampleData } from "./services/storageService";
+import { checkSupabaseConnection } from "./integrations/supabase/client";
 
-// Admin route component
-const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, isAdmin } = useAuth();
-  
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  if (!isAdmin) {
-    return <Navigate to="/" replace />;
-  }
-  
-  return <>{children}</>;
-};
+function App() {
+  const { currentStore } = useStallContext();
+  const { toast } = useToast();
 
-// SuperAdmin route component
-const SuperAdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, currentUser } = useAuth();
-  
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  if (!currentUser || currentUser.role !== "super_admin") {
-    return <Navigate to="/" replace />;
-  }
-  
-  return <>{children}</>;
-};
-
-const AppContent = () => {
-  const { isAuthenticated } = useAuth();
-  const isMobile = useIsMobile();
-  
-  // Initialize sample data on first load
   useEffect(() => {
+    // Check if sample data exists, otherwise initialize
     initializeSampleData();
+    
+    // Check Supabase connection
+    const checkConnection = async () => {
+      const isConnected = await checkSupabaseConnection();
+      console.log("Supabase connection status:", isConnected);
+    };
+    
+    checkConnection();
   }, []);
-  
+
   return (
-    <div className="min-h-screen bg-temple-background">
-      <Routes>
-        <Route path="/login" element={
-          isAuthenticated ? <Navigate to="/" /> : <LoginPage />
-        } />
-        
-        <Route path="/complete-signup/:inviteCode" element={<CompleteSignupPage />} />
-        
-        <Route path="/" element={
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/books" element={
-          <ProtectedRoute>
-            <BooksPage />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/search" element={
-          <ProtectedRoute>
-            <SearchPage />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <ProfilePage />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/sell/:bookId" element={
-          <ProtectedRoute>
-            <SellBookPage />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/add-book" element={
-          <AdminRoute>
-            <AddBookPage />
-          </AdminRoute>
-        } />
-        
-        <Route path="/sales" element={
-          <ProtectedRoute>
-            <SalesPage />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/orders" element={
-          <AdminRoute>
-            <OrdersPage />
-          </AdminRoute>
-        } />
-        
-        <Route path="/reports" element={
-          <AdminRoute>
-            <ReportsPage />
-          </AdminRoute>
-        } />
-        
-        <Route path="/admin" element={
-          <AdminRoute>
-            <AdminPage />
-          </AdminRoute>
-        } />
-        
-        <Route path="/settings" element={
-          <AdminRoute>
-            <SettingsPage />
-          </AdminRoute>
-        } />
-        
-        <Route path="/metadata-manager" element={
-          <AdminRoute>
-            <MetadataManagerPage />
-          </AdminRoute>
-        } />
-        
-        <Route path="/super-admin" element={
-          <SuperAdminRoute>
-            <SuperAdminPage />
-          </SuperAdminRoute>
-        } />
-        
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      
-      {isAuthenticated && isMobile && <MobileNavBar />}
+    <div className="app">
+      <Suspense fallback={<div className="loading">Loading...</div>}>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/complete-signup/:token" element={<CompleteSignupPage />} />
+          <Route path="/search" element={<SearchPage />} />
+          <Route path="/books" element={<BooksPage />} />
+          <Route path="/sell/:bookId" element={<SellBookPage />} />
+          <Route path="/add-book" element={<AddBookPage />} />
+          <Route path="/sales" element={<SalesPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/metadata" element={<MetadataManagerPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/super-admin" element={<SuperAdminPage />} />
+          <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/order-management" element={<OrderManagementPage />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
+      <Toaster />
     </div>
   );
-};
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <StallProvider>
-          <AppContent />
-          <Toaster />
-          <Sonner />
-        </StallProvider>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+}
 
 export default App;
