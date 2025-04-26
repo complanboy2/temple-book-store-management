@@ -18,7 +18,8 @@ import {
   BarChart3,
   Settings,
   Users,
-  ShieldCheck
+  ShieldCheck,
+  FileText
 } from "lucide-react";
 import MobileNavBar from "@/components/MobileNavBar";
 
