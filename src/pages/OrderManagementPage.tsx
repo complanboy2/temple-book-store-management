@@ -70,7 +70,7 @@ const OrderManagementPage = () => {
   const { t } = useTranslation();
 
   useEffect(() => {
-    if (!currentUser || !currentUser.canrestock) {
+    if (!currentUser || !currentUser.canRestock) {  // Fixed: canRestock instead of canrestock
       navigate("/");
       return;
     }
@@ -151,9 +151,13 @@ const OrderManagementPage = () => {
     setOrderItems(newItems);
   };
 
-  const handleItemChange = (index: number, field: "bookId" | "quantity", value: string | number) => {
+  const handleItemChange = (index: number, field: keyof typeof orderItems[0], value: any) => {
     const newItems = [...orderItems];
-    newItems[index][field] = value;
+    if (field === "bookId") {
+      newItems[index][field] = value as string;
+    } else if (field === "quantity") {
+      newItems[index][field] = Number(value);
+    }
     setOrderItems(newItems);
   };
 

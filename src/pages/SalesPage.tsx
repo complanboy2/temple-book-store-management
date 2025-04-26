@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
@@ -131,7 +132,7 @@ const SalesPage = () => {
           personnelId: sale.personnelid,
           stallId: sale.stallid,
           createdAt: new Date(sale.createdat),
-          updatedAt: new Date(sale.updatedat)
+          synced: sale.synced // Added synced property
         }));
         
         setSales(salesData);
@@ -149,7 +150,7 @@ const SalesPage = () => {
     };
     
     fetchSales();
-  }, [currentStore, timeFilter, selectedPaymentMethod, startDate, endDate, searchQuery, currentPage, toast, t]);
+  }, [currentStore, timeFilter, selectedPaymentMethod, startDate, endDate, searchQuery, currentPage, toast, t, navigate, isAdmin]);
 
   useEffect(() => {
     const fetchBookDetails = async () => {
@@ -309,9 +310,10 @@ const SalesPage = () => {
                 <PaginationItem>
                   <PaginationPrevious
                     onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
+                    className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
                   />
                 </PaginationItem>
+                
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                   <PaginationItem key={page}>
                     <PaginationLink
@@ -322,10 +324,11 @@ const SalesPage = () => {
                     </PaginationLink>
                   </PaginationItem>
                 ))}
+                
                 <PaginationItem>
                   <PaginationNext
                     onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
+                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
                   />
                 </PaginationItem>
               </PaginationContent>
