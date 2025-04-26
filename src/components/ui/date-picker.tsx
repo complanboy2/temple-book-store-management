@@ -47,13 +47,44 @@ export function DatePicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode={mode}
-          selected={selected}
-          onSelect={onSelect}
-          initialFocus
-          className={cn("p-3 pointer-events-auto")}
-        />
+        {mode === "single" && (
+          <Calendar
+            mode="single"
+            selected={selected}
+            onSelect={onSelect}
+            initialFocus
+            className={cn("p-3 pointer-events-auto")}
+          />
+        )}
+        {mode === "range" && (
+          <Calendar
+            mode="range"
+            selected={{
+              from: selected,
+              to: selected,
+            }}
+            onSelect={(range) => {
+              onSelect(range?.from);
+            }}
+            initialFocus
+            className={cn("p-3 pointer-events-auto")}
+          />
+        )}
+        {mode === "multiple" && (
+          <Calendar
+            mode="multiple"
+            selected={selected ? [selected] : []}
+            onSelect={(dates) => {
+              if (dates && dates.length > 0) {
+                onSelect(dates[dates.length - 1]);
+              } else {
+                onSelect(undefined);
+              }
+            }}
+            initialFocus
+            className={cn("p-3 pointer-events-auto")}
+          />
+        )}
       </PopoverContent>
     </Popover>
   );
