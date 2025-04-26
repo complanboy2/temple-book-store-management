@@ -27,18 +27,6 @@ export const generateImageHash = async (file: File): Promise<string> => {
  */
 export const findExistingImage = async (hash: string): Promise<string | null> => {
   try {
-    // First, we need to check if the table exists
-    const { error: tableExistsError } = await supabase
-      .from('book_images')
-      .select('hash')
-      .limit(1);
-
-    // If table doesn't exist, handle accordingly
-    if (tableExistsError && tableExistsError.code === '42P01') {
-      console.log("Book images table does not exist yet");
-      return null;
-    }
-    
     const { data, error } = await supabase
       .from('book_images')
       .select('url')
@@ -61,18 +49,6 @@ export const findExistingImage = async (hash: string): Promise<string | null> =>
  */
 export const recordImageHash = async (hash: string, url: string): Promise<void> => {
   try {
-    // First, check if the table exists by trying a simple query
-    const { error: tableExistsError } = await supabase
-      .from('book_images')
-      .select('hash')
-      .limit(1);
-
-    // If the table doesn't exist, create it first
-    if (tableExistsError && tableExistsError.code === '42P01') {
-      console.log("Book images table does not exist. Need to create it first.");
-      return; // We'll handle table creation through a proper migration
-    }
-      
     await supabase
       .from('book_images')
       .insert({

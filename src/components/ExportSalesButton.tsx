@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { download, printer } from "lucide-react";
+import { Download, Printer } from "lucide-react";
 import { Sale } from "@/types";
 import { useToast } from '@/hooks/use-toast';
 
@@ -234,11 +233,11 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
           className="flex items-center gap-2"
         >
           {variant === "print" ? (
-            <printer className="h-4 w-4" />
+            <Printer className="h-4 w-4" />
           ) : variant === "download" ? (
-            <download className="h-4 w-4" />
+            <Download className="h-4 w-4" />
           ) : (
-            <printer className="h-4 w-4" />
+            <Printer className="h-4 w-4" />
           )}
           {variant === "print" ? "Print" : variant === "download" ? "Download" : "Export"} Sales History
         </Button>
@@ -342,7 +341,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
                 onClick={handlePrint}
                 className="flex items-center gap-2"
               >
-                <printer className="h-4 w-4" />
+                <Printer className="h-4 w-4" />
                 Print
               </Button>
             )}
@@ -352,7 +351,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
                 onClick={handleDownload}
                 className="flex items-center gap-2"
               >
-                <download className="h-4 w-4" />
+                <Download className="h-4 w-4" />
                 Download
               </Button>
             )}
