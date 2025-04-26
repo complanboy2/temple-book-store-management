@@ -155,7 +155,7 @@ const SellBookPage: React.FC = () => {
       
       if (saleError) {
         console.error("Error creating sale:", saleError);
-        throw new Error("Failed to record sale" + saleError);
+        throw new Error("Failed to record sale");
       }
       
       console.log("Sale recorded successfully:", saleData);
