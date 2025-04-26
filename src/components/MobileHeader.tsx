@@ -106,7 +106,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
           <div 
             className="h-8 w-8 bg-temple-saffron rounded-full flex items-center justify-center text-white text-sm font-bold cursor-pointer"
             onClick={() => {
-              if (currentUser?.role === 'super_admin') {
+              if (currentUser?.role === "super_admin") {
                 navigate("/super-admin");
               } else {
                 navigate("/profile");

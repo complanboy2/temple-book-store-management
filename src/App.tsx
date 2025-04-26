@@ -63,7 +63,7 @@ const SuperAdminRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace />;
   }
   
-  if (!currentUser || currentUser.role !== 'super_admin') {
+  if (!currentUser || currentUser.role !== "super_admin") {
     return <Navigate to="/" replace />;
   }
   

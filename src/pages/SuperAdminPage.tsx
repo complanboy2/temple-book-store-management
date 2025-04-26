@@ -45,7 +45,7 @@ const SuperAdminPage = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (!currentUser || currentUser.role !== 'super_admin') {
+    if (!currentUser || currentUser.role !== "super_admin") {
       navigate("/");
       return;
     }
