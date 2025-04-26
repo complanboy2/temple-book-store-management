@@ -87,3 +87,45 @@ export interface DashboardSummary {
     totalSold: number;
   }[];
 }
+
+export interface Order {
+  id: string;
+  customerName: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  orderDate: Date;
+  deliveryDate?: Date;
+  status: OrderStatus;
+  items: OrderItem[];
+  totalAmount: number;
+  paymentStatus: PaymentStatus;
+  paymentMethod?: string;
+  notes?: string;
+  adminId: string;
+  stallId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  synced: boolean;
+}
+
+export interface OrderItem {
+  id: string;
+  bookId: string;
+  quantity: number;
+  priceAtOrder: number;
+  fulfilled: number;
+}
+
+export type OrderStatus = 
+  | "pending" 
+  | "confirmed" 
+  | "processing" 
+  | "partially_fulfilled" 
+  | "fulfilled" 
+  | "cancelled";
+
+export type PaymentStatus = 
+  | "pending" 
+  | "partially_paid" 
+  | "paid" 
+  | "refunded";

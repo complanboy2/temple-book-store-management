@@ -20,6 +20,7 @@ import MobileHeader from "@/components/MobileHeader";
 import { useStallContext } from "@/contexts/StallContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTranslation } from "react-i18next";
+import ExportBookListButton from "@/components/ExportBookListButton";
 
 const BooksPage: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
@@ -149,11 +150,6 @@ const BooksPage: React.FC = () => {
     }
   };
 
-  // Handle back button navigation
-  const handleBackNavigation = () => {
-    navigate("/");
-  };
-
   return (
     <div className="min-h-screen bg-temple-background pb-20">
       <MobileHeader 
@@ -168,12 +164,17 @@ const BooksPage: React.FC = () => {
       <main className="container mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-temple-maroon mb-4 md:mb-0">{t("common.booksInventory")}</h1>
-          <Button
-            onClick={() => navigate("/add-book")}
-            className="bg-temple-saffron hover:bg-temple-saffron/90"
-          >
-            {t("common.addNewBook")}
-          </Button>
+          
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              onClick={() => navigate("/add-book")}
+              className="bg-temple-saffron hover:bg-temple-saffron/90"
+            >
+              {t("common.addNewBook")}
+            </Button>
+            
+            <ExportBookListButton books={books} />
+          </div>
         </div>
         
         <div className="mb-6">

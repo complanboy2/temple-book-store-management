@@ -1,10 +1,10 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { generateImageHash, findExistingImage, recordImageHash } from "@/services/imageService";
 
 interface ImageUploadProps {
   initialImageUrl?: string;
@@ -48,7 +48,27 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ initialImageUrl, onImageUploa
     try {
       setIsUploading(true);
       
-      // Try to upload to Supabase Storage
+      // Generate hash for the image file
+      const imageHash = await generateImageHash(file);
+      
+      // Check if the image already exists
+      const existingImageUrl = await findExistingImage(imageHash);
+      
+      if (existingImageUrl) {
+        console.log("Found existing image with same hash:", existingImageUrl);
+        setImageUrl(existingImageUrl);
+        onImageUploaded(existingImageUrl);
+        
+        toast({
+          title: "Image Reused",
+          description: "This image already exists and has been linked to your book",
+        });
+        
+        setIsUploading(false);
+        return;
+      }
+      
+      // If image doesn't exist, proceed with upload to Supabase Storage
       let uploadUrl = "";
       const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
       
@@ -83,16 +103,23 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ initialImageUrl, onImageUploa
           
         uploadUrl = urlData.publicUrl;
         console.log("Image uploaded to Supabase:", uploadUrl);
+        
+        // Record the hash and URL to our database
+        await recordImageHash(imageHash, uploadUrl);
+        
       } catch (storageError) {
         console.error("Failed to upload to Supabase Storage:", storageError);
         
         // Fallback: Convert to data URL
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
           if (e.target?.result) {
             uploadUrl = e.target.result as string;
             setImageUrl(uploadUrl);
             onImageUploaded(uploadUrl);
+            
+            // Also record the data URL hash for future reference
+            await recordImageHash(imageHash, uploadUrl);
           }
         };
         reader.readAsDataURL(file);

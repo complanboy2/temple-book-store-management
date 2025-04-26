@@ -1,4 +1,5 @@
-import { Book, Sale, RestockEntry, Institute, BookStall, User } from "../types";
+
+import { Book, Sale, RestockEntry, Institute, BookStall, User, Order } from "../types";
 
 // Local storage keys
 const KEYS = {
@@ -9,11 +10,13 @@ const KEYS = {
   BOOKS: "temple_books",
   SALES: "temple_sales",
   RESTOCK: "temple_restock",
+  ORDERS: "temple_orders",
   AUTHORS: "temple_authors",
   CATEGORIES: "temple_categories",
   SALE_PERCENTAGE: "temple_author_sale_percent",
   PRINTING_INSTITUTES: "printingInstitutes",
-  INSTITUTE_PERCENTAGE: "printing_institute_percentage"
+  INSTITUTE_PERCENTAGE: "printing_institute_percentage",
+  BOOK_IMAGES: "temple_book_images"
 };
 
 // Enable debug mode for logging
@@ -98,6 +101,25 @@ export const addRestockEntry = (entry: RestockEntry): void => {
   setRestockEntries(entries);
 };
 
+// Order related functions
+export const getOrders = (): Order[] => getItems<Order>(KEYS.ORDERS);
+export const setOrders = (orders: Order[]): void => setItems(KEYS.ORDERS, orders);
+export const addOrder = (order: Order): void => {
+  const orders = getOrders();
+  orders.push(order);
+  setOrders(orders);
+};
+export const updateOrder = (orderId: string, updates: Partial<Order>): Order | null => {
+  const orders = getOrders();
+  const orderIndex = orders.findIndex(order => order.id === orderId);
+  
+  if (orderIndex === -1) return null;
+  
+  orders[orderIndex] = { ...orders[orderIndex], ...updates, updatedAt: new Date() };
+  setOrders(orders);
+  return orders[orderIndex];
+};
+
 // Author functions
 export const getAuthors = (): string[] => getItems<string>(KEYS.AUTHORS);
 export const setAuthors = (authors: string[]) => setItems(KEYS.AUTHORS, authors);
@@ -124,6 +146,24 @@ export const setInstituteSalePercentage = (obj: Record<string, number>) => {
   localStorage.setItem(KEYS.INSTITUTE_PERCENTAGE, JSON.stringify(obj));
 };
 
+// Image hash storage
+export const getImageHashes = (): Record<string, string> => {
+  const val = localStorage.getItem(KEYS.BOOK_IMAGES);
+  return val ? JSON.parse(val) : {};
+};
+export const setImageHashes = (obj: Record<string, string>) => {
+  localStorage.setItem(KEYS.BOOK_IMAGES, JSON.stringify(obj));
+};
+export const addImageHash = (hash: string, url: string): void => {
+  const hashes = getImageHashes();
+  hashes[hash] = url;
+  setImageHashes(hashes);
+};
+export const getImageUrlByHash = (hash: string): string | null => {
+  const hashes = getImageHashes();
+  return hashes[hash] || null;
+};
+
 // Book operations
 export const getBooksByStall = (stallId: string): Book[] => {
   const books = getBooks();
@@ -141,6 +181,50 @@ export const updateBookQuantity = (bookId: string, changeAmount: number): void =
   }
 };
 
+// Fulfill order and update book quantities
+export const fulfillOrder = (orderId: string, fulfilledItems: Record<string, number>): boolean => {
+  const orders = getOrders();
+  const orderIndex = orders.findIndex(order => order.id === orderId);
+  
+  if (orderIndex === -1) return false;
+  
+  const order = orders[orderIndex];
+  let allFulfilled = true;
+  
+  // Update items in the order
+  order.items = order.items.map(item => {
+    const fulfilledQty = fulfilledItems[item.id] || 0;
+    const newFulfilled = Math.min(item.quantity, (item.fulfilled || 0) + fulfilledQty);
+    
+    if (newFulfilled < item.quantity) {
+      allFulfilled = false;
+    }
+    
+    // Update book quantity
+    if (fulfilledQty > 0) {
+      updateBookQuantity(item.bookId, -fulfilledQty);
+    }
+    
+    return {
+      ...item,
+      fulfilled: newFulfilled
+    };
+  });
+  
+  // Update order status
+  if (allFulfilled) {
+    order.status = "fulfilled";
+  } else if (order.items.some(item => item.fulfilled > 0)) {
+    order.status = "partially_fulfilled";
+  }
+  
+  order.updatedAt = new Date();
+  orders[orderIndex] = order;
+  setOrders(orders);
+  
+  return true;
+};
+
 // Offline sync tracking
 export const getUnsyncedSales = (): Sale[] => {
   const sales = getSales();
@@ -150,6 +234,11 @@ export const getUnsyncedSales = (): Sale[] => {
 export const getUnsyncedRestockEntries = (): RestockEntry[] => {
   const entries = getRestockEntries();
   return entries.filter(entry => !entry.synced);
+};
+
+export const getUnsyncedOrders = (): Order[] => {
+  const orders = getOrders();
+  return orders.filter(order => !order.synced);
 };
 
 export const markSaleSynced = (saleId: string): void => {
@@ -169,6 +258,16 @@ export const markRestockSynced = (entryId: string): void => {
   if (entryIndex !== -1) {
     entries[entryIndex].synced = true;
     setRestockEntries(entries);
+  }
+};
+
+export const markOrderSynced = (orderId: string): void => {
+  const orders = getOrders();
+  const orderIndex = orders.findIndex(order => order.id === orderId);
+  
+  if (orderIndex !== -1) {
+    orders[orderIndex].synced = true;
+    setOrders(orders);
   }
 };
 
@@ -352,6 +451,58 @@ export const initializeSampleData = (): void => {
     });
   }
   setRestockEntries(restockEntries);
+
+  // Create sample orders
+  const orders: Order[] = [];
+  for (let i = 0; i < 3; i++) {
+    const orderItems = [];
+    let totalAmount = 0;
+    
+    // 1-3 items per order
+    const itemCount = Math.floor(Math.random() * 3) + 1;
+    
+    for (let j = 0; j < itemCount; j++) {
+      const book = books[Math.floor(Math.random() * books.length)];
+      const quantity = Math.floor(Math.random() * 3) + 1;
+      const fulfilled = i === 0 ? 0 : i === 1 ? Math.floor(quantity / 2) : quantity;
+      
+      orderItems.push({
+        id: generateId(),
+        bookId: book.id,
+        quantity,
+        priceAtOrder: book.salePrice,
+        fulfilled
+      });
+      
+      totalAmount += book.salePrice * quantity;
+    }
+    
+    let status: OrderStatus;
+    if (i === 0) status = "pending";
+    else if (i === 1) status = "partially_fulfilled";
+    else status = "fulfilled";
+    
+    orders.push({
+      id: generateId(),
+      customerName: `Order Customer ${i+1}`,
+      customerPhone: `9876543${i}00`,
+      customerEmail: `customer${i+1}@example.com`,
+      orderDate: new Date(Date.now() - (30 - i*5) * 24 * 60 * 60 * 1000),
+      deliveryDate: i > 0 ? new Date(Date.now() + i*10 * 24 * 60 * 60 * 1000) : undefined,
+      status,
+      items: orderItems,
+      totalAmount,
+      paymentStatus: i === 0 ? "pending" : "paid",
+      paymentMethod: i === 0 ? undefined : "cash",
+      notes: i === 1 ? "Customer requested specific edition" : undefined,
+      adminId: users[0].id,
+      stallId: bookStalls[0].id,
+      synced: true,
+      createdAt: new Date(Date.now() - (30 - i*5) * 24 * 60 * 60 * 1000),
+      updatedAt: new Date(Date.now() - (25 - i*5) * 24 * 60 * 60 * 1000)
+    });
+  }
+  setOrders(orders);
   
   console.log("Sample data initialization complete");
 };

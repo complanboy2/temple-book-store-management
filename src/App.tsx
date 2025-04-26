@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -26,6 +27,7 @@ import SuperAdminPage from "./pages/SuperAdminPage";
 import CompleteSignupPage from "./pages/CompleteSignupPage";
 import SettingsPage from "./pages/SettingsPage";
 import MetadataManagerPage from "./pages/MetadataManagerPage";
+import OrdersPage from "./pages/OrdersPage";
 
 const queryClient = new QueryClient();
 
@@ -128,6 +130,12 @@ const AppContent = () => {
           <ProtectedRoute>
             <SalesPage />
           </ProtectedRoute>
+        } />
+        
+        <Route path="/orders" element={
+          <AdminRoute>
+            <OrdersPage />
+          </AdminRoute>
         } />
         
         <Route path="/reports" element={
