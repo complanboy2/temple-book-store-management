@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -22,6 +23,7 @@ const LoginPage: React.FC = () => {
       await login(email, password);
       navigate("/");
     } catch (error) {
+      console.error("Login failed:", error);
       toast({
         title: "Login Failed",
         description: "Invalid email or password. Please try again.",
@@ -72,7 +74,6 @@ const LoginPage: React.FC = () => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required
                   className="temple-input w-full"
                   placeholder="Enter your password"
                 />
@@ -83,16 +84,25 @@ const LoginPage: React.FC = () => {
                 disabled={isLoading}
                 className="temple-button w-full"
               >
-                {isLoading ? "Signing in..." : "Sign In"}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign In"
+                )}
               </Button>
             </form>
           </CardContent>
         </Card>
         
         <div className="text-center mt-6">
-          <p className="text-sm text-muted-foreground">
-            For demo purposes, use: admin@temple.com
-          </p>
+          <div className="text-sm text-muted-foreground space-y-1">
+            <p>For demo purposes, use one of these accounts:</p>
+            <p><strong>Admin:</strong> admin@temple.com</p>
+            <p><strong>Super Admin:</strong> complanboy2@gmail.com</p>
+          </div>
         </div>
       </div>
     </div>

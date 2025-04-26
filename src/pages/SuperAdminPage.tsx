@@ -20,7 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { UserPlus, Trash2 } from "lucide-react";
+import { UserPlus, Trash2, Loader2 } from "lucide-react";
 
 interface User {
   id: string;
@@ -43,6 +43,7 @@ const SuperAdminPage = () => {
     role: "admin" as const,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingUsers, setIsFetchingUsers] = useState(true);
 
   useEffect(() => {
     if (!currentUser || currentUser.role !== "super_admin") {
@@ -54,23 +55,37 @@ const SuperAdminPage = () => {
   }, [currentUser, navigate]);
 
   const fetchUsers = async () => {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .order('role', { ascending: true })
-      .order('name', { ascending: true });
+    setIsFetchingUsers(true);
+    try {
+      console.log("Fetching users from Supabase");
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('role', { ascending: true })
+        .order('name', { ascending: true });
 
-    if (error) {
-      console.error('Error fetching users:', error);
+      if (error) {
+        console.error('Error fetching users:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch users: " + error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log("Fetched users:", data);
+      setUsers(data as User[]);
+    } catch (err) {
+      console.error("Exception fetching users:", err);
       toast({
         title: "Error",
-        description: "Failed to fetch users",
+        description: "An unexpected error occurred when fetching users",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setIsFetchingUsers(false);
     }
-
-    setUsers(data as User[]);
   };
 
   const handleAddUser = async () => {
@@ -88,9 +103,13 @@ const SuperAdminPage = () => {
       const { error } = await supabase
         .from('users')
         .insert([{
-          ...newUser,
-          canrestock: true,
+          name: newUser.name,
+          email: newUser.email,
+          phone: newUser.phone || null,
+          role: newUser.role,
+          canrestock: newUser.role === "admin",
           cansell: true,
+          instituteid: currentUser?.instituteId || null
         }]);
 
       if (error) throw error;
@@ -103,11 +122,11 @@ const SuperAdminPage = () => {
       setIsAddUserOpen(false);
       setNewUser({ name: "", email: "", phone: "", role: "admin" });
       fetchUsers();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding user:', error);
       toast({
         title: "Error",
-        description: "Failed to add user",
+        description: "Failed to add user: " + error.message,
         variant: "destructive",
       });
     } finally {
@@ -132,25 +151,14 @@ const SuperAdminPage = () => {
       });
       
       fetchUsers();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting user:', error);
       toast({
         title: "Error",
-        description: "Failed to delete user",
+        description: "Failed to delete user: " + error.message,
         variant: "destructive",
       });
     }
-  };
-
-  const generateWhatsAppMessage = (user: typeof newUser) => {
-    const message = `Welcome to Temple Book Manager!\n\n` +
-      `Your account details:\n` +
-      `Name: ${user.name}\n` +
-      `Email: ${user.email}\n` +
-      `Role: ${user.role}\n\n` +
-      `Please complete your registration by clicking on this link: ${window.location.origin}/complete-signup/[INVITE_CODE]`;
-    
-    return `https://wa.me/${user.phone}?text=${encodeURIComponent(message)}`;
   };
 
   return (
@@ -204,39 +212,56 @@ const SuperAdminPage = () => {
                       onClick={handleAddUser}
                       disabled={isLoading}
                     >
-                      {isLoading ? "Adding..." : "Add Administrator"}
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Adding...
+                        </>
+                      ) : (
+                        "Add Administrator"
+                      )}
                     </Button>
                   </div>
                 </DialogContent>
               </Dialog>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {users.map((user) => (
-                  <div
-                    key={user.id}
-                    className="flex items-center justify-between p-3 border border-temple-gold/20 rounded-lg bg-white shadow-sm"
-                  >
-                    <div>
-                      <h3 className="font-medium text-temple-maroon">{user.name}</h3>
-                      <p className="text-sm text-gray-600">{user.email}</p>
-                      <span className="text-xs px-2 py-1 bg-temple-gold/10 rounded-full">
-                        {user.role}
-                      </span>
+              {isFetchingUsers ? (
+                <div className="py-8 flex justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-temple-maroon" />
+                </div>
+              ) : users.length > 0 ? (
+                <div className="space-y-4">
+                  {users.map((user) => (
+                    <div
+                      key={user.id}
+                      className="flex items-center justify-between p-3 border border-temple-gold/20 rounded-lg bg-white shadow-sm"
+                    >
+                      <div>
+                        <h3 className="font-medium text-temple-maroon">{user.name}</h3>
+                        <p className="text-sm text-gray-600">{user.email}</p>
+                        <span className="text-xs px-2 py-1 bg-temple-gold/10 rounded-full">
+                          {user.role}
+                        </span>
+                      </div>
+                      {user.role !== 'super_admin' && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteUser(user.id)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 size={18} />
+                        </Button>
+                      )}
                     </div>
-                    {user.role !== 'super_admin' && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteUser(user.id)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 size={18} />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-gray-500">
+                  No users found. Add some administrators to get started.
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

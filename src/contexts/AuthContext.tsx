@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, UserRole } from "../types";
 import { getCurrentUser, setCurrentUser, getUsers, setUsers, generateId } from "../services/storageService";
+import { supabase } from "../integrations/supabase/client";
 
 interface AuthContextType {
   currentUser: User | null;
@@ -38,9 +39,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   }, []);
 
-  // Mock login function
+  // Enhanced login function that handles both Supabase and local users
   const login = async (email: string, password: string): Promise<User> => {
-    return new Promise((resolve, reject) => {
+    try {
+      // First check if it's our super_admin from Supabase
+      if (email === 'complanboy2@gmail.com') {
+        const { data: supaUsers, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', email)
+          .single();
+
+        if (supaUsers && !error) {
+          const supaUser = {
+            id: supaUsers.id,
+            name: supaUsers.name,
+            email: supaUsers.email,
+            phone: supaUsers.phone || '',
+            role: supaUsers.role as UserRole,
+            canRestock: supaUsers.canrestock,
+            canSell: supaUsers.cansell,
+            instituteId: supaUsers.instituteid || 'default-institute',
+          };
+          
+          setUser(supaUser);
+          setCurrentUser(supaUser);
+          return supaUser;
+        }
+      }
+
+      // Then fall back to local storage users
       const users = getUsers();
       const user = users.find(u => u.email === email);
       
@@ -48,11 +76,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // In a real app, we would verify the password here
         setUser(user);
         setCurrentUser(user);
-        resolve(user);
+        return user;
       } else {
-        reject(new Error("Invalid credentials"));
+        // For demo purposes, if user is admin@temple.com, create it
+        if (email === 'admin@temple.com') {
+          const newUser: User = {
+            id: generateId(),
+            name: 'Temple Admin',
+            email: 'admin@temple.com',
+            role: 'admin',
+            canRestock: true,
+            canSell: true,
+            instituteId: 'default-institute',
+          };
+          
+          const updatedUsers = [...users, newUser];
+          setUsers(updatedUsers);
+          setUser(newUser);
+          setCurrentUser(newUser);
+          return newUser;
+        }
+        
+        throw new Error("Invalid credentials");
       }
-    });
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
+    }
   };
   
   // Mock register function
@@ -185,7 +235,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     inviteUser,
     completeRegistration,
     isAuthenticated: !!currentUser,
-    isAdmin: currentUser?.role === "admin",
+    isAdmin: currentUser?.role === "admin" || currentUser?.role === "super_admin",
     isLoading,
   };
 
