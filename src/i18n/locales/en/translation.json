@@ -74,7 +74,8 @@
     "manageAndSellBooks": "Manage And Sell Books",
     "manageYourBookInventory" : "Manage Your Book Inventory",
     "administration": "Administration",
-    "analytics": "Analytics"  
+    "analytics": "Analytics",
+    "allBooks": "All Books"  
   },
   "sell": {
     "title": "Sell Book",

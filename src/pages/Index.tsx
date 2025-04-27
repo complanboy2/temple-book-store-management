@@ -56,7 +56,7 @@ const Index = () => {
                   className="w-full justify-start"
                 >
                   <Library className="mr-2 h-5 w-5" />
-                  {t("common.viewInventory")}
+                  {t("common.allBooks")}
                 </Button>
               </Link>
               <Link to="/add-book">
