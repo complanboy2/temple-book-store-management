@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
@@ -29,7 +30,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import ExportSalesButton from "@/components/ExportSalesButton";
-import MobileNavBar from "@/components/MobileNavBar";
+import MobileHeader from "@/components/MobileHeader";
 
 const SalesPage = () => {
   const [sales, setSales] = useState<Sale[]>([]);
@@ -209,7 +210,13 @@ const SalesPage = () => {
 
   return (
     <div className="min-h-screen bg-temple-background pb-20">
-      <Header />
+      <MobileHeader 
+        title={t("common.salesHistory")} 
+        showBackButton={true} 
+        backTo="/" 
+        showStallSelector={true}
+      />
+      
       <main className="container mx-auto px-4 py-6 pb-20">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <h1 className="text-2xl font-bold text-temple-maroon mb-4 md:mb-0">
@@ -285,6 +292,7 @@ const SalesPage = () => {
                   <TableRow>
                     <TableHead>{t("common.date")}</TableHead>
                     <TableHead>{t("common.book")}</TableHead>
+                    <TableHead>{t("common.buyer")}</TableHead>
                     <TableHead>{t("common.quantity")}</TableHead>
                     <TableHead className="text-right">{t("common.amount")}</TableHead>
                   </TableRow>
@@ -296,6 +304,7 @@ const SalesPage = () => {
                       <TableRow key={sale.id}>
                         <TableCell>{sale.createdAt.toLocaleDateString()}</TableCell>
                         <TableCell>{bookDetails?.name || "Unknown"}</TableCell>
+                        <TableCell>{sale.buyerName || "N/A"}</TableCell>
                         <TableCell>{sale.quantity}</TableCell>
                         <TableCell className="text-right">₹{sale.totalAmount.toFixed(2)}</TableCell>
                       </TableRow>
@@ -356,8 +365,6 @@ const SalesPage = () => {
           </div>
         )}
       </main>
-      
-      <MobileNavBar />
     </div>
   );
 };

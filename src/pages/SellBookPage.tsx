@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,6 @@ import MobileHeader from "@/components/MobileHeader";
 import { useTranslation } from "react-i18next";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
-import MobileNavBar from "@/components/MobileNavBar";
 
 const SellBookPage: React.FC = () => {
   const [book, setBook] = useState<Book | null>(null);
@@ -31,6 +31,14 @@ const SellBookPage: React.FC = () => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Auto-fill buyer information from current user
+    if (currentUser) {
+      setBuyerName(currentUser.name || "");
+      setBuyerPhone(currentUser.phone || "");
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -77,7 +85,7 @@ const SellBookPage: React.FC = () => {
           salePrice: supabaseBook.saleprice,
           quantity: supabaseBook.quantity,
           stallId: supabaseBook.stallid,
-          imageUrl: undefined,
+          imageUrl: supabaseBook.imageurl,
           createdAt: supabaseBook.createdat ? new Date(supabaseBook.createdat) : new Date(),
           updatedAt: supabaseBook.updatedat ? new Date(supabaseBook.updatedat) : new Date()
         };
@@ -138,8 +146,27 @@ const SellBookPage: React.FC = () => {
       const saleId = generateId();
       const totalAmount = book.salePrice * quantity;
       
-      const currentTimestamp = new Date().toISOString();
+      const saleDate = new Date();
+      const currentTimestamp = saleDate.toISOString();
       
+      // First update book quantity to prevent race conditions
+      const { data: bookData, error: updateError } = await supabase
+        .from('books')
+        .update({ 
+          quantity: book.quantity - quantity, 
+          updatedat: currentTimestamp
+        })
+        .eq('id', book.id)
+        .select();
+        
+      if (updateError) {
+        console.error("Error updating book quantity:", updateError);
+        throw new Error(t("sell.failedToUpdateInventory"));
+      }
+      
+      console.log("Book inventory updated:", bookData);
+      
+      // Then record the sale
       const { data: saleData, error: saleError } = await supabase
         .from('sales')
         .insert({
@@ -159,27 +186,16 @@ const SellBookPage: React.FC = () => {
       
       if (saleError) {
         console.error("Error creating sale:", saleError);
+        // If sale creation fails, we need to revert the inventory change
+        await supabase
+          .from('books')
+          .update({ quantity: book.quantity, updatedat: new Date().toISOString() })
+          .eq('id', book.id);
+          
         throw new Error(t("sell.failedToRecordSale"));
       }
       
       console.log("Sale recorded successfully:", saleData);
-      
-      const newQuantity = book.quantity - quantity;
-      const { data: bookData, error: updateError } = await supabase
-        .from('books')
-        .update({ 
-          quantity: newQuantity, 
-          updatedat: currentTimestamp
-        })
-        .eq('id', book.id)
-        .select();
-        
-      if (updateError) {
-        console.error("Error updating book quantity:", updateError);
-        throw new Error(t("sell.failedToUpdateInventory"));
-      }
-      
-      console.log("Book inventory updated:", bookData);
 
       toast({
         title: t("common.success"),
@@ -325,8 +341,6 @@ const SellBookPage: React.FC = () => {
           </CardContent>
         </Card>
       </main>
-      
-      <MobileNavBar />
     </div>
   );
 };

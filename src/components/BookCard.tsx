@@ -1,70 +1,62 @@
 
 import React from "react";
 import { Book } from "@/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { Button } from "@/components/ui/button";
 
 interface BookCardProps {
   book: Book;
   onSelect: (book: Book) => void;
+  onDelete?: (bookId: string) => void;
 }
 
-const BookCard: React.FC<BookCardProps> = ({ book, onSelect }) => {
+const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete }) => {
   const { isAdmin } = useAuth();
-
-  // Default placeholder image
-  const placeholderImage = "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=300&h=400&fit=crop";
   
+  const handleClick = () => {
+    onSelect(book);
+  };
+  
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDelete) {
+      onDelete(book.id);
+    }
+  };
+
   return (
-    <Card className="temple-card overflow-hidden h-full flex flex-col">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-xl text-temple-maroon line-clamp-2">{book.name}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3 flex-1 flex flex-col">
-        {/* Book Image */}
-        <div className="mb-3 rounded-md overflow-hidden bg-gray-100">
-          <AspectRatio ratio={3/4} className="bg-muted">
-            <img 
-              src={book.imageUrl || placeholderImage} 
-              alt={book.name}
-              className="object-cover w-full h-full rounded-md"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = placeholderImage;
-              }}
-            />
-          </AspectRatio>
-        </div>
-        
-        <p className="text-sm text-muted-foreground">
-          <span className="font-medium">Author:</span> {book.author}
-        </p>
-        <p className="text-sm text-muted-foreground">
-          <span className="font-medium">Category:</span> {book.category}
-        </p>
-        <div className="flex items-center justify-between mt-2">
-          <p className="text-lg font-semibold text-temple-saffron">
-            ₹{book.salePrice}
-          </p>
-          {isAdmin && (
-            <p className="text-sm text-muted-foreground">
-              Original: ₹{book.originalPrice}
-            </p>
+    <Card 
+      className="cursor-pointer hover:shadow-md transition-shadow temple-card"
+      onClick={handleClick}
+    >
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start">
+          <h3 className="font-medium text-lg mb-1 text-temple-maroon">{book.name}</h3>
+          {isAdmin && onDelete && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-600"
+              onClick={handleDelete}
+              title="Delete Book"
+            >
+              <Trash2 size={16} />
+            </Button>
           )}
         </div>
-        <div className="flex justify-between items-center pt-2 mt-auto">
-          <p className={`text-sm ${book.quantity < 5 ? 'text-destructive' : 'text-muted-foreground'}`}>
-            Stock: {book.quantity}
+        <p className="text-sm text-muted-foreground mb-1">{book.author}</p>
+        {book.category && (
+          <p className="text-xs text-muted-foreground mb-2">
+            Category: {book.category}
           </p>
-          <Button 
-            variant="default" 
-            className="bg-temple-saffron hover:bg-temple-saffron/90"
-            onClick={() => onSelect(book)}
-            disabled={book.quantity <= 0}
-          >
-            {book.quantity > 0 ? "Sell" : "Out of Stock"}
-          </Button>
+        )}
+        <div className="flex justify-between items-center">
+          <p className="font-bold text-temple-saffron">₹{book.salePrice}</p>
+          <p className="text-sm text-muted-foreground">
+            {book.quantity} in stock
+          </p>
         </div>
       </CardContent>
     </Card>

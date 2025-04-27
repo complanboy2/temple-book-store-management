@@ -9,6 +9,7 @@ import { Toaster } from "./components/ui/toaster";
 import LoginPage from "./pages/LoginPage";
 import CompleteSignupPage from "./pages/CompleteSignupPage";
 import SearchPage from "./pages/SearchPage";
+import Layout from "./components/Layout";
 
 // Lazy load routes to improve initial load performance
 const Index = lazy(() => import("./pages/Index"));
@@ -52,24 +53,136 @@ function App() {
     <div className="app">
       <Suspense fallback={<div className="loading">Loading...</div>}>
         <Routes>
-          <Route path="/" element={<Index />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/complete-signup/:token" element={<CompleteSignupPage />} />
-          <Route path="/search" element={<SearchPage />} />
-          <Route path="/books" element={<BooksPage />} />
-          <Route path="/sell/:bookId" element={<SellBookPage />} />
-          <Route path="/add-book" element={<AddBookPage />} />
-          <Route path="/sales" element={<SalesPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/metadata" element={<MetadataManagerPage />} />
-          <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/admin" element={<AdminPage />} />
-          <Route path="/super-admin" element={<SuperAdminPage />} />
-          <Route path="/orders" element={<OrdersPage />} />
-          <Route path="/order-management" element={<OrderManagementPage />} />
-          <Route path="*" element={<NotFound />} />
+          <Route 
+            path="/" 
+            element={
+              <Layout>
+                <Index />
+              </Layout>
+            } 
+          />
+          <Route
+            path="/search"
+            element={
+              <Layout>
+                <SearchPage />
+              </Layout>
+            }
+          />
+          <Route
+            path="/books"
+            element={
+              <Layout>
+                <BooksPage />
+              </Layout>
+            }
+          />
+          <Route
+            path="/sell/:bookId"
+            element={
+              <Layout>
+                <SellBookPage />
+              </Layout>
+            }
+          />
+          <Route
+            path="/add-book"
+            element={
+              <Layout>
+                <AddBookPage />
+              </Layout>
+            }
+          />
+          <Route
+            path="/sales"
+            element={
+              <Layout>
+                <SalesPage />
+              </Layout>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <Layout>
+                <ProfilePage />
+              </Layout>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <Layout>
+                <SettingsPage />
+              </Layout>
+            }
+          />
+          <Route
+            path="/metadata"
+            element={
+              <Layout>
+                <MetadataManagerPage />
+              </Layout>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <Layout>
+                <ReportsPage />
+              </Layout>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <Layout>
+                <DashboardPage />
+              </Layout>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <Layout>
+                <AdminPage />
+              </Layout>
+            }
+          />
+          <Route
+            path="/super-admin"
+            element={
+              <Layout>
+                <SuperAdminPage />
+              </Layout>
+            }
+          />
+          <Route
+            path="/orders"
+            element={
+              <Layout>
+                <OrdersPage />
+              </Layout>
+            }
+          />
+          <Route
+            path="/order-management"
+            element={
+              <Layout>
+                <OrderManagementPage />
+              </Layout>
+            }
+          />
+          <Route
+            path="*"
+            element={
+              <Layout>
+                <NotFound />
+              </Layout>
+            }
+          />
         </Routes>
       </Suspense>
       <Toaster />

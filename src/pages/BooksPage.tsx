@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import BookCard from "@/components/BookCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, Trash2 } from "lucide-react";
 import ScannerButton from "@/components/ScannerButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +21,17 @@ import { useStallContext } from "@/contexts/StallContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTranslation } from "react-i18next";
 import ExportBookListButton from "@/components/ExportBookListButton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useAuth } from "@/contexts/AuthContext";
 
 const BooksPage: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
@@ -28,11 +39,14 @@ const BooksPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
+  const [bookToDelete, setBookToDelete] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const navigate = useNavigate();
   const { currentStore } = useStallContext();
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -150,6 +164,62 @@ const BooksPage: React.FC = () => {
     }
   };
 
+  const handleDeleteBook = (bookId: string) => {
+    setBookToDelete(bookId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!bookToDelete || !currentStore) {
+      setIsDeleteDialogOpen(false);
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("books")
+        .delete()
+        .eq("id", bookToDelete)
+        .eq("stallid", currentStore);
+        
+      if (error) {
+        console.error("Error deleting book:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete book. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        // Remove the deleted book from state
+        const updatedBooks = books.filter(book => book.id !== bookToDelete);
+        setBooks(updatedBooks);
+        setFilteredBooks(updatedBooks.filter(book => 
+          (!selectedCategory || book.category === selectedCategory) &&
+          (!searchTerm || 
+            book.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (book.category && book.category.toLowerCase().includes(searchTerm.toLowerCase()))
+          )
+        ));
+        
+        toast({
+          title: "Success",
+          description: "Book deleted successfully",
+        });
+      }
+    } catch (err) {
+      console.error("Unexpected error deleting book:", err);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while deleting the book",
+        variant: "destructive",
+      });
+    } finally {
+      setBookToDelete(null);
+      setIsDeleteDialogOpen(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-temple-background pb-20">
       <MobileHeader 
@@ -217,7 +287,12 @@ const BooksPage: React.FC = () => {
         ) : filteredBooks.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredBooks.map((book) => (
-              <BookCard key={book.id} book={book} onSelect={handleBookSelect} />
+              <BookCard 
+                key={book.id} 
+                book={book} 
+                onSelect={handleBookSelect}
+                onDelete={isAdmin ? handleDeleteBook : undefined}
+              />
             ))}
           </div>
         ) : (
@@ -238,6 +313,23 @@ const BooksPage: React.FC = () => {
           </div>
         )}
       </main>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("common.confirmDelete")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("common.deleteBookConfirmation")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600">
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
