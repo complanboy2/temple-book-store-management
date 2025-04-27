@@ -45,9 +45,9 @@ const Index = () => {
               <CardTitle className="text-temple-maroon">
                 {t("common.bookManagement")}
               </CardTitle>
-              <CardDescription>
+              {/* <CardDescription>
                 {t("common.manageAndSellBooks")}
-              </CardDescription>
+              </CardDescription> */}
             </CardHeader>
             <CardContent className="space-y-4">
               <Link to="/books">
@@ -86,7 +86,7 @@ const Index = () => {
               <CardTitle className="text-temple-maroon">
                 {t("common.sales")}
               </CardTitle>
-              <CardDescription>{t("common.salesDescription")}</CardDescription>
+              {/* <CardDescription>{t("common.salesDescription")}</CardDescription> */}
             </CardHeader>
             <CardContent className="space-y-4">
               <Link to="/sales">
@@ -117,9 +117,9 @@ const Index = () => {
               <CardTitle className="text-temple-maroon">
                 {t("common.analytics")}
               </CardTitle>
-              <CardDescription>
+              {/* <CardDescription>
                 {t("common.trackYourStallPerformance")}
-              </CardDescription>
+              </CardDescription> */}
             </CardHeader>
             <CardContent className="space-y-4">
               <Link to="/dashboard">
@@ -149,9 +149,9 @@ const Index = () => {
               <CardTitle className="text-temple-maroon">
                 {t("common.administration")}
               </CardTitle>
-              <CardDescription>
+              {/* <CardDescription>
                 {t("common.manageStallSettings")}
-              </CardDescription>
+              </CardDescription> */}
             </CardHeader>
             <CardContent className="space-y-4">
               <Link to="/settings">
