@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Download, Printer } from "lucide-react";
 import { Sale } from "@/types";
 import { useToast } from '@/hooks/use-toast';
+import { useStallContext } from '@/context/stall-context';
+import { supabase } from '@/lib/supabase';
 
 interface ExportSalesButtonProps {
   sales: Sale[];
@@ -47,6 +49,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
     personnel: false
   });
   const { toast } = useToast();
+  const { currentStore } = useStallContext();
 
   const handleFieldChange = (field: keyof ExportFields, value: boolean) => {
     setFields(prev => ({ ...prev, [field]: value }));
@@ -205,13 +208,25 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
     setOpen(false);
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     const html = generateSalesHTML();
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
+    
+    // Get stall name
+    const { data: stallData } = await supabase
+      .from('book_stalls')
+      .select('name')
+      .eq('id', currentStore)
+      .single();
+    
+    const stallName = stallData?.name || 'unknown_stall';
+    const date = new Date().toISOString().split('T')[0];
+    const fileName = `${stallName}_${date}_sales-history.html`;
+    
     const a = document.createElement('a');
     a.href = url;
-    a.download = `sales-history-${new Date().toISOString().split('T')[0]}.html`;
+    a.download = fileName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

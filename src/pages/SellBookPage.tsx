@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,7 @@ import MobileHeader from "@/components/MobileHeader";
 import { useTranslation } from "react-i18next";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 const SellBookPage: React.FC = () => {
   const [book, setBook] = useState<Book | null>(null);
@@ -22,6 +22,7 @@ const SellBookPage: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
+  const [sellerName, setSellerName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const params = useParams();
@@ -33,10 +34,9 @@ const SellBookPage: React.FC = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Auto-fill buyer information from current user
     if (currentUser) {
       setBuyerName(currentUser.name || "");
-      setBuyerPhone(currentUser.phone || "");
+      setSellerName(currentUser.name || "");
     }
   }, [currentUser]);
 
@@ -143,14 +143,12 @@ const SellBookPage: React.FC = () => {
     
     try {
       console.log("Starting sale process for book:", book.id);
-      // Use generateId() instead of crypto.randomUUID()
       const saleId = generateId();
       const totalAmount = book.salePrice * quantity;
       
       const saleDate = new Date();
       const currentTimestamp = saleDate.toISOString();
       
-      // First update book quantity to prevent race conditions
       const { error: updateError } = await supabase
         .from('books')
         .update({ 
@@ -166,7 +164,6 @@ const SellBookPage: React.FC = () => {
       
       console.log("Book inventory updated successfully");
       
-      // Then record the sale with more robust error handling
       const { error: saleError } = await supabase
         .from('sales')
         .insert({
@@ -175,8 +172,8 @@ const SellBookPage: React.FC = () => {
           quantity: quantity,
           totalamount: totalAmount,
           paymentmethod: paymentMethod,
-          buyername: buyerName || currentUser.name,
-          buyerphone: buyerPhone || currentUser.phone,
+          buyername: buyerName,
+          buyerphone: buyerPhone,
           personnelid: currentUser.id,
           stallid: currentStore,
           synced: true,
@@ -185,7 +182,6 @@ const SellBookPage: React.FC = () => {
       
       if (saleError) {
         console.error("Error creating sale:", saleError);
-        // Revert the quantity change
         await supabase
           .from('books')
           .update({ quantity: book.quantity, updatedat: new Date().toISOString() })
@@ -248,24 +244,46 @@ const SellBookPage: React.FC = () => {
         
         <Card className="temple-card">
           <CardHeader>
-            <CardTitle className="text-lg text-temple-maroon">{book.name}</CardTitle>
+            <CardTitle className="text-lg text-temple-maroon">{book?.name}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4">
+              {book?.imageUrl && (
+                <div className="max-w-sm mx-auto mb-4">
+                  <AspectRatio ratio={4/3}>
+                    <img 
+                      src={book.imageUrl} 
+                      alt={book.name}
+                      className="rounded-lg object-cover w-full h-full"
+                    />
+                  </AspectRatio>
+                </div>
+              )}
+              
               <div className="flex flex-col md:flex-row justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">{t("common.author")}: {book.author}</p>
-                  {book.category && (
-                    <p className="text-sm text-muted-foreground">{t("common.category")}: {book.category}</p>
+                  <p className="text-sm text-muted-foreground">{t("common.author")}: {book?.author}</p>
+                  {book?.category && (
+                    <p className="text-sm text-muted-foreground">{t("common.category")}: {book?.category}</p>
                   )}
-                  <p className="text-sm text-muted-foreground">{t("common.availableQuantity")}: {book.quantity}</p>
+                  <p className="text-sm text-muted-foreground">{t("common.availableQuantity")}: {book?.quantity}</p>
                 </div>
                 <div>
-                  <p className="font-medium text-lg text-temple-saffron">₹{book.salePrice}</p>
+                  <p className="font-medium text-lg text-temple-saffron">₹{book?.salePrice}</p>
                 </div>
               </div>
               
               <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid gap-2">
+                  <Label htmlFor="sellerName">{t("sell.sellerName")}</Label>
+                  <Input
+                    id="sellerName"
+                    value={sellerName}
+                    readOnly
+                    className="bg-gray-50"
+                  />
+                </div>
+
                 <div className="grid gap-2">
                   <Label htmlFor="quantity">{t("common.quantity")}</Label>
                   <Input
@@ -274,7 +292,7 @@ const SellBookPage: React.FC = () => {
                     value={quantity}
                     onChange={handleQuantityChange}
                     min={1}
-                    max={book.quantity}
+                    max={book?.quantity}
                     className="max-w-xs"
                   />
                 </div>
@@ -308,6 +326,7 @@ const SellBookPage: React.FC = () => {
                     value={buyerName}
                     onChange={(e) => setBuyerName(e.target.value)}
                     className="max-w-md"
+                    placeholder="Enter buyer's name"
                   />
                 </div>
                 
@@ -318,19 +337,20 @@ const SellBookPage: React.FC = () => {
                     value={buyerPhone}
                     onChange={(e) => setBuyerPhone(e.target.value)}
                     className="max-w-md"
+                    placeholder="Enter buyer's phone number"
                   />
                 </div>
                 
                 <div className="border-t pt-4">
                   <div className="flex justify-between items-center mb-4">
                     <p className="font-medium">{t("common.total")}</p>
-                    <p className="font-bold text-xl text-temple-maroon">₹{(book.salePrice * quantity).toFixed(2)}</p>
+                    <p className="font-bold text-xl text-temple-maroon">₹{book ? (book.salePrice * quantity).toFixed(2) : '0.00'}</p>
                   </div>
                   
                   <Button 
                     type="submit" 
                     className="w-full" 
-                    disabled={isSubmitting || book.quantity === 0}
+                    disabled={isSubmitting || !book || book.quantity === 0}
                   >
                     {isSubmitting ? `${t("common.processing")}...` : t("sell.completeSale")}
                   </Button>
