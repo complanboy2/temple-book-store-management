@@ -1,5 +1,4 @@
-
-import { Route, Routes } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import React, { Suspense, lazy, useEffect } from "react";
 import { useStallContext } from "./contexts/StallContext";
 import { useToast } from "./hooks/use-toast";
@@ -32,7 +31,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 import { initializeSampleData } from "./services/storageService";
 import { checkSupabaseConnection } from "./integrations/supabase/client";
 
-function App() {
+const App = () => {
   const { currentStore } = useStallContext();
   const { toast } = useToast();
 
@@ -188,6 +187,6 @@ function App() {
       <Toaster />
     </div>
   );
-}
+};
 
 export default App;

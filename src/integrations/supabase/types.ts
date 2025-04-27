@@ -129,6 +129,98 @@ export type Database = {
         }
         Relationships: []
       }
+      order_items: {
+        Row: {
+          bookid: string
+          fulfilled: number
+          id: string
+          orderid: string
+          priceatorder: number
+          quantity: number
+        }
+        Insert: {
+          bookid: string
+          fulfilled?: number
+          id?: string
+          orderid: string
+          priceatorder: number
+          quantity: number
+        }
+        Update: {
+          bookid?: string
+          fulfilled?: number
+          id?: string
+          orderid?: string
+          priceatorder?: number
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_orderid_fkey"
+            columns: ["orderid"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          adminid: string
+          createdat: string
+          customeremail: string | null
+          customername: string
+          customerphone: string | null
+          deliverydate: string | null
+          id: string
+          notes: string | null
+          orderdate: string
+          paymentmethod: string | null
+          paymentstatus: string
+          stallid: string
+          status: string
+          synced: boolean
+          totalamount: number
+          updatedat: string
+        }
+        Insert: {
+          adminid: string
+          createdat?: string
+          customeremail?: string | null
+          customername: string
+          customerphone?: string | null
+          deliverydate?: string | null
+          id?: string
+          notes?: string | null
+          orderdate?: string
+          paymentmethod?: string | null
+          paymentstatus: string
+          stallid: string
+          status: string
+          synced?: boolean
+          totalamount: number
+          updatedat?: string
+        }
+        Update: {
+          adminid?: string
+          createdat?: string
+          customeremail?: string | null
+          customername?: string
+          customerphone?: string | null
+          deliverydate?: string | null
+          id?: string
+          notes?: string | null
+          orderdate?: string
+          paymentmethod?: string | null
+          paymentstatus?: string
+          stallid?: string
+          status?: string
+          synced?: boolean
+          totalamount?: number
+          updatedat?: string
+        }
+        Relationships: []
+      }
       restock_entries: {
         Row: {
           adminid: string

@@ -1,11 +1,11 @@
 
 import React from "react";
 import { Book } from "@/types";
-import { Card, CardContent } from "@/components/ui/card";
-import { Trash2 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { Trash2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface BookCardProps {
   book: Book;
@@ -14,60 +14,45 @@ interface BookCardProps {
 }
 
 const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete }) => {
-  const { isAdmin } = useAuth();
-  
-  const handleClick = () => {
-    onSelect(book);
-  };
-  
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onDelete) {
-      onDelete(book.id);
-    }
-  };
+  const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === "admin";
 
   return (
-    <Card 
-      className="cursor-pointer hover:shadow-md transition-shadow temple-card"
-      onClick={handleClick}
-    >
-      <CardContent className="p-4">
-        <div className="mb-4 overflow-hidden rounded-md">
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+      <CardHeader className="p-0">
+        {book.imageUrl && (
           <AspectRatio ratio={4/3}>
             <img 
-              src={book.imageUrl || '/placeholder.svg'} 
+              src={book.imageUrl} 
               alt={book.name}
-              className="h-full w-full object-cover"
+              className="w-full h-full object-cover"
             />
           </AspectRatio>
-        </div>
+        )}
+      </CardHeader>
+      <CardContent className="p-4">
+        <CardTitle className="text-lg mb-2">{book.name}</CardTitle>
+        <p className="text-sm text-muted-foreground mb-1">Author: {book.author}</p>
+        <p className="text-sm text-muted-foreground mb-2">Stock: {book.quantity}</p>
+        <p className="font-medium text-temple-saffron mb-4">₹{book.salePrice}</p>
         
-        <div className="flex justify-between items-start">
-          <h3 className="font-medium text-lg mb-1 text-temple-maroon">{book.name}</h3>
+        <div className="flex justify-between items-center">
+          <Button 
+            onClick={() => onSelect(book)}
+            variant="default"
+          >
+            Select
+          </Button>
+          
           {isAdmin && onDelete && (
             <Button
+              onClick={() => onDelete(book.id)}
               variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-600"
-              onClick={handleDelete}
-              title="Delete Book"
+              className="text-destructive hover:text-destructive"
             >
-              <Trash2 size={16} />
+              <Trash2 className="h-4 w-4" />
             </Button>
           )}
-        </div>
-        <p className="text-sm text-muted-foreground mb-1">{book.author}</p>
-        {book.category && (
-          <p className="text-xs text-muted-foreground mb-2">
-            Category: {book.category}
-          </p>
-        )}
-        <div className="flex justify-between items-center">
-          <p className="font-bold text-temple-saffron">₹{book.salePrice}</p>
-          <p className="text-sm text-muted-foreground">
-            {book.quantity} in stock
-          </p>
         </div>
       </CardContent>
     </Card>

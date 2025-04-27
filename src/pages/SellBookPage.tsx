@@ -35,7 +35,6 @@ const SellBookPage: React.FC = () => {
 
   useEffect(() => {
     if (currentUser) {
-      setBuyerName(currentUser.name || "");
       setSellerName(currentUser.name || "");
     }
   }, [currentUser]);
