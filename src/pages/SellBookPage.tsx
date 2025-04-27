@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,6 @@ import MobileHeader from "@/components/MobileHeader";
 import { useTranslation } from "react-i18next";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
-import { crypto } from "crypto";
 
 const SellBookPage: React.FC = () => {
   const [book, setBook] = useState<Book | null>(null);
@@ -143,7 +143,8 @@ const SellBookPage: React.FC = () => {
     
     try {
       console.log("Starting sale process for book:", book.id);
-      const saleId = crypto.randomUUID();
+      // Use generateId() instead of crypto.randomUUID()
+      const saleId = generateId();
       const totalAmount = book.salePrice * quantity;
       
       const saleDate = new Date();
@@ -163,7 +164,7 @@ const SellBookPage: React.FC = () => {
         throw new Error(t("sell.failedToUpdateInventory"));
       }
       
-      console.log("Book inventory updated:", bookData);
+      console.log("Book inventory updated successfully");
       
       // Then record the sale with more robust error handling
       const { error: saleError } = await supabase
@@ -193,7 +194,7 @@ const SellBookPage: React.FC = () => {
         throw new Error(t("sell.failedToRecordSale"));
       }
       
-      console.log("Sale recorded successfully:", saleData);
+      console.log("Sale recorded successfully");
 
       toast({
         title: t("common.success"),
