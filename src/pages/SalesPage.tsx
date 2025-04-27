@@ -5,7 +5,7 @@ import Header from "@/components/Header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Search, Filter } from "lucide-react";
+import { Search, Filter, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { 
   Select, 
@@ -45,7 +45,7 @@ const SalesPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [bookDetailsMap, setBookDetailsMap] = useState<Record<string, { name: string; author: string; price: number }>>({});
   const { currentStore } = useStallContext();
-  const { isAdmin } = useAuth();
+  const { isAdmin, currentUser } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -198,7 +198,10 @@ const SalesPage = () => {
       })
     : sales;
 
-  const paymentMethods = Array.from(new Set(sales.map(sale => sale.paymentMethod)));
+  // Make sure we don't have empty payment methods
+  const paymentMethods = Array.from(
+    new Set(sales.filter(sale => sale.paymentMethod).map(sale => sale.paymentMethod))
+  );
 
   const handleStartDateSelect = (date: Date | undefined) => {
     setStartDate(date);
@@ -206,6 +209,10 @@ const SalesPage = () => {
   
   const handleEndDateSelect = (date: Date | undefined) => {
     setEndDate(date);
+  };
+
+  const navigateToNewSale = () => {
+    navigate('/sell/new');
   };
 
   return (
@@ -223,11 +230,22 @@ const SalesPage = () => {
             {t("common.salesHistory")}
           </h1>
           
-          <ExportSalesButton 
-            sales={sales} 
-            bookDetailsMap={bookDetailsMap} 
-            variant="both"
-          />
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button 
+              variant="default" 
+              className="flex items-center gap-2"
+              onClick={navigateToNewSale}
+            >
+              <Plus className="h-4 w-4" />
+              {t("common.newSale")}
+            </Button>
+            
+            <ExportSalesButton 
+              sales={sales} 
+              bookDetailsMap={bookDetailsMap} 
+              variant="both"
+            />
+          </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
