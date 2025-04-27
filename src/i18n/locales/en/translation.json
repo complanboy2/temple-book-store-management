@@ -69,7 +69,8 @@
     "left": "left",
     "confirmDelete": "Confirm Deletion",
     "deleteBookConfirmation": "Are you sure you want to delete this book? This action cannot be undone.",
-    "buyer": "Buyer"
+    "buyer": "Buyer",
+    "bookManagement": "Book Management"  
   },
   "sell": {
     "title": "Sell Book",
