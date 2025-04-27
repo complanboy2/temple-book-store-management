@@ -70,7 +70,10 @@
     "confirmDelete": "Confirm Deletion",
     "deleteBookConfirmation": "Are you sure you want to delete this book? This action cannot be undone.",
     "buyer": "Buyer",
-    "bookManagement": "Book Management"  
+    "bookManagement": "Book Management",
+    "manageAndSellBooks": "Manage And Sell Books",
+    "manageYourBookInventory" : "Manage Your Book Inventory",
+    "administration": "Administration"  
   },
   "sell": {
     "title": "Sell Book",
