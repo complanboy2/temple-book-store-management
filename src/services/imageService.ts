@@ -1,4 +1,3 @@
-
 import CryptoJS from 'crypto-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -106,7 +105,10 @@ export const getImageUrl = async (file: File, metadata?: { author?: string, name
     const { data, error } = await supabase
       .storage
       .from('book-images')
-      .upload(fileName, file);
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
       
     if (error) {
       console.error("Failed to upload to Supabase Storage:", error);

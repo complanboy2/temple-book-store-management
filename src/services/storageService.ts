@@ -272,7 +272,7 @@ export const markOrderSynced = (orderId: string): void => {
 
 // Helper function to generate a simple UUID
 export const generateId = (): string => {
-  return Date.now().toString(36) + Math.random().toString(36).substring(2);
+  return crypto.randomUUID(); // Use built-in crypto.randomUUID() for proper UUID generation
 };
 
 // Clear local storage function

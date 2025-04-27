@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,7 @@ import MobileHeader from "@/components/MobileHeader";
 import { useTranslation } from "react-i18next";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
+import { crypto } from "crypto";
 
 const SellBookPage: React.FC = () => {
   const [book, setBook] = useState<Book | null>(null);
@@ -143,21 +143,20 @@ const SellBookPage: React.FC = () => {
     
     try {
       console.log("Starting sale process for book:", book.id);
-      const saleId = generateId();
+      const saleId = crypto.randomUUID();
       const totalAmount = book.salePrice * quantity;
       
       const saleDate = new Date();
       const currentTimestamp = saleDate.toISOString();
       
       // First update book quantity to prevent race conditions
-      const { data: bookData, error: updateError } = await supabase
+      const { error: updateError } = await supabase
         .from('books')
         .update({ 
           quantity: book.quantity - quantity, 
           updatedat: currentTimestamp
         })
-        .eq('id', book.id)
-        .select();
+        .eq('id', book.id);
         
       if (updateError) {
         console.error("Error updating book quantity:", updateError);
@@ -166,8 +165,8 @@ const SellBookPage: React.FC = () => {
       
       console.log("Book inventory updated:", bookData);
       
-      // Then record the sale
-      const { data: saleData, error: saleError } = await supabase
+      // Then record the sale with more robust error handling
+      const { error: saleError } = await supabase
         .from('sales')
         .insert({
           id: saleId,
@@ -175,18 +174,17 @@ const SellBookPage: React.FC = () => {
           quantity: quantity,
           totalamount: totalAmount,
           paymentmethod: paymentMethod,
-          buyername: buyerName || null,
-          buyerphone: buyerPhone || null,
+          buyername: buyerName || currentUser.name,
+          buyerphone: buyerPhone || currentUser.phone,
           personnelid: currentUser.id,
           stallid: currentStore,
           synced: true,
           createdat: currentTimestamp
-        })
-        .select();
+        });
       
       if (saleError) {
         console.error("Error creating sale:", saleError);
-        // If sale creation fails, we need to revert the inventory change
+        // Revert the quantity change
         await supabase
           .from('books')
           .update({ quantity: book.quantity, updatedat: new Date().toISOString() })
