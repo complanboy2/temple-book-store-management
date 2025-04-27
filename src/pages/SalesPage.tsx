@@ -199,6 +199,14 @@ const SalesPage = () => {
 
   const paymentMethods = Array.from(new Set(sales.map(sale => sale.paymentMethod)));
 
+  const handleStartDateSelect = (date: Date | undefined) => {
+    setStartDate(date);
+  };
+  
+  const handleEndDateSelect = (date: Date | undefined) => {
+    setEndDate(date);
+  };
+
   return (
     <div className="min-h-screen bg-temple-background pb-20">
       <Header />
@@ -256,14 +264,14 @@ const SalesPage = () => {
             mode="single"
             placeholder={t("common.startDate")}
             selected={startDate}
-            onSelect={setStartDate}
+            onSelect={handleStartDateSelect}
           />
           <DatePicker
             id="end-date"
             mode="single"
             placeholder={t("common.endDate")}
             selected={endDate}
-            onSelect={setEndDate}
+            onSelect={handleEndDateSelect}
           />
         </div>
         
