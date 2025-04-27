@@ -12,8 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Download, Printer } from "lucide-react";
 import { Sale } from "@/types";
 import { useToast } from '@/hooks/use-toast';
-import { useStallContext } from '@/context/stall-context';
-import { supabase } from '@/lib/supabase';
+import { useStallContext } from '@/contexts/StallContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ExportSalesButtonProps {
   sales: Sale[];
