@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
@@ -30,6 +29,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import ExportSalesButton from "@/components/ExportSalesButton";
+import MobileNavBar from "@/components/MobileNavBar";
 
 const SalesPage = () => {
   const [sales, setSales] = useState<Sale[]>([]);
@@ -117,7 +117,6 @@ const SalesPage = () => {
         if (count !== null) {
           setTotalPages(Math.ceil(count / itemsPerPage));
         } else {
-          // If count is null, estimate total pages based on the number of items returned
           setTotalPages(data ? Math.ceil(data.length / itemsPerPage) : 1);
         }
         
@@ -132,7 +131,7 @@ const SalesPage = () => {
           personnelId: sale.personnelid,
           stallId: sale.stallid,
           createdAt: new Date(sale.createdat),
-          synced: sale.synced // Added synced property
+          synced: sale.synced
         }));
         
         setSales(salesData);
@@ -201,15 +200,14 @@ const SalesPage = () => {
   const paymentMethods = Array.from(new Set(sales.map(sale => sale.paymentMethod)));
 
   return (
-    <div className="min-h-screen bg-temple-background">
+    <div className="min-h-screen bg-temple-background pb-20">
       <Header />
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-4 py-6 pb-20">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <h1 className="text-2xl font-bold text-temple-maroon mb-4 md:mb-0">
             {t("common.salesHistory")}
           </h1>
           
-          {/* Add Export Sales Button here */}
           <ExportSalesButton 
             sales={sales} 
             bookDetailsMap={bookDetailsMap} 
@@ -309,7 +307,12 @@ const SalesPage = () => {
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage > 1) setCurrentPage(currentPage - 1);
+                    }}
+                    aria-disabled={currentPage === 1}
                     className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
                   />
                 </PaginationItem>
@@ -317,8 +320,12 @@ const SalesPage = () => {
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                   <PaginationItem key={page}>
                     <PaginationLink
+                      href="#"
                       isActive={currentPage === page}
-                      onClick={() => setCurrentPage(page)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentPage(page);
+                      }}
                     >
                       {page}
                     </PaginationLink>
@@ -327,7 +334,12 @@ const SalesPage = () => {
                 
                 <PaginationItem>
                   <PaginationNext
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                    }}
+                    aria-disabled={currentPage === totalPages}
                     className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
                   />
                 </PaginationItem>
@@ -336,6 +348,8 @@ const SalesPage = () => {
           </div>
         )}
       </main>
+      
+      <MobileNavBar />
     </div>
   );
 };

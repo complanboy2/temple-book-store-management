@@ -14,6 +14,7 @@ import MobileHeader from "@/components/MobileHeader";
 import { useTranslation } from "react-i18next";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
+import MobileNavBar from "@/components/MobileNavBar";
 
 const SellBookPage: React.FC = () => {
   const [book, setBook] = useState<Book | null>(null);
@@ -37,8 +38,8 @@ const SellBookPage: React.FC = () => {
       
       if (!bookId || !currentStore) {
         toast({
-          title: "Error",
-          description: "Book ID or store not found",
+          title: t("common.error"),
+          description: t("common.bookNotFound"),
           variant: "destructive",
         });
         navigate('/books');
@@ -57,8 +58,8 @@ const SellBookPage: React.FC = () => {
         if (error || !supabaseBook) {
           console.error("Error fetching book:", error);
           toast({
-            title: "Error",
-            description: "Book not found",
+            title: t("common.error"),
+            description: t("common.bookNotFound"),
             variant: "destructive",
           });
           navigate('/books');
@@ -85,8 +86,8 @@ const SellBookPage: React.FC = () => {
       } catch (error) {
         console.error("Fetch error:", error);
         toast({
-          title: "Error",
-          description: "Failed to load book details",
+          title: t("common.error"),
+          description: t("common.failedToLoadBookDetails"),
           variant: "destructive",
         });
         navigate('/books');
@@ -114,8 +115,8 @@ const SellBookPage: React.FC = () => {
     
     if (!book || !currentStore || !currentUser) {
       toast({
-        title: "Error",
-        description: "Missing required information",
+        title: t("common.error"),
+        description: t("common.missingRequiredInformation"),
         variant: "destructive",
       });
       return;
@@ -123,8 +124,8 @@ const SellBookPage: React.FC = () => {
     
     if (quantity > book.quantity) {
       toast({
-        title: "Error",
-        description: "Not enough books in stock",
+        title: t("common.error"),
+        description: t("common.notEnoughBooks"),
         variant: "destructive",
       });
       return;
@@ -136,6 +137,8 @@ const SellBookPage: React.FC = () => {
       console.log("Starting sale process for book:", book.id);
       const saleId = generateId();
       const totalAmount = book.salePrice * quantity;
+      
+      const currentTimestamp = new Date().toISOString();
       
       const { data: saleData, error: saleError } = await supabase
         .from('sales')
@@ -149,13 +152,14 @@ const SellBookPage: React.FC = () => {
           buyerphone: buyerPhone || null,
           personnelid: currentUser.id,
           stallid: currentStore,
-          synced: true
+          synced: true,
+          createdat: currentTimestamp
         })
         .select();
       
       if (saleError) {
         console.error("Error creating sale:", saleError);
-        throw new Error("Failed to record sale");
+        throw new Error(t("sell.failedToRecordSale"));
       }
       
       console.log("Sale recorded successfully:", saleData);
@@ -165,29 +169,29 @@ const SellBookPage: React.FC = () => {
         .from('books')
         .update({ 
           quantity: newQuantity, 
-          updatedat: new Date().toISOString() 
+          updatedat: currentTimestamp
         })
         .eq('id', book.id)
         .select();
         
       if (updateError) {
         console.error("Error updating book quantity:", updateError);
-        throw new Error("Failed to update inventory");
+        throw new Error(t("sell.failedToUpdateInventory"));
       }
       
       console.log("Book inventory updated:", bookData);
 
       toast({
-        title: "Success",
-        description: "Sale completed successfully",
+        title: t("common.success"),
+        description: t("sell.saleCompleted"),
       });
       
       navigate('/sales');
     } catch (error) {
       console.error("Sale submission error:", error);
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to complete sale",
+        title: t("common.error"),
+        description: error instanceof Error ? error.message : t("sell.failedToCompleteSale"),
         variant: "destructive",
       });
     } finally {
@@ -215,14 +219,14 @@ const SellBookPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-temple-background">
+    <div className="min-h-screen bg-temple-background pb-20">
       <MobileHeader 
         title={t("sell.title")}
         showBackButton={true}
         backTo="/books"
       />
       
-      <main className="container mx-auto px-2 py-4">
+      <main className="container mx-auto px-2 py-4 pb-20">
         {!isMobile && (
           <h1 className="text-2xl font-bold text-temple-maroon mb-4">{t("sell.title")}</h1>
         )}
@@ -321,6 +325,8 @@ const SellBookPage: React.FC = () => {
           </CardContent>
         </Card>
       </main>
+      
+      <MobileNavBar />
     </div>
   );
 };

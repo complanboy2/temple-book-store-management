@@ -3,16 +3,32 @@ import CryptoJS from 'crypto-js';
 import { supabase } from '@/integrations/supabase/client';
 
 /**
- * Generates a hash of the image file content
+ * Generates a hash of the image file content combined with book metadata
  */
-export const generateImageHash = async (file: File): Promise<string> => {
+export const generateImageHash = async (file: File, metadata?: { author?: string, name?: string, printingInstitute?: string }): Promise<string> => {
   return new Promise((resolve) => {
     const reader = new FileReader();
     
     reader.onload = (e) => {
       if (e.target?.result) {
-        // Create SHA-256 hash of the file content
-        const hashResult = CryptoJS.SHA256(e.target.result as string);
+        // Combine file content with book metadata for a more unique hash
+        let contentToHash = e.target.result as string;
+        
+        // Add metadata to the hash if available
+        if (metadata) {
+          const metadataString = [
+            metadata.author || '',
+            metadata.name || '',
+            metadata.printingInstitute || ''
+          ].join('::');
+          
+          if (metadataString.trim().length > 0) {
+            contentToHash += metadataString;
+          }
+        }
+        
+        // Create SHA-256 hash of the combined content
+        const hashResult = CryptoJS.SHA256(contentToHash);
         const hash = hashResult.toString(CryptoJS.enc.Base64);
         resolve(hash);
       }
@@ -72,10 +88,10 @@ export const recordImageHash = async (hash: string, url: string): Promise<void> 
 /**
  * Optimized function to get an image URL - either finds an existing one or uploads a new one
  */
-export const getImageUrl = async (file: File): Promise<string | null> => {
+export const getImageUrl = async (file: File, metadata?: { author?: string, name?: string, printingInstitute?: string }): Promise<string | null> => {
   try {
-    // Generate hash for the image file
-    const imageHash = await generateImageHash(file);
+    // Generate hash for the image file with metadata
+    const imageHash = await generateImageHash(file, metadata);
     
     // Check if the image already exists
     const existingImageUrl = await findExistingImage(imageHash);

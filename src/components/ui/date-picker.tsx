@@ -1,6 +1,4 @@
 
-"use client";
-
 import * as React from "react";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
@@ -12,80 +10,96 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useTranslation } from "react-i18next";
 
 interface DatePickerProps {
   id?: string;
-  selected?: Date;
-  onSelect: (date: Date | undefined) => void;
-  mode?: "single" | "range" | "multiple";
   placeholder?: string;
+  mode?: "single" | "range" | "multiple"; 
+  selected?: Date | Date[] | { from: Date; to: Date };
+  onSelect?: (date: Date | Date[] | { from: Date; to: Date } | undefined) => void;
   className?: string;
+  disabled?: boolean;
 }
 
 export function DatePicker({
   id,
+  placeholder,
+  mode = "single",
   selected,
   onSelect,
-  mode = "single",
-  placeholder = "Pick a date",
   className,
+  disabled = false,
 }: DatePickerProps) {
+  const { t } = useTranslation();
+  
+  // Default placeholder text if none provided
+  const placeholderText = placeholder || t("common.selectDate");
+
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          id={id}
-          variant={"outline"}
-          className={cn(
-            "w-[240px] justify-start text-left font-normal",
-            !selected && "text-muted-foreground",
-            className
+    <div className={cn("relative", className)}>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            id={id}
+            variant={"outline"}
+            className={cn(
+              "w-full justify-start text-left font-normal",
+              !selected && "text-muted-foreground"
+            )}
+            disabled={disabled}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {selected ? (
+              mode === "single" && selected instanceof Date ? (
+                format(selected, "PPP")
+              ) : mode === "range" && selected && typeof selected === "object" && "from" in selected ? (
+                <>
+                  {selected.from && format(selected.from, "PPP")}
+                  {selected.to ? ` - ${format(selected.to, "PPP")}` : ""}
+                </>
+              ) : mode === "multiple" && Array.isArray(selected) ? (
+                `${selected.length} ${
+                  selected.length === 1 ? t("common.day") : t("common.days")
+                } ${t("common.selected")}`
+              ) : (
+                placeholderText
+              )
+            ) : (
+              placeholderText
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          {mode === "single" && (
+            <Calendar
+              mode="single"
+              selected={selected as Date}
+              onSelect={onSelect as (date: Date | undefined) => void}
+              initialFocus
+              className="rounded-md border"
+            />
           )}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {selected ? format(selected, "PPP") : <span>{placeholder}</span>}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        {mode === "single" && (
-          <Calendar
-            mode="single"
-            selected={selected}
-            onSelect={onSelect}
-            initialFocus
-            className={cn("p-3 pointer-events-auto")}
-          />
-        )}
-        {mode === "range" && (
-          <Calendar
-            mode="range"
-            selected={{
-              from: selected,
-              to: selected,
-            }}
-            onSelect={(range) => {
-              onSelect(range?.from);
-            }}
-            initialFocus
-            className={cn("p-3 pointer-events-auto")}
-          />
-        )}
-        {mode === "multiple" && (
-          <Calendar
-            mode="multiple"
-            selected={selected ? [selected] : []}
-            onSelect={(dates) => {
-              if (dates && dates.length > 0) {
-                onSelect(dates[dates.length - 1]);
-              } else {
-                onSelect(undefined);
-              }
-            }}
-            initialFocus
-            className={cn("p-3 pointer-events-auto")}
-          />
-        )}
-      </PopoverContent>
-    </Popover>
+          {mode === "range" && (
+            <Calendar
+              mode="range"
+              selected={selected as { from: Date; to: Date }}
+              onSelect={onSelect as (date: { from: Date; to: Date } | undefined) => void}
+              initialFocus
+              className="rounded-md border"
+            />
+          )}
+          {mode === "multiple" && (
+            <Calendar
+              mode="multiple"
+              selected={selected as Date[]}
+              onSelect={onSelect as (date: Date[] | undefined) => void}
+              initialFocus
+              className="rounded-md border"
+            />
+          )}
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 }
