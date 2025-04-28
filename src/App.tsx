@@ -20,7 +20,6 @@ const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const MetadataManagerPage = lazy(() => import("./pages/MetadataManagerPage"));
 const ReportsPage = lazy(() => import("./pages/ReportsPage"));
-const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const SuperAdminPage = lazy(() => import("./pages/SuperAdminPage"));
 const OrdersPage = lazy(() => import("./pages/OrdersPage"));
@@ -131,14 +130,6 @@ const App = () => {
             element={
               <Layout>
                 <ReportsPage />
-              </Layout>
-            }
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <Layout>
-                <DashboardPage />
               </Layout>
             }
           />

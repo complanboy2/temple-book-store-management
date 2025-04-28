@@ -29,7 +29,7 @@ const Header = () => {
             <SheetContent side="left" className="w-72 bg-temple-background">
               <div className="flex flex-col h-full">
                 <div className="p-4 border-b border-temple-gold/30">
-                  <h2 className="text-xl font-bold text-temple-maroon">Temple Book Manager</h2>
+                  <h2 className="text-xl font-bold text-temple-maroon">Book Store Manager</h2>
                   {currentUser && (
                     <p className="text-sm text-muted-foreground mt-1">{currentUser.name}</p>
                   )}
@@ -110,7 +110,7 @@ const Header = () => {
               </div>
             </SheetContent>
           </Sheet>
-          <h1 className="text-xl font-bold text-white">Temple Book Manager</h1>
+          <h1 className="text-xl font-bold text-white">Book Store Manager</h1>
         </div>
         
         <div className="flex items-center space-x-2">

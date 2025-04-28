@@ -1,4 +1,3 @@
-
 {
   "common": {
     "home": "Home",
@@ -72,10 +71,11 @@
     "buyer": "Buyer",
     "bookManagement": "Book Management",
     "manageAndSellBooks": "Manage And Sell Books",
-    "manageYourBookInventory" : "Manage Your Book Inventory",
+    "manageYourBookInventory": "Manage Your Book Inventory",
     "administration": "Administration",
     "analytics": "Analytics",
-    "allBooks": "All Books"  
+    "allBooks": "All Books",
+    "templeBookStall": "Book Store Manager"
   },
   "sell": {
     "title": "Sell Book",

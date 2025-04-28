@@ -60,7 +60,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
             </button>
           )}
           <h1 className="font-bold text-lg text-temple-maroon truncate max-w-[200px]">
-            {title}
+            {title || "Book Store Manager"}
           </h1>
         </div>
         
