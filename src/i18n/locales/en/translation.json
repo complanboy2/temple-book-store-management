@@ -1,3 +1,4 @@
+
 {
   "common": {
     "home": "Home",
@@ -75,7 +76,28 @@
     "administration": "Administration",
     "analytics": "Analytics",
     "allBooks": "All Books",
-    "templeBookStall": "Book Store Manager"
+    "templeBookStall": "Book Store Manager",
+    "store": "Store",
+    "stores": "Stores",
+    "reports": "Reports",
+    "required": "Required",
+    "orderManagement": "Order Management",
+    "orders": "Orders",
+    "order": "Order",
+    "orderDetails": "Order Details",
+    "orderStatus": "Order Status",
+    "orderDate": "Order Date",
+    "orderTotal": "Order Total",
+    "orderItems": "Order Items",
+    "newOrder": "New Order",
+    "viewOrders": "View Orders",
+    "manageOrders": "Manage Orders",
+    "stallSettings": "Store Settings",
+    "manageUsers": "Manage Users",
+    "metadataManagement": "Metadata Management",
+    "generateReports": "Generate Reports",
+    "viewDashboard": "View Dashboard",
+    "trackYourStallPerformance": "Track Your Store Performance"
   },
   "sell": {
     "title": "Sell Book",
@@ -98,5 +120,20 @@
     "lowStock": "Low Stock",
     "topSellingBooks": "Top Selling Books",
     "recentSales": "Recent Sales"
+  },
+  "settings": {
+    "language": "Language",
+    "selectLanguage": "Select Language",
+    "storeManagement": "Store Management",
+    "storeSettings": "Store Settings",
+    "currentStore": "Current Store"
+  },
+  "languages": {
+    "english": "English",
+    "hindi": "Hindi",
+    "telugu": "Telugu",
+    "tamil": "Tamil",
+    "kannada": "Kannada",
+    "marathi": "Marathi"
   }
 }

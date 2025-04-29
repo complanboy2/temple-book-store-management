@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -19,7 +20,8 @@ import {
   Settings,
   Users,
   ShieldCheck,
-  FileText
+  FileText,
+  Package
 } from "lucide-react";
 import MobileNavBar from "@/components/MobileNavBar";
 
@@ -104,8 +106,8 @@ const Index = () => {
                   variant="outline"
                   className="w-full justify-start"
                 >
-                  <CalendarCheck className="mr-2 h-5 w-5" />
-                  Order Management
+                  <Package className="mr-2 h-5 w-5" />
+                  {t("common.orderManagement")}
                 </Button>
               </Link>
             </CardContent>
@@ -122,22 +124,13 @@ const Index = () => {
               </CardDescription> */}
             </CardHeader>
             <CardContent className="space-y-4">
-              <Link to="/dashboard">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <BarChart3 className="mr-2 h-5 w-5" />
-                  {t("common.viewDashboard")}
-                </Button>
-              </Link>
               <Link to="/reports">
                 <Button
                   variant="outline"
                   className="w-full justify-start"
                 >
                   <FileText className="mr-2 h-5 w-5" />
-                  {t("common.generateReports")}
+                  {t("common.reports")}
                 </Button>
               </Link>
             </CardContent>
@@ -160,7 +153,7 @@ const Index = () => {
                   className="w-full justify-start"
                 >
                   <Settings className="mr-2 h-5 w-5" />
-                  {t("common.stallSettings")}
+                  {t("common.settings")}
                 </Button>
               </Link>
               <Link to="/admin">
