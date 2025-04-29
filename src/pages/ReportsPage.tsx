@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import { getSales, getBooks } from "@/services/storageService";
+import { supabase } from "@/integrations/supabase/client";
 import { Book, Sale } from "@/types";
 import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,8 +24,11 @@ import {
 import { CalendarDays, ChartBar, FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
+import { useTranslation } from "react-i18next";
+import { useStallContext } from "@/contexts/StallContext";
+import { ChartContainer } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { useToast } from "@/hooks/use-toast";
 
 const ReportsPage: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
@@ -36,8 +39,12 @@ const ReportsPage: React.FC = () => {
   const [categoryData, setCategoryData] = useState<any[]>([]);
   const [authorData, setAuthorData] = useState<any[]>([]);
   const [instituteData, setInstituteData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { isAdmin } = useAuth();
+  const { currentStore } = useStallContext();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { toast } = useToast();
   
   const itemsPerPage = 10;
   const COLORS = ['#FFC107', '#800000', '#FF6F00', '#FF9800', '#4CAF50', '#2196F3'];
@@ -48,21 +55,70 @@ const ReportsPage: React.FC = () => {
       return;
     }
     
-    const fetchData = () => {
-      const allBooks = getBooks();
-      const allSales = getSales();
-      setBooks(allBooks);
-      setSales(allSales);
+    if (!currentStore) {
+      setIsLoading(false);
+      return;
+    }
+    
+    const fetchData = async () => {
+      setIsLoading(true);
       
-      prepareReportData(allSales, allBooks);
+      try {
+        // Fetch books data from Supabase
+        const { data: booksData, error: booksError } = await supabase
+          .from('books')
+          .select('*')
+          .eq('stallid', currentStore);
+          
+        if (booksError) {
+          throw new Error(`Error fetching books: ${booksError.message}`);
+        }
+        
+        // Fetch sales data from Supabase
+        const { data: salesData, error: salesError } = await supabase
+          .from('sales')
+          .select('*')
+          .eq('stallid', currentStore)
+          .order('createdat', { ascending: false });
+          
+        if (salesError) {
+          throw new Error(`Error fetching sales: ${salesError.message}`);
+        }
+        
+        // Convert to proper format
+        const formattedBooks = booksData as Book[];
+        const formattedSales = salesData.map(sale => ({
+          id: sale.id,
+          bookId: sale.bookid,
+          quantity: sale.quantity,
+          totalAmount: sale.totalamount,
+          paymentMethod: sale.paymentmethod,
+          buyerName: sale.buyername || "",
+          buyerPhone: sale.buyerphone || "",
+          personnelId: sale.personnelid,
+          stallId: sale.stallid,
+          createdAt: new Date(sale.createdat),
+          synced: sale.synced
+        })) as Sale[];
+        
+        setBooks(formattedBooks);
+        setSales(formattedSales);
+        
+        prepareReportData(formattedSales, formattedBooks);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast({
+          title: t("common.error"),
+          description: t("common.failedToLoadSales"),
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
     };
     
     fetchData();
-    
-    // Refresh data every 30 seconds
-    const intervalId = setInterval(fetchData, 30000);
-    return () => clearInterval(intervalId);
-  }, [isAdmin, navigate]);
+  }, [currentStore, isAdmin, navigate, t, toast]);
   
   const prepareReportData = (salesData: Sale[], booksData: Book[]) => {
     // Daily sales data
@@ -109,7 +165,8 @@ const ReportsPage: React.FC = () => {
     salesData.forEach(sale => {
       const book = booksData.find(b => b.id === sale.bookId);
       if (book) {
-        categorySales[book.category] = (categorySales[book.category] || 0) + sale.quantity;
+        const category = book.category || t("common.uncategorized");
+        categorySales[category] = (categorySales[category] || 0) + sale.quantity;
       }
     });
     
@@ -144,7 +201,8 @@ const ReportsPage: React.FC = () => {
     salesData.forEach(sale => {
       const book = booksData.find(b => b.id === sale.bookId);
       if (book) {
-        instituteSales[book.printingInstitute] = (instituteSales[book.printingInstitute] || 0) + sale.quantity;
+        const institute = book.printingInstitute || t("common.notSpecified");
+        instituteSales[institute] = (instituteSales[institute] || 0) + sale.quantity;
       }
     });
     
@@ -225,12 +283,14 @@ const ReportsPage: React.FC = () => {
   };
   
   return (
-    <div className="min-h-screen bg-temple-background">
+    <div className="min-h-screen bg-temple-background pb-20">
       <Header />
       
       <main className="container mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-          <h1 className="text-2xl font-bold text-temple-maroon mb-4 md:mb-0">Reports & Analytics</h1>
+          <h1 className="text-2xl font-bold text-temple-maroon mb-4 md:mb-0">
+            {t("common.reports")} & {t("common.analytics")}
+          </h1>
           
           <div className="flex flex-wrap gap-2">
             <Button
@@ -239,7 +299,7 @@ const ReportsPage: React.FC = () => {
               onClick={() => setReportType('daily')}
             >
               <CalendarDays className="mr-2 h-4 w-4" />
-              Daily
+              {t("common.today")}
             </Button>
             <Button
               variant={reportType === 'category' ? "default" : "outline"}
@@ -247,7 +307,7 @@ const ReportsPage: React.FC = () => {
               onClick={() => setReportType('category')}
             >
               <ChartBar className="mr-2 h-4 w-4" />
-              By Category
+              {t("common.byCategory")}
             </Button>
             <Button
               variant={reportType === 'author' ? "default" : "outline"}
@@ -255,7 +315,7 @@ const ReportsPage: React.FC = () => {
               onClick={() => setReportType('author')}
             >
               <FileText className="mr-2 h-4 w-4" />
-              By Author
+              {t("common.byAuthor")}
             </Button>
             <Button
               variant={reportType === 'institute' ? "default" : "outline"}
@@ -263,171 +323,199 @@ const ReportsPage: React.FC = () => {
               onClick={() => setReportType('institute')}
             >
               <FileText className="mr-2 h-4 w-4" />
-              By Institute
+              {t("common.byInstitute")}
             </Button>
           </div>
         </div>
         
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Sales Trend Chart */}
-          <Card className="temple-card overflow-hidden">
-            <CardHeader>
-              <CardTitle className="text-lg text-temple-maroon">Sales Trend (Last 7 Days)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80">
-                <ChartContainer config={{}} className="h-full">
-                  <BarChart data={salesData}>
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="sales" fill="#FFC107" name="Revenue" />
-                  </BarChart>
-                </ChartContainer>
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Category or Author Distribution */}
-          <Card className="temple-card overflow-hidden">
-            <CardHeader>
-              <CardTitle className="text-lg text-temple-maroon">
-                {reportType === 'category' ? 'Sales by Category' : 
-                 reportType === 'author' ? 'Top Authors' : 
-                 reportType === 'institute' ? 'Printing Institutes' : 'Sales Distribution'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80">
-                <ChartContainer config={{}} className="h-full">
-                  <PieChart>
-                    <Pie
-                      data={reportType === 'category' ? categoryData : 
-                           reportType === 'author' ? authorData : 
-                           reportType === 'institute' ? instituteData : []}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                      nameKey="name"
-                      label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {(reportType === 'category' ? categoryData : 
-                        reportType === 'author' ? authorData : 
-                        reportType === 'institute' ? instituteData : []).map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ChartContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        {/* Detailed Sales Table */}
-        <Card className="temple-card overflow-hidden mb-6">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg text-temple-maroon">Detailed Report</CardTitle>
-            <Button 
-              onClick={exportReport}
-              variant="outline"
-              className="border-temple-maroon text-temple-maroon hover:bg-temple-maroon/10"
-            >
-              Export CSV
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {reportType === 'daily' || reportType === 'weekly' || reportType === 'monthly' ? (
-                    <>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Book</TableHead>
-                      <TableHead>Quantity</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                    </>
-                  ) : (
-                    <>
-                      <TableHead>{reportType === 'category' ? 'Category' : 
-                                  reportType === 'author' ? 'Author' : 'Printing Institute'}</TableHead>
-                      <TableHead className="text-right">Quantity Sold</TableHead>
-                    </>
-                  )}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {reportType === 'daily' || reportType === 'weekly' || reportType === 'monthly' ? (
-                  getCurrentData().map((sale: Sale) => {
-                    const book = books.find(b => b.id === sale.bookId);
-                    return (
-                      <TableRow key={sale.id}>
-                        <TableCell>{new Date(sale.createdAt).toLocaleDateString()}</TableCell>
-                        <TableCell>{book?.name || "Unknown Book"}</TableCell>
-                        <TableCell>{sale.quantity}</TableCell>
-                        <TableCell className="text-right font-semibold">₹{sale.totalAmount}</TableCell>
-                      </TableRow>
-                    );
-                  })
-                ) : (
-                  getCurrentData().map((item: any, index: number) => (
-                    <TableRow key={index}>
-                      <TableCell>{item.name}</TableCell>
-                      <TableCell className="text-right font-semibold">{item.value}</TableCell>
-                    </TableRow>
-                  ))
-                )}
-                
-                {getCurrentData().length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={reportType === 'daily' || reportType === 'weekly' || reportType === 'monthly' ? 4 : 2} className="text-center py-6">
-                      No data available for this report
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-            
-            {totalPages > 1 && (
-              <div className="mt-4 flex justify-center">
-                <Pagination>
-                  <PaginationContent>
-                    {currentPage > 1 && (
-                      <PaginationItem>
-                        <PaginationPrevious onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} />
-                      </PaginationItem>
+        {isLoading ? (
+          <div className="text-center py-10">
+            <p>{t("common.loading")}...</p>
+          </div>
+        ) : (
+          <>
+            {/* Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              {/* Sales Trend Chart */}
+              <Card className="temple-card overflow-hidden">
+                <CardHeader>
+                  <CardTitle className="text-lg text-temple-maroon">{t("common.salesTrend")}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
+                    {salesData.length > 0 ? (
+                      <ChartContainer config={{}} className="h-full">
+                        <BarChart data={salesData}>
+                          <XAxis dataKey="date" />
+                          <YAxis />
+                          <Tooltip />
+                          <Bar dataKey="sales" fill="#FFC107" name={t("common.revenue")} />
+                        </BarChart>
+                      </ChartContainer>
+                    ) : (
+                      <div className="h-full flex items-center justify-center">
+                        <p className="text-gray-500">{t("common.noSalesData")}</p>
+                      </div>
                     )}
-                    
-                    {[...Array(Math.min(totalPages, 5))].map((_, i) => {
-                      const pageNum = i + 1;
-                      return (
-                        <PaginationItem key={pageNum}>
-                          <PaginationLink 
-                            isActive={currentPage === pageNum}
-                            onClick={() => setCurrentPage(pageNum)}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Category or Author Distribution */}
+              <Card className="temple-card overflow-hidden">
+                <CardHeader>
+                  <CardTitle className="text-lg text-temple-maroon">
+                    {reportType === 'category' ? t("common.salesByCategory") : 
+                     reportType === 'author' ? t("common.topAuthors") : 
+                     reportType === 'institute' ? t("common.printingInstitutes") : t("common.salesDistribution")}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
+                    {(reportType === 'category' ? categoryData.length > 0 : 
+                     reportType === 'author' ? authorData.length > 0 : 
+                     reportType === 'institute' ? instituteData.length > 0 : false) ? (
+                      <ChartContainer config={{}} className="h-full">
+                        <PieChart>
+                          <Pie
+                            data={reportType === 'category' ? categoryData : 
+                                reportType === 'author' ? authorData : 
+                                reportType === 'institute' ? instituteData : []}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="value"
+                            nameKey="name"
+                            label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
                           >
-                            {pageNum}
-                          </PaginationLink>
-                        </PaginationItem>
-                      );
-                    })}
-                    
-                    {currentPage < totalPages && (
-                      <PaginationItem>
-                        <PaginationNext onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} />
-                      </PaginationItem>
+                            {(reportType === 'category' ? categoryData : 
+                              reportType === 'author' ? authorData : 
+                              reportType === 'institute' ? instituteData : []).map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ChartContainer>
+                    ) : (
+                      <div className="h-full flex items-center justify-center">
+                        <p className="text-gray-500">{t("common.noDataAvailable")}</p>
+                      </div>
                     )}
-                  </PaginationContent>
-                </Pagination>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* Detailed Sales Table */}
+            <Card className="temple-card overflow-hidden mb-6">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-lg text-temple-maroon">{t("common.detailedReport")}</CardTitle>
+                <Button 
+                  onClick={exportReport}
+                  variant="outline"
+                  className="border-temple-maroon text-temple-maroon hover:bg-temple-maroon/10"
+                  disabled={
+                    (reportType === 'daily' && sales.length === 0) ||
+                    (reportType === 'category' && categoryData.length === 0) ||
+                    (reportType === 'author' && authorData.length === 0) ||
+                    (reportType === 'institute' && instituteData.length === 0)
+                  }
+                >
+                  {t("common.exportCSV")}
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      {reportType === 'daily' || reportType === 'weekly' || reportType === 'monthly' ? (
+                        <>
+                          <TableHead>{t("common.date")}</TableHead>
+                          <TableHead>{t("common.book")}</TableHead>
+                          <TableHead>{t("common.quantity")}</TableHead>
+                          <TableHead className="text-right">{t("common.amount")}</TableHead>
+                        </>
+                      ) : (
+                        <>
+                          <TableHead>{reportType === 'category' ? t("common.category") : 
+                                      reportType === 'author' ? t("common.author") : t("common.publisher")}</TableHead>
+                          <TableHead className="text-right">{t("common.quantitySold")}</TableHead>
+                        </>
+                      )}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {reportType === 'daily' || reportType === 'weekly' || reportType === 'monthly' ? (
+                      getCurrentData().map((sale: Sale) => {
+                        const book = books.find(b => b.id === sale.bookId);
+                        return (
+                          <TableRow key={sale.id}>
+                            <TableCell>{new Date(sale.createdAt).toLocaleDateString()}</TableCell>
+                            <TableCell>{book?.name || t("common.unknownBook")}</TableCell>
+                            <TableCell>{sale.quantity}</TableCell>
+                            <TableCell className="text-right font-semibold">₹{sale.totalAmount}</TableCell>
+                          </TableRow>
+                        );
+                      })
+                    ) : (
+                      getCurrentData().map((item: any, index: number) => (
+                        <TableRow key={index}>
+                          <TableCell>{item.name}</TableCell>
+                          <TableCell className="text-right font-semibold">{item.value}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                    
+                    {getCurrentData().length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={reportType === 'daily' || reportType === 'weekly' || reportType === 'monthly' ? 4 : 2} className="text-center py-6">
+                          {t("common.noDataAvailable")}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+                
+                {totalPages > 1 && (
+                  <div className="mt-4 flex justify-center">
+                    <Pagination>
+                      <PaginationContent>
+                        {currentPage > 1 && (
+                          <PaginationItem>
+                            <PaginationPrevious onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} />
+                          </PaginationItem>
+                        )}
+                        
+                        {[...Array(Math.min(totalPages, 5))].map((_, i) => {
+                          const pageNum = i + 1;
+                          return (
+                            <PaginationItem key={pageNum}>
+                              <PaginationLink 
+                                isActive={currentPage === pageNum}
+                                onClick={() => setCurrentPage(pageNum)}
+                              >
+                                {pageNum}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        })}
+                        
+                        {currentPage < totalPages && (
+                          <PaginationItem>
+                            <PaginationNext onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} />
+                          </PaginationItem>
+                        )}
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        )}
       </main>
     </div>
   );

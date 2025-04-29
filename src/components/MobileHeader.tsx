@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useStallContext } from "@/contexts/StallContext";
 import { useTranslation } from "react-i18next";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import LowStockNotification from "@/components/LowStockNotification";
 
 interface MobileHeaderProps {
   title: string;
@@ -39,14 +40,6 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
     }
   };
   
-  console.log("MobileHeader rendering with:", { 
-    title, 
-    showBackButton, 
-    showStallSelector, 
-    stores: stores.length,
-    currentStore 
-  });
-  
   return (
     <div className="sticky top-0 z-40 bg-temple-background border-b border-temple-gold/20 pt-safe">
       <div className="flex items-center justify-between h-14 px-4">
@@ -60,7 +53,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
             </button>
           )}
           <h1 className="font-bold text-lg text-temple-maroon truncate max-w-[200px]">
-            {title || "Book Store Manager"}
+            {title || t("common.templeBookStall")}
           </h1>
         </div>
         
@@ -95,12 +88,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
           )}
           
           {showNotification && (
-            <button 
-              className="p-1 rounded-full hover:bg-temple-gold/10"
-              onClick={() => navigate("/notifications")}
-            >
-              <Bell size={20} className="text-temple-maroon" />
-            </button>
+            <LowStockNotification />
           )}
           
           <div 

@@ -1,185 +1,268 @@
 
-import React from "react";
-import { Link } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Plus, Search, BookOpen, BarChart2, BookIcon, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  BookPlus,
-  Library,
-  Receipt,
-  Search,
-  CalendarCheck,
-  BarChart3,
-  Settings,
-  Users,
-  ShieldCheck,
-  FileText,
-  Package
-} from "lucide-react";
-import MobileNavBar from "@/components/MobileNavBar";
+import MobileHeader from "@/components/MobileHeader";
+import Header from "@/components/Header";
+import { useStallContext } from "@/contexts/StallContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "react-i18next";
+import { Card, CardContent } from "@/components/ui/card";
+import LowStockNotification from "@/components/LowStockNotification";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { currentStore, stores } = useStallContext();
+  const { currentUser, isAdmin, isAuthenticated } = useAuth();
   const { t } = useTranslation();
+  const [totalBooks, setTotalBooks] = useState(0);
+  const [todaySales, setTodaySales] = useState(0);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [lowStockCount, setLowStockCount] = useState(0);
+  
+  // Threshold for low stock
+  const LOW_STOCK_THRESHOLD = 5;
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+  }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!currentStore) return;
+      
+      setIsLoading(true);
+      
+      try {
+        // Get total books count
+        const { count: booksCount } = await supabase
+          .from('books')
+          .select('*', { count: 'exact', head: true })
+          .eq('stallid', currentStore);
+        
+        // Get today's sales
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const { data: todaySalesData } = await supabase
+          .from('sales')
+          .select('quantity, totalamount')
+          .eq('stallid', currentStore)
+          .gte('createdat', today.toISOString());
+        
+        const salesCount = todaySalesData?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+        const revenue = todaySalesData?.reduce((sum, item) => sum + item.totalamount, 0) || 0;
+        
+        // Get low stock count
+        const { count: lowStock } = await supabase
+          .from('books')
+          .select('*', { count: 'exact', head: true })
+          .eq('stallid', currentStore)
+          .lt('quantity', LOW_STOCK_THRESHOLD);
+        
+        setTotalBooks(booksCount || 0);
+        setTodaySales(salesCount);
+        setTotalRevenue(revenue);
+        setLowStockCount(lowStock || 0);
+      } catch (error) {
+        console.error("Error fetching statistics:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchStats();
+    
+    // Refresh stats every 5 minutes
+    const intervalId = setInterval(fetchStats, 5 * 60 * 1000);
+    
+    return () => clearInterval(intervalId);
+  }, [currentStore]);
+  
+  if (!isAuthenticated) {
+    return null; // Will redirect to login in useEffect
+  }
 
   return (
-    <div className="min-h-screen bg-temple-background pb-20">
-      <div className="container mx-auto px-4 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold text-temple-maroon">
-            {t("common.templeBookStall")}
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            {t("common.manageYourBookInventory")}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Book Management */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-temple-maroon">
-                {t("common.bookManagement")}
-              </CardTitle>
-              {/* <CardDescription>
-                {t("common.manageAndSellBooks")}
-              </CardDescription> */}
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Link to="/books">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <Library className="mr-2 h-5 w-5" />
-                  {t("common.allBooks")}
-                </Button>
-              </Link>
-              <Link to="/add-book">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <BookPlus className="mr-2 h-5 w-5" />
-                  {t("common.addNewBook")}
-                </Button>
-              </Link>
-              <Link to="/search">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <Search className="mr-2 h-5 w-5" />
-                  {t("common.searchBooks")}
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          {/* Sales */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-temple-maroon">
-                {t("common.sales")}
-              </CardTitle>
-              {/* <CardDescription>{t("common.salesDescription")}</CardDescription> */}
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Link to="/sales">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <Receipt className="mr-2 h-5 w-5" />
-                  {t("common.salesHistory")}
-                </Button>
-              </Link>
+    <div className="bg-temple-background min-h-screen pb-20">
+      <Header />
+      <MobileHeader 
+        title={t("common.templeBookStall")}
+        showBackButton={false}
+        showSearchButton={true}
+        onSearch={() => navigate("/search")}
+        showStallSelector={stores.length > 1}
+      />
+      
+      {currentStore ? (
+        <div className="mobile-container">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <Card className="bg-white border-temple-gold/20 shadow-sm">
+              <CardContent className="p-4">
+                <h3 className="text-sm text-gray-600 mb-1">{t("dashboard.totalBooks")}</h3>
+                <p className="text-2xl font-bold text-temple-maroon">{isLoading ? "..." : totalBooks}</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-white border-temple-gold/20 shadow-sm">
+              <CardContent className="p-4">
+                <h3 className="text-sm text-gray-600 mb-1">{t("dashboard.salesToday")}</h3>
+                <p className="text-2xl font-bold text-temple-maroon">{isLoading ? "..." : todaySales}</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-white border-temple-gold/20 shadow-sm">
+              <CardContent className="p-4">
+                <h3 className="text-sm text-gray-600 mb-1">{t("dashboard.revenue")}</h3>
+                <p className="text-2xl font-bold text-temple-maroon">
+                  {isLoading ? "..." : `₹${totalRevenue.toFixed(2)}`}
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className={`bg-white border-temple-gold/20 shadow-sm ${lowStockCount > 0 ? 'border-red-300' : ''}`}>
+              <CardContent className="p-4">
+                <h3 className="text-sm text-gray-600 mb-1">{t("dashboard.lowStock")}</h3>
+                <p className={`text-2xl font-bold ${lowStockCount > 0 ? 'text-red-500' : 'text-temple-maroon'}`}>
+                  {isLoading ? "..." : lowStockCount}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Action Cards */}
+          <div className="space-y-4">
+            {/* Book Management */}
+            <div className="mobile-card">
+              <h2 className="mobile-header">{t("common.bookManagement")}</h2>
               
-              <Link to="/order-management">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <Package className="mr-2 h-5 w-5" />
-                  {t("common.orderManagement")}
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          {/* Analytics */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-temple-maroon">
-                {t("common.analytics")}
-              </CardTitle>
-              {/* <CardDescription>
-                {t("common.trackYourStallPerformance")}
-              </CardDescription> */}
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Link to="/reports">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <FileText className="mr-2 h-5 w-5" />
-                  {t("common.reports")}
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          {/* Administration */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-temple-maroon">
-                {t("common.administration")}
-              </CardTitle>
-              {/* <CardDescription>
-                {t("common.manageStallSettings")}
-              </CardDescription> */}
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Link to="/settings">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <Settings className="mr-2 h-5 w-5" />
-                  {t("common.settings")}
-                </Button>
-              </Link>
-              <Link to="/admin">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <Users className="mr-2 h-5 w-5" />
-                  {t("common.manageUsers")}
-                </Button>
-              </Link>
-              <Link to="/metadata">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <ShieldCheck className="mr-2 h-5 w-5" />
-                  {t("common.metadataManagement")}
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
+              <div className="grid grid-cols-1 gap-4 mt-4">
+                <div className="flex flex-col bg-temple-background/50 rounded-lg p-4 border border-temple-gold/20">
+                  <h3 className="font-medium mb-1">{t("common.manageAndSellBooks")}</h3>
+                  <p className="text-sm text-gray-600 mb-3">{t("common.manageYourBookInventory")}</p>
+                  
+                  <div className="flex flex-wrap gap-2 mt-auto">
+                    <Button 
+                      variant="outline"
+                      className="flex-1 justify-center border-temple-gold/30 text-temple-maroon flex items-center"
+                      onClick={() => navigate("/books")}
+                    >
+                      <BookIcon size={16} className="mr-1" /> {t("common.books")}
+                    </Button>
+                    
+                    <Button 
+                      variant="outline"
+                      className="flex-1 justify-center border-temple-gold/30 text-temple-maroon flex items-center"
+                      onClick={() => navigate("/sell/new")}
+                    >
+                      <Plus size={16} className="mr-1" /> {t("common.sell")}
+                    </Button>
+                    
+                    <Button 
+                      variant="outline"
+                      className="flex-1 justify-center border-temple-gold/30 text-temple-maroon flex items-center"
+                      onClick={() => navigate("/search")}
+                    >
+                      <Search size={16} className="mr-1" /> {t("common.search")}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Order Management */}
+            <div className="mobile-card">
+              <h2 className="mobile-header">{t("common.orderManagement")}</h2>
+              
+              <div className="grid grid-cols-1 gap-4 mt-4">
+                <div className="flex flex-col bg-temple-background/50 rounded-lg p-4 border border-temple-gold/20">
+                  <h3 className="font-medium mb-1">{t("common.manageOrders")}</h3>
+                  <p className="text-sm text-gray-600 mb-3">{t("common.orderManagementDescription")}</p>
+                  
+                  <div className="flex flex-wrap gap-2 mt-auto">
+                    <Button 
+                      variant="outline"
+                      className="flex-1 justify-center border-temple-gold/30 text-temple-maroon flex items-center"
+                      onClick={() => navigate("/orders")}
+                    >
+                      <Package size={16} className="mr-1" /> {t("common.viewOrders")}
+                    </Button>
+                    
+                    <Button 
+                      variant="outline"
+                      className="flex-1 justify-center border-temple-gold/30 text-temple-maroon flex items-center"
+                      onClick={() => navigate("/orders/new")}
+                    >
+                      <Plus size={16} className="mr-1" /> {t("common.newOrder")}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Admin Section */}
+            {isAdmin && (
+              <div className="mobile-card">
+                <h2 className="mobile-header">{t("common.administration")}</h2>
+                
+                <div className="grid grid-cols-1 gap-4 mt-4">
+                  <div className="flex flex-col bg-temple-background/50 rounded-lg p-4 border border-temple-gold/20">
+                    <h3 className="font-medium mb-1">{t("common.analytics")}</h3>
+                    <p className="text-sm text-gray-600 mb-3">{t("common.trackYourStallPerformance")}</p>
+                    
+                    <div className="flex flex-wrap gap-2 mt-auto">
+                      <Button 
+                        variant="outline"
+                        className="flex-1 justify-center border-temple-gold/30 text-temple-maroon flex items-center"
+                        onClick={() => navigate("/reports")}
+                      >
+                        <BarChart2 size={16} className="mr-1" /> {t("common.reports")}
+                      </Button>
+                      
+                      <Button 
+                        variant="outline"
+                        className="flex-1 justify-center border-temple-gold/30 text-temple-maroon flex items-center"
+                        onClick={() => navigate("/admin")}
+                      >
+                        <BookOpen size={16} className="mr-1" /> {t("common.more")}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Privacy Policy Link */}
+            <div className="text-center mt-8 pb-4">
+              <Button 
+                variant="link" 
+                className="text-temple-maroon/70 text-sm"
+                onClick={() => navigate("/privacy-policy")}
+              >
+                {t("common.privacyPolicy")}
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <MobileNavBar />
+      ) : (
+        <div className="mobile-container flex flex-col items-center justify-center py-16">
+          <h2 className="text-xl font-bold text-temple-maroon">{t("common.welcomeToBookStore")}</h2>
+          <p className="text-gray-600 mb-6 text-center">{t("common.pleaseSelectStore")}</p>
+          <Button 
+            onClick={() => navigate("/admin")} 
+            className="bg-temple-saffron hover:bg-temple-saffron/90"
+          >
+            <Plus size={16} className="mr-1" /> {t("common.addStore")}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

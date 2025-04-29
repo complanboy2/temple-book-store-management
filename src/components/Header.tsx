@@ -5,11 +5,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const Header = () => {
   const { currentUser, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { t } = useTranslation();
 
   const handleLogout = () => {
     logout();
@@ -17,7 +18,7 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-gradient-to-r from-temple-saffron to-temple-gold py-4 px-4 shadow-md">
+    <header className="bg-gradient-to-r from-temple-saffron to-temple-gold py-4 px-4 shadow-md sticky top-0 z-40">
       <div className="container mx-auto flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Sheet>
@@ -29,7 +30,7 @@ const Header = () => {
             <SheetContent side="left" className="w-72 bg-temple-background">
               <div className="flex flex-col h-full">
                 <div className="p-4 border-b border-temple-gold/30">
-                  <h2 className="text-xl font-bold text-temple-maroon">Book Store Manager</h2>
+                  <h2 className="text-xl font-bold text-temple-maroon">{t("common.templeBookStall")}</h2>
                   {currentUser && (
                     <p className="text-sm text-muted-foreground mt-1">{currentUser.name}</p>
                   )}
@@ -43,7 +44,7 @@ const Header = () => {
                         className="w-full justify-start text-lg font-medium"
                         onClick={() => navigate("/")}
                       >
-                        🏠 Dashboard
+                        🏠 {t("common.home")}
                       </Button>
                     </li>
                     <li>
@@ -52,7 +53,7 @@ const Header = () => {
                         className="w-full justify-start text-lg font-medium"
                         onClick={() => navigate("/books")}
                       >
-                        📚 Books
+                        📚 {t("common.books")}
                       </Button>
                     </li>
                     <li>
@@ -61,7 +62,16 @@ const Header = () => {
                         className="w-full justify-start text-lg font-medium"
                         onClick={() => navigate("/sales")}
                       >
-                        💰 Sales
+                        💰 {t("common.sales")}
+                      </Button>
+                    </li>
+                    <li>
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start text-lg font-medium"
+                        onClick={() => navigate("/orders")}
+                      >
+                        📦 {t("common.orders")}
                       </Button>
                     </li>
                     {isAdmin && (
@@ -70,18 +80,18 @@ const Header = () => {
                           <Button 
                             variant="ghost" 
                             className="w-full justify-start text-lg font-medium"
-                            onClick={() => navigate("/inventory")}
+                            onClick={() => navigate("/reports")}
                           >
-                            📦 Inventory
+                            📊 {t("common.reports")}
                           </Button>
                         </li>
                         <li>
                           <Button 
                             variant="ghost" 
                             className="w-full justify-start text-lg font-medium"
-                            onClick={() => navigate("/reports")}
+                            onClick={() => navigate("/admin")}
                           >
-                            📊 Reports
+                            ⚙️ {t("common.administration")}
                           </Button>
                         </li>
                         <li>
@@ -90,11 +100,20 @@ const Header = () => {
                             className="w-full justify-start text-lg font-medium"
                             onClick={() => navigate("/settings")}
                           >
-                            ⚙️ Settings
+                            ⚙️ {t("common.settings")}
                           </Button>
                         </li>
                       </>
                     )}
+                    <li>
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start text-lg font-medium"
+                        onClick={() => navigate("/privacy-policy")}
+                      >
+                        📜 {t("common.privacyPolicy")}
+                      </Button>
+                    </li>
                   </ul>
                 </nav>
                 
@@ -104,21 +123,29 @@ const Header = () => {
                     className="w-full justify-start border-temple-maroon text-temple-maroon hover:bg-temple-maroon/10"
                     onClick={handleLogout}
                   >
-                    Logout
+                    {t("common.logout")}
                   </Button>
                 </div>
               </div>
             </SheetContent>
           </Sheet>
-          <h1 className="text-xl font-bold text-white">Book Store Manager</h1>
+          <h1 className="text-xl font-bold text-white" onClick={() => navigate("/")}>{t("common.templeBookStall")}</h1>
         </div>
         
         <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="icon" className="text-white">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-white"
+            onClick={() => navigate("/notifications")}
+          >
             <Bell size={24} />
           </Button>
-          <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center text-white">
-            {currentUser?.name.charAt(0).toUpperCase()}
+          <div 
+            className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center text-white cursor-pointer"
+            onClick={() => navigate("/profile")}
+          >
+            {currentUser?.name?.charAt(0).toUpperCase() || "U"}
           </div>
         </div>
       </div>

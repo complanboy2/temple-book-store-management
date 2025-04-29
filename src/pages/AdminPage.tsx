@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Users, BookOpen, BarChart2, Settings } from "lucide-react";
+import { Plus, Users, BookOpen, BarChart2, Settings, MessageSquare } from "lucide-react";
 import MobileHeader from "@/components/MobileHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStallContext } from "@/contexts/StallContext";
@@ -15,13 +16,19 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
+import Header from "@/components/Header";
+
+// Import the WhatsApp icon from lucide-react
+import { Smartphone } from "lucide-react";
 
 const AdminPage = () => {
   const navigate = useNavigate();
-  const { isAdmin, inviteUser } = useAuth();
-  const { stores, addStore } = useStallContext();
+  const { isAdmin, inviteUser, currentUser } = useAuth();
+  const { stores, addStore, currentStore } = useStallContext();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [isAddStallOpen, setIsAddStallOpen] = useState(false);
   const [isInviteUserOpen, setIsInviteUserOpen] = useState(false);
   const [newStallName, setNewStallName] = useState("");
@@ -32,17 +39,27 @@ const AdminPage = () => {
   const [inviteRole, setInviteRole] = useState<"admin" | "personnel">("personnel");
   const [inviteCode, setInviteCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [appVersion, setAppVersion] = useState("1.0.0"); // Default app version
+
+  useEffect(() => {
+    if (!isAdmin) {
+      navigate("/");
+    }
+    
+    // Get app version from package.json or environment
+    // Since we can't directly access package.json, we'll use this placeholder
+    setAppVersion("1.0.0");
+  }, [isAdmin, navigate]);
 
   if (!isAdmin) {
-    navigate("/");
     return null;
   }
 
   const handleAddStall = async () => {
     if (!newStallName.trim()) {
       toast({
-        title: "Error",
-        description: "Please enter a stall name",
+        title: t("common.error"),
+        description: t("common.stallNameRequired"),
         variant: "destructive",
       });
       return;
@@ -52,16 +69,16 @@ const AdminPage = () => {
     try {
       await addStore(newStallName, newStallLocation);
       toast({
-        title: "Success",
-        description: "Stall added successfully",
+        title: t("common.success"),
+        description: t("common.stallAddedSuccess"),
       });
       setNewStallName("");
       setNewStallLocation("");
       setIsAddStallOpen(false);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to add stall",
+        title: t("common.error"),
+        description: t("common.stallAddFailed"),
         variant: "destructive",
       });
     } finally {
@@ -72,8 +89,8 @@ const AdminPage = () => {
   const handleInviteUser = async () => {
     if (!inviteName.trim() || !inviteEmail.trim() || !invitePhone.trim()) {
       toast({
-        title: "Error",
-        description: "Please fill all required fields",
+        title: t("common.error"),
+        description: t("common.fillRequiredFields"),
         variant: "destructive",
       });
       return;
@@ -84,13 +101,13 @@ const AdminPage = () => {
       const code = await inviteUser(inviteName, inviteEmail, invitePhone, inviteRole);
       setInviteCode(code);
       toast({
-        title: "Success",
-        description: "User invited successfully",
+        title: t("common.success"),
+        description: t("common.userInvitedSuccess"),
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to invite user",
+        title: t("common.error"),
+        description: t("common.userInviteFailed"),
         variant: "destructive",
       });
     } finally {
@@ -108,53 +125,70 @@ const AdminPage = () => {
     const signupUrl = `${window.location.origin}/complete-signup/${code}`;
     navigator.clipboard.writeText(signupUrl);
     toast({
-      title: "Copied",
-      description: "Invite link copied to clipboard",
+      title: t("common.copied"),
+      description: t("common.inviteLinkCopied"),
     });
+  };
+
+  // Create WhatsApp contact us link
+  const generateContactUsWhatsAppLink = () => {
+    // The phone number provided in the requirements
+    const phoneNumber = "919100091000";
+    
+    // Create message with app details
+    const message = `Hello, I'm using Book Store Manager app v${appVersion}.${
+      currentUser ? ` My name is ${currentUser.name}.` : ''
+    }${
+      currentStore ? ` I'm managing the store: ${stores.find(s => s.id === currentStore)?.name}.` : ''
+    } I need assistance with: `;
+    
+    // Generate WhatsApp URL
+    return `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
   };
 
   return (
     <div className="min-h-screen bg-temple-background pb-20">
-      <MobileHeader title="Admin Panel" showBackButton={true} />
+      <Header />
+      <MobileHeader title={t("common.administration")} showBackButton={true} />
 
       <div className="mobile-container">
         <div className="grid grid-cols-1 gap-4 mt-4">
           {/* Stalls section */}
           <div className="mobile-card">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="mobile-header">Book Stalls</h2>
+              <h2 className="mobile-header">{t("common.stores")}</h2>
               <Dialog open={isAddStallOpen} onOpenChange={setIsAddStallOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm" className="bg-temple-saffron hover:bg-temple-saffron/90">
-                    <Plus size={16} className="mr-1" /> Add Stall
+                    <Plus size={16} className="mr-1" /> {t("common.addStore")}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Add New Book Stall</DialogTitle>
+                    <DialogTitle>{t("common.addNewStore")}</DialogTitle>
                     <DialogDescription>
-                      Create a new book stall for your temple or organization.
+                      {t("common.createNewStoreDescription")}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
                       <label htmlFor="stallName" className="text-sm font-medium">
-                        Stall Name *
+                        {t("common.storeName")} *
                       </label>
                       <Input
                         id="stallName"
-                        placeholder="Main Book Stall"
+                        placeholder={t("common.storeNamePlaceholder")}
                         value={newStallName}
                         onChange={(e) => setNewStallName(e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
                       <label htmlFor="stallLocation" className="text-sm font-medium">
-                        Location (Optional)
+                        {t("common.storeLocation")} ({t("common.optional")})
                       </label>
                       <Input
                         id="stallLocation"
-                        placeholder="Temple Entrance"
+                        placeholder={t("common.storeLocationPlaceholder")}
                         value={newStallLocation}
                         onChange={(e) => setNewStallLocation(e.target.value)}
                       />
@@ -162,14 +196,14 @@ const AdminPage = () => {
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setIsAddStallOpen(false)}>
-                      Cancel
+                      {t("common.cancel")}
                     </Button>
                     <Button 
                       className="bg-temple-saffron hover:bg-temple-saffron/90"
                       onClick={handleAddStall}
                       disabled={isSubmitting}
                     >
-                      {isSubmitting ? "Adding..." : "Add Stall"}
+                      {isSubmitting ? t("common.adding") : t("common.addStore")}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -187,13 +221,13 @@ const AdminPage = () => {
               </div>
             ) : (
               <div className="text-center py-6 border border-dashed border-temple-gold/40 rounded-lg">
-                <p className="text-gray-500">No book stalls added yet</p>
+                <p className="text-gray-500">{t("common.noStores")}</p>
                 <Button 
                   className="mt-2 bg-temple-saffron hover:bg-temple-saffron/90"
                   size="sm"
                   onClick={() => setIsAddStallOpen(true)}
                 >
-                  <Plus size={16} className="mr-1" /> Add Your First Stall
+                  <Plus size={16} className="mr-1" /> {t("common.addFirstStore")}
                 </Button>
               </div>
             )}
@@ -202,18 +236,18 @@ const AdminPage = () => {
           {/* Invite users section */}
           <div className="mobile-card">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="mobile-header">Invite Users</h2>
+              <h2 className="mobile-header">{t("common.inviteUsers")}</h2>
               <Dialog open={isInviteUserOpen} onOpenChange={setIsInviteUserOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm" className="bg-temple-maroon hover:bg-temple-maroon/90">
-                    <Plus size={16} className="mr-1" /> Invite
+                    <Plus size={16} className="mr-1" /> {t("common.invite")}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Invite New User</DialogTitle>
+                    <DialogTitle>{t("common.inviteNewUser")}</DialogTitle>
                     <DialogDescription>
-                      Send an invitation to a new personnel or admin.
+                      {t("common.sendInvitation")}
                     </DialogDescription>
                   </DialogHeader>
                   {!inviteCode ? (
@@ -221,7 +255,7 @@ const AdminPage = () => {
                       <div className="space-y-4 py-4">
                         <div className="space-y-2">
                           <label htmlFor="inviteName" className="text-sm font-medium">
-                            Name *
+                            {t("common.name")} *
                           </label>
                           <Input
                             id="inviteName"
@@ -232,7 +266,7 @@ const AdminPage = () => {
                         </div>
                         <div className="space-y-2">
                           <label htmlFor="inviteEmail" className="text-sm font-medium">
-                            Email *
+                            {t("common.email")} *
                           </label>
                           <Input
                             id="inviteEmail"
@@ -244,7 +278,7 @@ const AdminPage = () => {
                         </div>
                         <div className="space-y-2">
                           <label htmlFor="invitePhone" className="text-sm font-medium">
-                            Phone Number *
+                            {t("common.phoneNumber")} *
                           </label>
                           <Input
                             id="invitePhone"
@@ -255,7 +289,7 @@ const AdminPage = () => {
                         </div>
                         <div className="space-y-2">
                           <label htmlFor="inviteRole" className="text-sm font-medium">
-                            Role *
+                            {t("common.role")} *
                           </label>
                           <select
                             id="inviteRole"
@@ -263,21 +297,21 @@ const AdminPage = () => {
                             value={inviteRole}
                             onChange={(e) => setInviteRole(e.target.value as "admin" | "personnel")}
                           >
-                            <option value="personnel">Personnel (Sales Only)</option>
-                            <option value="admin">Admin (Full Access)</option>
+                            <option value="personnel">{t("common.personnel")}</option>
+                            <option value="admin">{t("common.admin")}</option>
                           </select>
                         </div>
                       </div>
                       <DialogFooter>
                         <Button variant="outline" onClick={() => setIsInviteUserOpen(false)}>
-                          Cancel
+                          {t("common.cancel")}
                         </Button>
                         <Button 
                           className="bg-temple-maroon hover:bg-temple-maroon/90"
                           onClick={handleInviteUser}
                           disabled={isSubmitting}
                         >
-                          {isSubmitting ? "Generating Invite..." : "Generate Invite"}
+                          {isSubmitting ? t("common.generatingInvite") : t("common.generateInvite")}
                         </Button>
                       </DialogFooter>
                     </>
@@ -285,8 +319,8 @@ const AdminPage = () => {
                     <>
                       <div className="space-y-4 py-4">
                         <div className="text-center">
-                          <p className="font-medium text-temple-maroon">Invite Created!</p>
-                          <p className="text-sm mt-2">Share this link with {inviteName} via WhatsApp:</p>
+                          <p className="font-medium text-temple-maroon">{t("common.inviteCreated")}</p>
+                          <p className="text-sm mt-2">{t("common.shareLink", { name: inviteName })}</p>
                         </div>
                         <div className="p-3 bg-gray-100 rounded-md text-sm break-all">
                           {`${window.location.origin}/complete-signup/${inviteCode}`}
@@ -298,14 +332,14 @@ const AdminPage = () => {
                           variant="outline"
                           onClick={() => copyInviteLink(inviteCode)}
                         >
-                          Copy Link
+                          {t("common.copyLink")}
                         </Button>
                         <Button
                           className="w-full justify-start shadow-sm bg-temple-background hover:bg-temple-gold/10 text-temple-maroon"
                           variant="outline"
                           onClick={() => window.open(generateWhatsAppLink(inviteCode), '_blank')}
                         >
-                          Share via WhatsApp
+                          {t("common.shareViaWhatsApp")}
                         </Button>
                         <Button
                           className="w-full justify-start shadow-sm bg-temple-background hover:bg-temple-gold/10 text-temple-maroon"
@@ -319,7 +353,7 @@ const AdminPage = () => {
                             setIsInviteUserOpen(false);
                           }}
                         >
-                          Done
+                          {t("common.done")}
                         </Button>
                       </DialogFooter>
                     </>
@@ -334,35 +368,44 @@ const AdminPage = () => {
                 variant="outline"
                 onClick={() => setIsInviteUserOpen(true)}
               >
-                <Users size={20} className="mr-2" /> Invite New Personnel
+                <Users size={20} className="mr-2" /> {t("common.inviteNewPersonnel")}
               </Button>
             </div>
           </div>
 
           {/* Quick links section */}
           <div className="mobile-card">
-            <h2 className="mobile-header mb-4">Admin Actions</h2>
+            <h2 className="mobile-header mb-4">{t("common.adminActions")}</h2>
             <div className="grid grid-cols-1 gap-3">
               <Button
                 className="justify-start shadow-sm bg-temple-background hover:bg-temple-gold/10 text-temple-maroon"
                 variant="outline"
                 onClick={() => navigate("/reports")}
               >
-                <BarChart2 size={20} className="mr-2" /> Sales Reports
+                <BarChart2 size={20} className="mr-2" /> {t("common.salesReports")}
               </Button>
               <Button
                 className="justify-start shadow-sm bg-temple-background hover:bg-temple-gold/10 text-temple-maroon"
                 variant="outline"
                 onClick={() => navigate("/books")}
               >
-                <BookOpen size={20} className="mr-2" /> Manage Inventory
+                <BookOpen size={20} className="mr-2" /> {t("common.manageInventory")}
               </Button>
               <Button
                 className="justify-start shadow-sm bg-temple-background hover:bg-temple-gold/10 text-temple-maroon"
                 variant="outline"
                 onClick={() => navigate("/settings")}
               >
-                <Settings size={20} className="mr-2" /> App Settings
+                <Settings size={20} className="mr-2" /> {t("common.appSettings")}
+              </Button>
+              
+              {/* Contact Us via WhatsApp Button */}
+              <Button
+                className="justify-start shadow-sm bg-temple-background hover:bg-temple-gold/10 text-temple-maroon"
+                variant="outline"
+                onClick={() => window.open(generateContactUsWhatsAppLink(), '_blank')}
+              >
+                <Smartphone size={20} className="mr-2" /> {t("common.contactUs")}
               </Button>
             </div>
           </div>
