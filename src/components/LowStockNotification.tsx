@@ -56,7 +56,7 @@ const LowStockNotification: React.FC = () => {
           toast({
             title: t("common.lowStockAlert"),
             description: `"${data[0].name}" - ${t("common.onlyRemaining")} ${data[0].quantity} ${t("common.left")}`,
-            variant: "warning",
+            variant: "destructive", // Changed from "warning" to "destructive"
           });
         }
       } catch (error) {

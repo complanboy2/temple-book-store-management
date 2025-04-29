@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Book, Sale } from "@/types";
@@ -85,8 +84,23 @@ const ReportsPage: React.FC = () => {
           throw new Error(`Error fetching sales: ${salesError.message}`);
         }
         
-        // Convert to proper format
-        const formattedBooks = booksData as Book[];
+        // Convert to proper format - map database fields to our types
+        const formattedBooks = booksData.map(book => ({
+          id: book.id,
+          barcode: book.barcode,
+          name: book.name,
+          author: book.author,
+          category: book.category,
+          printingInstitute: book.printinginstitute,
+          originalPrice: book.originalprice,
+          salePrice: book.saleprice,
+          quantity: book.quantity,
+          stallId: book.stallid,
+          imageUrl: book.imageurl,
+          createdAt: new Date(book.createdat),
+          updatedAt: new Date(book.updatedat)
+        })) as Book[];
+        
         const formattedSales = salesData.map(sale => ({
           id: sale.id,
           bookId: sale.bookid,

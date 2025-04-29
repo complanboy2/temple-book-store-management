@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, X } from "lucide-react";
@@ -44,7 +43,23 @@ const SearchPage = () => {
           throw error;
         }
         
-        const books = data as Book[];
+        // Map database fields to Book type fields
+        const books = data.map(item => ({
+          id: item.id,
+          barcode: item.barcode,
+          name: item.name,
+          author: item.author,
+          category: item.category,
+          printingInstitute: item.printinginstitute,
+          originalPrice: item.originalprice,
+          salePrice: item.saleprice,
+          quantity: item.quantity,
+          stallId: item.stallid,
+          imageUrl: item.imageurl,
+          createdAt: new Date(item.createdat),
+          updatedAt: new Date(item.updatedat)
+        })) as Book[];
+        
         setAllBooks(books);
         setFilteredBooks(books);
         
