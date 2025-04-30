@@ -1,9 +1,7 @@
 
 import { useEffect } from "react";
-import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { StallProvider } from "@/contexts/StallContext";
 
 import Index from "@/pages/Index";
 import BooksPage from "@/pages/BooksPage";
@@ -33,36 +31,32 @@ function App() {
   }, []);
 
   return (
-    <Router>
-      <AuthProvider>
-        <StallProvider>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/complete-signup/:code" element={<CompleteSignupPage />} />
-            <Route path="/" element={<Index />} />
-            <Route path="/books" element={<BooksPage />} />
-            <Route path="/books/add" element={<AddBookPage />} />
-            <Route path="/books/:id" element={<AddBookPage />} />
-            <Route path="/sell/new" element={<SellBookPage />} />
-            <Route path="/sell/:id" element={<SellBookPage />} />
-            <Route path="/sales" element={<SalesPage />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/admin" element={<AdminPage />} />
-            <Route path="/reports" element={<ReportsPage />} />
-            <Route path="/orders" element={<OrdersPage />} />
-            <Route path="/orders/new" element={<OrderManagementPage />} />
-            <Route path="/orders/:id" element={<OrderManagementPage />} />
-            <Route path="/super-admin" element={<SuperAdminPage />} />
-            <Route path="/metadata" element={<MetadataManagerPage />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Toaster />
-        </StallProvider>
-      </AuthProvider>
-    </Router>
+    <>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/complete-signup/:code" element={<CompleteSignupPage />} />
+        <Route path="/" element={<Index />} />
+        <Route path="/books" element={<BooksPage />} />
+        <Route path="/books/add" element={<AddBookPage />} />
+        <Route path="/books/:id" element={<AddBookPage />} />
+        <Route path="/sell/new" element={<SellBookPage />} />
+        <Route path="/sell/:id" element={<SellBookPage />} />
+        <Route path="/sales" element={<SalesPage />} />
+        <Route path="/search" element={<SearchPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/admin" element={<AdminPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/orders/new" element={<OrderManagementPage />} />
+        <Route path="/orders/:id" element={<OrderManagementPage />} />
+        <Route path="/super-admin" element={<SuperAdminPage />} />
+        <Route path="/metadata" element={<MetadataManagerPage />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <Toaster />
+    </>
   );
 }
 
