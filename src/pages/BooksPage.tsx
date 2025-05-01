@@ -1,154 +1,69 @@
 
-import React, { useEffect, useState } from "react";
-import { Book } from "@/types";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import BookCard from "@/components/BookCard";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, Trash2 } from "lucide-react";
-import ScannerButton from "@/components/ScannerButton";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import MobileHeader from "@/components/MobileHeader";
 import { useStallContext } from "@/contexts/StallContext";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useTranslation } from "react-i18next";
-import ExportBookListButton from "@/components/ExportBookListButton";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from "react-i18next";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Book } from "@/types";
+import MobileHeader from "@/components/MobileHeader";
+import ScannerButton from "@/components/ScannerButton";
+import ExportBookListButton from "@/components/ExportBookListButton";
+import BookFilter from "@/components/BookFilter";
+import BookList from "@/components/BookList";
+import DeleteBookDialog from "@/components/DeleteBookDialog";
+import { useBookManager } from "@/hooks/useBookManager";
+import { useToast } from "@/hooks/use-toast";
 
 const BooksPage: React.FC = () => {
-  const [books, setBooks] = useState<Book[]>([]);
-  const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true);
   const [bookToDelete, setBookToDelete] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const navigate = useNavigate();
   const { currentStore } = useStallContext();
   const isMobile = useIsMobile();
-  const { toast } = useToast();
   const { t } = useTranslation();
   const { isAdmin } = useAuth();
-
-  useEffect(() => {
-    const fetchBooks = async () => {
-      setIsLoading(true);
-      
-      if (!currentStore) {
-        console.log("No store selected, cannot fetch books");
-        setBooks([]);
-        setFilteredBooks([]);
-        setIsLoading(false);
-        return;
-      }
-
-      console.log(`Fetching books for store ID: ${currentStore}`);
-
-      try {
-        console.log("Making Supabase query for books");
-        const { data, error } = await supabase
-          .from("books")
-          .select("*")
-          .eq("stallid", currentStore)
-          .order('createdat', { ascending: false });
-          
-        if (error) {
-          console.error("Error fetching books from Supabase:", error);
-          toast({
-            title: "Error",
-            description: "Error fetching books. Please try again.",
-            variant: "destructive",
-          });
-          setBooks([]);
-          setFilteredBooks([]);
-          setIsLoading(false);
-          return;
-        }
-
-        console.log("Supabase returned books data:", data);
-
-        if (data && Array.isArray(data)) {
-          // Transform API result to local Book type
-          const result: Book[] = data.map((row: any) => ({
-            id: row.id,
-            barcode: row.barcode ?? undefined,
-            name: row.name,
-            author: row.author,
-            category: row.category ?? "",
-            printingInstitute: row.printinginstitute ?? "",
-            originalPrice: row.originalprice,
-            salePrice: row.saleprice,
-            quantity: row.quantity,
-            stallId: row.stallid,
-            imageUrl: row.imageurl,
-            createdAt: row.createdat ? new Date(row.createdat) : new Date(),
-            updatedAt: row.updatedat ? new Date(row.updatedat) : new Date()
-          }));
-
-          console.log(`Fetched ${result.length} books for store ${currentStore}`);
-          setBooks(result);
-          setFilteredBooks(result);
-        }
-      } catch (err) {
-        console.error("Unexpected error fetching books:", err);
-        toast({
-          title: "Error",
-          description: "Unexpected error fetching books. Please try again.",
-          variant: "destructive",
-        });
-        setBooks([]);
-        setFilteredBooks([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchBooks();
-  }, [currentStore, toast, t]);
-
-  useEffect(() => {
-    let results = books;
-    if (searchTerm) {
-      results = results.filter(book => 
-        book.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (book.category && book.category.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-    }
-    if (selectedCategory) {
-      results = results.filter(book => book.category === selectedCategory);
-    }
-    setFilteredBooks(results);
-  }, [searchTerm, selectedCategory, books]);
-
-  // Get unique categories from actual books for dropdown
-  const categories = Array.from(new Set(books
-    .map(book => book.category)
-    .filter(Boolean)
-  )).sort();
-
-  console.log("Available categories:", categories);
+  const { toast } = useToast();
+  
+  const {
+    books,
+    filteredBooks,
+    searchTerm,
+    setSearchTerm,
+    selectedCategory,
+    setSelectedCategory,
+    isLoading,
+    categories,
+    deleteBook
+  } = useBookManager(currentStore);
 
   const handleBookSelect = (book: Book) => {
     navigate(`/sell/${book.id}`);
+  };
+
+  const handleDeleteBook = (bookId: string) => {
+    setBookToDelete(bookId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!bookToDelete) {
+      setIsDeleteDialogOpen(false);
+      return;
+    }
+
+    const success = await deleteBook(bookToDelete);
+    
+    if (success) {
+      toast({
+        title: "Success",
+        description: "Book deleted successfully",
+      });
+    }
+    
+    setBookToDelete(null);
+    setIsDeleteDialogOpen(false);
   };
 
   const handleCodeScanned = (code: string) => {
@@ -164,60 +79,9 @@ const BooksPage: React.FC = () => {
     }
   };
 
-  const handleDeleteBook = (bookId: string) => {
-    setBookToDelete(bookId);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    if (!bookToDelete || !currentStore) {
-      setIsDeleteDialogOpen(false);
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from("books")
-        .delete()
-        .eq("id", bookToDelete)
-        .eq("stallid", currentStore);
-        
-      if (error) {
-        console.error("Error deleting book:", error);
-        toast({
-          title: "Error",
-          description: "Failed to delete book. Please try again.",
-          variant: "destructive",
-        });
-      } else {
-        // Remove the deleted book from state
-        const updatedBooks = books.filter(book => book.id !== bookToDelete);
-        setBooks(updatedBooks);
-        setFilteredBooks(updatedBooks.filter(book => 
-          (!selectedCategory || book.category === selectedCategory) &&
-          (!searchTerm || 
-            book.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (book.category && book.category.toLowerCase().includes(searchTerm.toLowerCase()))
-          )
-        ));
-        
-        toast({
-          title: "Success",
-          description: "Book deleted successfully",
-        });
-      }
-    } catch (err) {
-      console.error("Unexpected error deleting book:", err);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred while deleting the book",
-        variant: "destructive",
-      });
-    } finally {
-      setBookToDelete(null);
-      setIsDeleteDialogOpen(false);
-    }
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSelectedCategory("");
   };
 
   return (
@@ -251,85 +115,30 @@ const BooksPage: React.FC = () => {
           <ScannerButton onCodeScanned={handleCodeScanned} />
         </div>
         
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="w-full md:flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-            <Input
-              id="searchInput"
-              placeholder={t("common.searchBooks")}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="temple-input pl-10 w-full"
-            />
-          </div>
-          <Select
-            value={selectedCategory}
-            onValueChange={setSelectedCategory}
-          >
-            <SelectTrigger className="w-full md:w-[200px]">
-              <SelectValue placeholder={t("common.allCategories")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem key="all-categories" value="">{t("common.allCategories")}</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <BookFilter
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          categories={categories}
+        />
         
-        {isLoading ? (
-          <div className="text-center py-12">
-            <p className="text-lg text-muted-foreground">{t("common.loading")}...</p>
-          </div>
-        ) : filteredBooks.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredBooks.map((book) => (
-              <BookCard 
-                key={book.id} 
-                book={book} 
-                onSelect={handleBookSelect}
-                onDelete={isAdmin ? handleDeleteBook : undefined}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-lg text-muted-foreground">{t("common.noBooks")}</p>
-            {(searchTerm || selectedCategory) && (
-              <Button
-                onClick={() => {
-                  setSearchTerm("");
-                  setSelectedCategory("");
-                }}
-                variant="link"
-                className="mt-2 text-temple-saffron"
-              >
-                {t("common.clearFilters")}
-              </Button>
-            )}
-          </div>
-        )}
+        <BookList
+          books={filteredBooks}
+          isLoading={isLoading}
+          searchTerm={searchTerm}
+          selectedCategory={selectedCategory}
+          onBookSelect={handleBookSelect}
+          onDeleteBook={isAdmin ? handleDeleteBook : undefined}
+          onClearFilters={clearFilters}
+        />
       </main>
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("common.confirmDelete")}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("common.deleteBookConfirmation")}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600">
-              {t("common.delete")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteBookDialog
+        isOpen={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };

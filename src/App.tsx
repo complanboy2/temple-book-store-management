@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
+import Layout from "@/components/Layout";
 
 import Index from "@/pages/Index";
 import BooksPage from "@/pages/BooksPage";
@@ -35,25 +36,25 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/complete-signup/:code" element={<CompleteSignupPage />} />
-        <Route path="/" element={<Index />} />
-        <Route path="/books" element={<BooksPage />} />
-        <Route path="/books/add" element={<AddBookPage />} />
-        <Route path="/books/:id" element={<AddBookPage />} />
-        <Route path="/sell/new" element={<SellBookPage />} />
-        <Route path="/sell/:id" element={<SellBookPage />} />
-        <Route path="/sales" element={<SalesPage />} />
-        <Route path="/search" element={<SearchPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="/reports" element={<ReportsPage />} />
-        <Route path="/orders" element={<OrdersPage />} />
-        <Route path="/orders/new" element={<OrderManagementPage />} />
-        <Route path="/orders/:id" element={<OrderManagementPage />} />
-        <Route path="/super-admin" element={<SuperAdminPage />} />
-        <Route path="/metadata" element={<MetadataManagerPage />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-        <Route path="*" element={<NotFound />} />
+        <Route path="/" element={<Layout><Index /></Layout>} />
+        <Route path="/books" element={<Layout><BooksPage /></Layout>} />
+        <Route path="/books/add" element={<Layout><AddBookPage /></Layout>} />
+        <Route path="/books/:id" element={<Layout><AddBookPage /></Layout>} />
+        <Route path="/sell/new" element={<Layout><SellBookPage /></Layout>} />
+        <Route path="/sell/:id" element={<Layout><SellBookPage /></Layout>} />
+        <Route path="/sales" element={<Layout><SalesPage /></Layout>} />
+        <Route path="/search" element={<Layout><SearchPage /></Layout>} />
+        <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
+        <Route path="/settings" element={<Layout><SettingsPage /></Layout>} />
+        <Route path="/admin" element={<Layout><AdminPage /></Layout>} />
+        <Route path="/reports" element={<Layout><ReportsPage /></Layout>} />
+        <Route path="/orders" element={<Layout><OrdersPage /></Layout>} />
+        <Route path="/orders/new" element={<Layout><OrderManagementPage /></Layout>} />
+        <Route path="/orders/:id" element={<Layout><OrderManagementPage /></Layout>} />
+        <Route path="/super-admin" element={<Layout><SuperAdminPage /></Layout>} />
+        <Route path="/metadata" element={<Layout><MetadataManagerPage /></Layout>} />
+        <Route path="/privacy-policy" element={<Layout><PrivacyPolicyPage /></Layout>} />
+        <Route path="*" element={<Layout><NotFound /></Layout>} />
       </Routes>
       <Toaster />
     </>
