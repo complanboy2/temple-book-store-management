@@ -3,14 +3,12 @@ import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Home, BookOpen, BarChart2, Menu, ShoppingCart } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useStallContext } from "@/contexts/StallContext";
 import { useTranslation } from "react-i18next";
 
 const MobileNavBar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAdmin } = useAuth();
-  const { currentStore } = useStallContext();
   const { t } = useTranslation();
   
   const isActive = (path: string) => {
@@ -49,7 +47,7 @@ const MobileNavBar = () => {
           }`}
         >
           <ShoppingCart size={24} />
-          <span className="text-xs mt-1">{t("common.newSale")}</span>
+          <span className="text-xs mt-1">{t("common.sell")}</span>
         </button>
         
         <button

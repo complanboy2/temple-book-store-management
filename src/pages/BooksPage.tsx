@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { useStallContext } from "@/contexts/StallContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { Book } from "@/types";
 import MobileHeader from "@/components/MobileHeader";
 import ScannerButton from "@/components/ScannerButton";
@@ -21,7 +20,6 @@ const BooksPage: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const navigate = useNavigate();
   const { currentStore } = useStallContext();
-  const isMobile = useIsMobile();
   const { t } = useTranslation();
   const { isAdmin } = useAuth();
   const { toast } = useToast();
@@ -94,10 +92,6 @@ const BooksPage: React.FC = () => {
         showStallSelector={true}
         onSearch={() => navigate("/search")}
       />
-      
-      <div className="bg-temple-maroon/80 py-2 px-4 text-center">
-        <h2 className="text-sm font-medium text-white">{t("common.bookStoreManager")}</h2>
-      </div>
       
       <main className="container mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">

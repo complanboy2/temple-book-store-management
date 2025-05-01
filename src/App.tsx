@@ -41,6 +41,7 @@ function App() {
         <Route path="/add-book" element={<Layout><AddBookPage /></Layout>} />
         <Route path="/books/:id" element={<Layout><AddBookPage /></Layout>} />
         <Route path="/sell/:id" element={<Layout><SellBookPage /></Layout>} />
+        <Route path="/sell/new" element={<Layout><SellBookPage /></Layout>} />
         <Route path="/sales" element={<Layout><SalesPage /></Layout>} />
         <Route path="/search" element={<Layout><SearchPage /></Layout>} />
         <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
