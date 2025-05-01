@@ -115,7 +115,10 @@
     "contactUs": "Contact Us",
     "privacyPolicy": "Privacy Policy",
     "lowStockNotification": "Low Stock Notification",
-    "failedToLoadSales": "Failed to load sales data"
+    "failedToLoadSales": "Failed to load sales data",
+    "welcomeToBookStore": "Welcome to Book Store Manager",
+    "pleaseSelectStore": "Please select a store to continue",
+    "orderManagementDescription": "View and manage your orders"
   },
   "sell": {
     "title": "Sell Book",
@@ -129,7 +132,9 @@
     "saleCompleted": "Sale completed successfully",
     "failedToCompleteSale": "Failed to complete sale",
     "failedToRecordSale": "Failed to record sale",
-    "failedToUpdateInventory": "Failed to update inventory"
+    "failedToUpdateInventory": "Failed to update inventory",
+    "sellerName": "Seller Name",
+    "newSale": "New Sale"
   },
   "dashboard": {
     "totalBooks": "Total Books",

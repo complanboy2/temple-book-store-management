@@ -115,7 +115,10 @@
     "contactUs": "संपर्क करें",
     "privacyPolicy": "गोपनीयता नीति",
     "lowStockNotification": "कम स्टॉक सूचना",
-    "failedToLoadSales": "बिक्री डेटा लोड करने में विफल"
+    "failedToLoadSales": "बिक्री डेटा लोड करने में विफल",
+    "welcomeToBookStore": "पुस्तक स्टोर प्रबंधक में आपका स्वागत है",
+    "pleaseSelectStore": "कृपया जारी रखने के लिए एक स्टोर चुनें",
+    "orderManagementDescription": "अपने आदेशों को देखें और प्रबंधित करें"
   },
   "auth": {
     "login": "लॉगिन",
@@ -158,6 +161,8 @@
     "saleCompleted": "बिक्री सफलतापूर्वक पूरी हुई",
     "failedToCompleteSale": "बिक्री पूरी करने में विफल",
     "failedToRecordSale": "बिक्री दर्ज करने में विफल",
-    "failedToUpdateInventory": "इन्वेंटरी अपडेट करने में विफल"
+    "failedToUpdateInventory": "इन्वेंटरी अपडेट करने में विफल",
+    "sellerName": "विक्रेता का नाम",
+    "newSale": "नई बिक्री"
   }
 }

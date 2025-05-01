@@ -2,6 +2,7 @@
 import React from "react";
 import MobileNavBar from "@/components/MobileNavBar";
 import { useLocation } from "react-router-dom";
+import Header from "./Header";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -18,6 +19,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   
   return (
     <div className="min-h-screen bg-temple-background pb-20">
+      <Header />
       {children}
       {shouldShowNavbar && <MobileNavBar />}
     </div>

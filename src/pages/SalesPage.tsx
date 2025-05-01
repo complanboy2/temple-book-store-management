@@ -25,7 +25,7 @@ import {
 import { DatePicker } from "@/components/ui/date-picker";
 import { useStallContext } from "@/contexts/StallContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { Sale, Book } from "@/types";
+import { Sale } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -212,7 +212,7 @@ const SalesPage = () => {
   };
 
   const navigateToNewSale = () => {
-    navigate('/sell/new');
+    navigate('/books');
   };
 
   return (
@@ -237,7 +237,7 @@ const SalesPage = () => {
               onClick={navigateToNewSale}
             >
               <Plus className="h-4 w-4" />
-              {t("common.newSale")}
+              {t("sell.newSale")}
             </Button>
             
             <ExportSalesButton 

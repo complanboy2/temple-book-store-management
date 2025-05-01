@@ -1,110 +1,75 @@
 
 import React from "react";
+import { Button } from "@/components/ui/button";
+import { Bell, ChevronLeft, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, Bell, ChevronDown } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useStallContext } from "@/contexts/StallContext";
 import { useTranslation } from "react-i18next";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import LowStockNotification from "@/components/LowStockNotification";
+import StallSelector from "@/components/StallSelector";
 
 interface MobileHeaderProps {
   title: string;
   showBackButton?: boolean;
+  backTo?: string;
   showSearchButton?: boolean;
-  showStallSelector?: boolean;
   onSearch?: () => void;
-  backTo?: string; // Prop to specify where to navigate back to
-  showNotification?: boolean;
+  showStallSelector?: boolean;
+  mediumBand?: boolean;
 }
 
 const MobileHeader: React.FC<MobileHeaderProps> = ({
   title,
-  showBackButton = true,
+  showBackButton = false,
+  backTo = "/",
   showSearchButton = false,
-  showStallSelector = false,
   onSearch,
-  backTo,
-  showNotification = true,
+  showStallSelector = false,
+  mediumBand = true,
 }) => {
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
-  const { currentStore, stores, setCurrentStore } = useStallContext();
   const { t } = useTranslation();
   
-  const handleBack = () => {
-    if (backTo) {
-      navigate(backTo);
-    } else {
-      navigate(-1);
-    }
-  };
-  
   return (
-    <div className="sticky top-0 z-40 bg-temple-background border-b border-temple-gold/20 pt-safe">
-      <div className="flex items-center justify-between h-14 px-4">
+    <div>
+      <div className="bg-gradient-to-r from-temple-saffron to-temple-gold py-4 px-4 flex items-center justify-between">
         <div className="flex items-center">
           {showBackButton && (
-            <button
-              onClick={handleBack}
-              className="mr-2 p-1 rounded-full hover:bg-temple-gold/10"
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="mr-2 text-white"
+              onClick={() => navigate(backTo)}
             >
-              <ArrowLeft size={24} className="text-temple-maroon" />
-            </button>
+              <ChevronLeft size={24} />
+            </Button>
           )}
-          <h1 className="font-bold text-lg text-temple-maroon truncate max-w-[200px]">
-            {title || t("common.templeBookStall")}
-          </h1>
+          <h1 className="text-lg font-medium text-white">{title}</h1>
         </div>
         
-        {showStallSelector && stores.length > 0 && (
-          <div className="flex-1 mx-2">
-            <Select
-              value={currentStore || ""}
-              onValueChange={(value) => setCurrentStore(value)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={t("common.selectStore")} />
-              </SelectTrigger>
-              <SelectContent>
-                {stores.map((store) => (
-                  <SelectItem key={store.id} value={store.id}>
-                    {store.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-        
-        <div className="flex items-center space-x-3">
-          {showSearchButton && onSearch && (
-            <button
+        <div className="flex items-center space-x-2">
+          {showSearchButton && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-white"
               onClick={onSearch}
-              className="p-1 rounded-full hover:bg-temple-gold/10"
             >
-              <Search size={20} className="text-temple-maroon" />
-            </button>
+              <Search size={20} />
+            </Button>
           )}
-          
-          {showNotification && (
-            <LowStockNotification />
-          )}
-          
-          <div 
-            className="h-8 w-8 bg-temple-saffron rounded-full flex items-center justify-center text-white text-sm font-bold cursor-pointer"
-            onClick={() => {
-              if (currentUser?.role === "super_admin") {
-                navigate("/super-admin");
-              } else {
-                navigate("/profile");
-              }
-            }}
-          >
-            {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : "U"}
-          </div>
         </div>
       </div>
+      
+      {mediumBand && (
+        <div className="bg-temple-maroon/80 py-2 px-4 text-center">
+          <h2 className="text-sm font-medium text-white">{t("common.templeBookStall")}</h2>
+        </div>
+      )}
+      
+      {showStallSelector && (
+        <div className="py-2 px-4 bg-temple-background">
+          <StallSelector />
+        </div>
+      )}
     </div>
   );
 };
