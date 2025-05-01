@@ -2,9 +2,11 @@
 {
   "common": {
     "templeBookStall": "ఆలయ పుస్తక స్టాల్",
+    "bookStoreManager": "పుస్తక స్టోర్ మేనేజర్",
     "booksInventory": "పుస్తకాల జాబితా",
     "addNewBook": "కొత్త పుస్తకాన్ని జోడించండి",
     "searchBooks": "పుస్తకాలను వెతకండి...",
+    "searchBooksPlaceholder": "పేరు, రచయిత, ప్రచురణకర్త ద్వారా శోధించండి...",
     "allCategories": "అన్ని వర్గాలు",
     "loading": "లోడ్ అవుతోంది",
     "noBooks": "పుస్తకాలు కనుగొనబడలేదు",
@@ -29,6 +31,37 @@
     "administration": "నిర్వహణ",
     "privacyPolicy": "గోప్యతా విధానం",
     "logout": "లాగ్ అవుట్",
-    "selectStore": "స్టోర్ ఎంచుకోండి"
+    "selectStore": "స్టోర్ ఎంచుకోండి",
+    "error": "లోపం",
+    "failedToLoadBooks": "పుస్తకాలను లోడ్ చేయడంలో విఫలమైంది",
+    "failedToLoadBookDetails": "పుస్తక వివరాలను లోడ్ చేయడంలో విఫలమైంది",
+    "backToBooks": "పుస్తకాలకు తిరిగి వెళ్ళండి",
+    "all": "అన్నీ",
+    "uncategorized": "వర్గీకరించబడని",
+    "publisher": "ప్రచురణకర్త",
+    "notSpecified": "పేర్కొనబడలేదు",
+    "availableQuantity": "అందుబాటులో ఉన్న పరిమాణం",
+    "by": "ద్వారా",
+    "total": "మొత్తం",
+    "processing": "ప్రాసెసింగ్",
+    "quantity": "పరిమాణం",
+    "optional": "ఐచ్ఛికం",
+    "author": "రచయిత",
+    "category": "వర్గం"
+  },
+  "sell": {
+    "title": "పుస్తకం అమ్మకం",
+    "sellerName": "విక్రేత పేరు",
+    "paymentMethod": "చెల్లింపు విధానం",
+    "cash": "నగదు",
+    "upi": "యూపీఐ",
+    "card": "కార్డ్",
+    "buyerName": "కొనుగోలుదారు పేరు",
+    "buyerPhone": "కొనుగోలుదారు ఫోన్",
+    "completeSale": "అమ్మకం పూర్తి చేయండి",
+    "saleCompleted": "అమ్మకం విజయవంతంగా పూర్తయింది",
+    "failedToUpdateInventory": "ఇన్వెంటరీని అప్డేట్ చేయడంలో విఫలమైంది",
+    "failedToRecordSale": "అమ్మకాన్ని రికార్డ్ చేయడంలో విఫలమైంది",
+    "failedToCompleteSale": "అమ్మకాన్ని పూర్తి చేయడంలో విఫలమైంది"
   }
 }

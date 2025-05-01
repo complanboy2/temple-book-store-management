@@ -1,7 +1,7 @@
 
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, BookOpen, BarChart2, PlusCircle, Menu, Settings, ShoppingCart } from "lucide-react";
+import { Home, BookOpen, BarChart2, Menu, ShoppingCart } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStallContext } from "@/contexts/StallContext";
 import { useTranslation } from "react-i18next";

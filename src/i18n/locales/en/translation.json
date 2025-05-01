@@ -2,9 +2,11 @@
 {
   "common": {
     "templeBookStall": "Temple Book Stall",
+    "bookStoreManager": "Book Store Manager",
     "booksInventory": "Books Inventory",
     "addNewBook": "Add New Book",
     "searchBooks": "Search books...",
+    "searchBooksPlaceholder": "Search by name, author, publisher...",
     "allCategories": "All Categories",
     "loading": "Loading",
     "noBooks": "No books found",
@@ -29,6 +31,37 @@
     "administration": "Administration",
     "privacyPolicy": "Privacy Policy",
     "logout": "Logout",
-    "selectStore": "Select Store"
+    "selectStore": "Select Store",
+    "error": "Error",
+    "failedToLoadBooks": "Failed to load books",
+    "failedToLoadBookDetails": "Failed to load book details",
+    "backToBooks": "Back to Books",
+    "all": "All",
+    "uncategorized": "Uncategorized",
+    "publisher": "Publisher",
+    "notSpecified": "Not Specified",
+    "availableQuantity": "Available Quantity",
+    "by": "By",
+    "total": "Total",
+    "processing": "Processing",
+    "quantity": "Quantity",
+    "optional": "Optional",
+    "author": "Author",
+    "category": "Category"
+  },
+  "sell": {
+    "title": "Sell Book",
+    "sellerName": "Seller Name",
+    "paymentMethod": "Payment Method",
+    "cash": "Cash",
+    "upi": "UPI",
+    "card": "Card",
+    "buyerName": "Buyer Name",
+    "buyerPhone": "Buyer Phone",
+    "completeSale": "Complete Sale",
+    "saleCompleted": "Sale completed successfully",
+    "failedToUpdateInventory": "Failed to update inventory",
+    "failedToRecordSale": "Failed to record sale",
+    "failedToCompleteSale": "Failed to complete sale"
   }
 }

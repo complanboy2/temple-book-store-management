@@ -18,7 +18,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   );
   
   return (
-    <div className="min-h-screen bg-temple-background pb-20">
+    <div className="min-h-screen bg-temple-background">
       <Header />
       {children}
       {shouldShowNavbar && <MobileNavBar />}

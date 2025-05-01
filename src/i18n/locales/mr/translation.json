@@ -2,9 +2,11 @@
 {
   "common": {
     "templeBookStall": "मंदिर पुस्तक स्टॉल",
+    "bookStoreManager": "पुस्तक स्टोअर व्यवस्थापक",
     "booksInventory": "पुस्तकांची यादी",
     "addNewBook": "नवीन पुस्तक जोडा",
     "searchBooks": "पुस्तके शोधा...",
+    "searchBooksPlaceholder": "नाव, लेखक, प्रकाशक द्वारे शोधा...",
     "allCategories": "सर्व श्रेणी",
     "loading": "लोड होत आहे",
     "noBooks": "कोणतीही पुस्तके सापडली नाहीत",
@@ -29,6 +31,37 @@
     "administration": "प्रशासन",
     "privacyPolicy": "गोपनीयता धोरण",
     "logout": "लॉगआउट",
-    "selectStore": "स्टोअर निवडा"
+    "selectStore": "स्टोअर निवडा",
+    "error": "त्रुटी",
+    "failedToLoadBooks": "पुस्तके लोड करण्यात अयशस्वी",
+    "failedToLoadBookDetails": "पुस्तकाची माहिती लोड करण्यात अयशस्वी",
+    "backToBooks": "पुस्तकांकडे परत जा",
+    "all": "सर्व",
+    "uncategorized": "अवर्गीकृत",
+    "publisher": "प्रकाशक",
+    "notSpecified": "निर्दिष्ट नाही",
+    "availableQuantity": "उपलब्ध प्रमाण",
+    "by": "द्वारा",
+    "total": "एकूण",
+    "processing": "प्रक्रिया चालू आहे",
+    "quantity": "प्रमाण",
+    "optional": "वैकल्पिक",
+    "author": "लेखक",
+    "category": "श्रेणी"
+  },
+  "sell": {
+    "title": "पुस्तक विक्री",
+    "sellerName": "विक्रेत्याचे नाव",
+    "paymentMethod": "पेमेंट पद्धत",
+    "cash": "रोख",
+    "upi": "यूपीआय",
+    "card": "कार्ड",
+    "buyerName": "खरेदीदाराचे नाव",
+    "buyerPhone": "खरेदीदाराचा फोन",
+    "completeSale": "विक्री पूर्ण करा",
+    "saleCompleted": "विक्री यशस्वीरित्या पूर्ण झाली",
+    "failedToUpdateInventory": "यादी अपडेट करण्यात अयशस्वी",
+    "failedToRecordSale": "विक्री नोंदवण्यात अयशस्वी",
+    "failedToCompleteSale": "विक्री पूर्ण करण्यात अयशस्वी"
   }
 }

@@ -2,9 +2,11 @@
 {
   "common": {
     "templeBookStall": "ದೇವಸ್ಥಾನ ಪುಸ್ತಕ ಮಳಿಗೆ",
+    "bookStoreManager": "ಪುಸ್ತಕ ಅಂಗಡಿ ನಿರ್ವಾಹಕ",
     "booksInventory": "ಪುಸ್ತಕ ದಾಸ್ತಾನು",
     "addNewBook": "ಹೊಸ ಪುಸ್ತಕ ಸೇರಿಸಿ",
     "searchBooks": "ಪುಸ್ತಕಗಳನ್ನು ಹುಡುಕಿ...",
+    "searchBooksPlaceholder": "ಹೆಸರು, ಲೇಖಕ, ಪ್ರಕಾಶಕ ಮೂಲಕ ಹುಡುಕಿ...",
     "allCategories": "ಎಲ್ಲಾ ವಿಭಾಗಗಳು",
     "loading": "ಲೋಡ್ ಆಗುತ್ತಿದೆ",
     "noBooks": "ಯಾವುದೇ ಪುಸ್ತಕಗಳು ಕಂಡುಬಂದಿಲ್ಲ",
@@ -29,6 +31,37 @@
     "administration": "ಆಡಳಿತ",
     "privacyPolicy": "ಗೌಪ್ಯತಾ ನೀತಿ",
     "logout": "ಲಾಗ್ ಔಟ್",
-    "selectStore": "ಅಂಗಡಿಯನ್ನು ಆಯ್ಕೆಮಾಡಿ"
+    "selectStore": "ಅಂಗಡಿಯನ್ನು ಆಯ್ಕೆಮಾಡಿ",
+    "error": "ದೋಷ",
+    "failedToLoadBooks": "ಪುಸ್ತಕಗಳನ್ನು ಲೋಡ್ ಮಾಡಲು ವಿಫಲವಾಗಿದೆ",
+    "failedToLoadBookDetails": "ಪುಸ್ತಕದ ವಿವರಗಳನ್ನು ಲೋಡ್ ಮಾಡಲು ವಿಫಲವಾಗಿದೆ",
+    "backToBooks": "ಪುಸ್ತಕಗಳಿಗೆ ಹಿಂತಿರುಗಿ",
+    "all": "ಎಲ್ಲಾ",
+    "uncategorized": "ವರ್ಗೀಕರಿಸಲಾಗಿಲ್ಲ",
+    "publisher": "ಪ್ರಕಾಶಕ",
+    "notSpecified": "ನಿರ್ದಿಷ್ಟಪಡಿಸಲಾಗಿಲ್ಲ",
+    "availableQuantity": "ಲಭ್ಯವಿರುವ ಪ್ರಮಾಣ",
+    "by": "ಮೂಲಕ",
+    "total": "ಒಟ್ಟು",
+    "processing": "ಪ್ರಕ್ರಿಯೆಯಲ್ಲಿದೆ",
+    "quantity": "ಪ್ರಮಾಣ",
+    "optional": "ಐಚ್ಛಿಕ",
+    "author": "ಲೇಖಕ",
+    "category": "ವರ್ಗ"
+  },
+  "sell": {
+    "title": "ಪುಸ್ತಕ ಮಾರಾಟ",
+    "sellerName": "ಮಾರಾಟಗಾರರ ಹೆಸರು",
+    "paymentMethod": "ಪಾವತಿ ವಿಧಾನ",
+    "cash": "ನಗದು",
+    "upi": "ಯುಪಿಐ",
+    "card": "ಕಾರ್ಡ್",
+    "buyerName": "ಕೊಳ್ಳುವವರ ಹೆಸರು",
+    "buyerPhone": "ಕೊಳ್ಳುವವರ ಫೋನ್",
+    "completeSale": "ಮಾರಾಟವನ್ನು ಪೂರ್ಣಗೊಳಿಸಿ",
+    "saleCompleted": "ಮಾರಾಟವು ಯಶಸ್ವಿಯಾಗಿ ಪೂರ್ಣಗೊಂಡಿದೆ",
+    "failedToUpdateInventory": "ದಾಸ್ತಾನು ನವೀಕರಿಸಲು ವಿಫಲವಾಗಿದೆ",
+    "failedToRecordSale": "ಮಾರಾಟವನ್ನು ದಾಖಲಿಸಲು ವಿಫಲವಾಗಿದೆ",
+    "failedToCompleteSale": "ಮಾರಾಟವನ್ನು ಪೂರ್ಣಗೊಳಿಸಲು ವಿಫಲವಾಗಿದೆ"
   }
 }

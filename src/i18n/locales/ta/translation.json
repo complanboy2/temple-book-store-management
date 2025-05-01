@@ -2,9 +2,11 @@
 {
   "common": {
     "templeBookStall": "கோயில் புத்தக நிலையம்",
+    "bookStoreManager": "புத்தக கடை மேலாளர்",
     "booksInventory": "புத்தகங்கள் பட்டியல்",
     "addNewBook": "புதிய புத்தகம் சேர்க்க",
     "searchBooks": "புத்தகங்களைத் தேடுங்கள்...",
+    "searchBooksPlaceholder": "பெயர், ஆசிரியர், பதிப்பகம் மூலம் தேடுங்கள்...",
     "allCategories": "அனைத்து வகைகளும்",
     "loading": "ஏற்றுகிறது",
     "noBooks": "புத்தகங்கள் எதுவும் இல்லை",
@@ -29,6 +31,37 @@
     "administration": "நிர்வாகம்",
     "privacyPolicy": "தனியுரிமை கொள்கை",
     "logout": "வெளியேறு",
-    "selectStore": "கடையைத் தேர்வுசெய்க"
+    "selectStore": "கடையைத் தேர்வுசெய்க",
+    "error": "பிழை",
+    "failedToLoadBooks": "புத்தகங்களை ஏற்றுவதில் தோல்வி",
+    "failedToLoadBookDetails": "புத்தக விவரங்களை ஏற்றுவதில் தோல்வி",
+    "backToBooks": "புத்தகங்களுக்குத் திரும்புக",
+    "all": "அனைத்தும்",
+    "uncategorized": "வகைப்படுத்தப்படாதது",
+    "publisher": "பதிப்பகம்",
+    "notSpecified": "குறிப்பிடப்படவில்லை",
+    "availableQuantity": "கிடைக்கும் அளவு",
+    "by": "மூலம்",
+    "total": "மொத்தம்",
+    "processing": "செயலாக்குகிறது",
+    "quantity": "அளவு",
+    "optional": "விருப்பத்தேர்வு",
+    "author": "ஆசிரியர்",
+    "category": "வகை"
+  },
+  "sell": {
+    "title": "புத்தக விற்பனை",
+    "sellerName": "விற்பனையாளர் பெயர்",
+    "paymentMethod": "பணம் செலுத்தும் முறை",
+    "cash": "பணம்",
+    "upi": "யூபிஐ",
+    "card": "அட்டை",
+    "buyerName": "வாங்குபவர் பெயர்",
+    "buyerPhone": "வாங்குபவர் தொலைபேசி",
+    "completeSale": "விற்பனையை முடிக்க",
+    "saleCompleted": "விற்பனை வெற்றிகரமாக முடிந்தது",
+    "failedToUpdateInventory": "பட்டியலை புதுப்பிக்க முடியவில்லை",
+    "failedToRecordSale": "விற்பனையைப் பதிவுசெய்ய முடியவில்லை",
+    "failedToCompleteSale": "விற்பனையை முடிக்க முடியவில்லை"
   }
 }

@@ -92,7 +92,7 @@ const BooksPage: React.FC = () => {
         backTo="/"
         showSearchButton={true}
         showStallSelector={true}
-        onSearch={() => document.getElementById('searchInput')?.focus()}
+        onSearch={() => navigate("/search")}
         mediumBand={true}
       />
       
