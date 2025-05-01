@@ -47,7 +47,39 @@
     "quantity": "प्रमाण",
     "optional": "वैकल्पिक",
     "author": "लेखक",
-    "category": "श्रेणी"
+    "category": "श्रेणी",
+    "bookManagement": "पुस्तक व्यवस्थापन",
+    "manageAndSellBooks": "पुस्तके व्यवस्थापित करा आणि विका",
+    "manageYourBookInventory": "आपली पुस्तक यादी व्यवस्थापित करा आणि विक्री नोंदवा",
+    "orderManagement": "ऑर्डर व्यवस्थापन",
+    "manageOrders": "ऑर्डर व्यवस्थापित करा",
+    "orderManagementDescription": "आपले पुस्तक ऑर्डर तयार करा आणि ट्रॅक करा",
+    "analytics": "विश्लेषण",
+    "trackYourStallPerformance": "आपल्या स्टॉलची कामगिरी ट्रॅक करा",
+    "viewOrders": "ऑर्डर पहा",
+    "newOrder": "नवीन ऑर्डर",
+    "welcomeToBookStore": "पुस्तक स्टोअरमध्ये आपले स्वागत आहे",
+    "pleaseSelectStore": "कृपया पुढे जाण्यासाठी स्टोअर निवडा",
+    "addStore": "स्टोअर जोडा",
+    "sell": "विक्री करा",
+    "search": "शोधा",
+    "salesHistory": "विक्री इतिहास",
+    "timeFilter": "वेळ फिल्टर",
+    "allTime": "सर्व वेळ",
+    "today": "आज",
+    "thisWeek": "या आठवड्यात",
+    "thisMonth": "या महिन्यात",
+    "thisYear": "या वर्षी",
+    "paymentMethod": "पेमेंट पद्धत",
+    "startDate": "प्रारंभ दिनांक",
+    "endDate": "अंतिम दिनांक",
+    "date": "दिनांक",
+    "book": "पुस्तक",
+    "buyer": "खरेदीदार",
+    "amount": "रक्कम",
+    "noSales": "कोणतीही विक्री आढळली नाही",
+    "missingRequiredInformation": "आवश्यक माहिती गहाळ आहे",
+    "notEnoughBooks": "यादीत पुरेशी पुस्तके नाहीत"
   },
   "sell": {
     "title": "पुस्तक विक्री",
@@ -62,6 +94,13 @@
     "saleCompleted": "विक्री यशस्वीरित्या पूर्ण झाली",
     "failedToUpdateInventory": "यादी अपडेट करण्यात अयशस्वी",
     "failedToRecordSale": "विक्री नोंदवण्यात अयशस्वी",
-    "failedToCompleteSale": "विक्री पूर्ण करण्यात अयशस्वी"
+    "failedToCompleteSale": "विक्री पूर्ण करण्यात अयशस्वी",
+    "newSale": "नवीन विक्री"
+  },
+  "dashboard": {
+    "totalBooks": "एकूण पुस्तके",
+    "salesToday": "आजची विक्री",
+    "revenue": "महसूल",
+    "lowStock": "कमी साठा"
   }
 }

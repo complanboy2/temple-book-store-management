@@ -23,7 +23,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   showSearchButton = false,
   onSearch,
   showStallSelector = false,
-  mediumBand = true,
+  mediumBand = false,
 }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -58,12 +58,6 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
           )}
         </div>
       </div>
-      
-      {mediumBand && (
-        <div className="bg-temple-maroon/80 py-2 px-4 text-center">
-          <h2 className="text-sm font-medium text-white">{t("common.bookStoreManager")}</h2>
-        </div>
-      )}
       
       {showStallSelector && (
         <div className="py-2 px-4 bg-temple-background">

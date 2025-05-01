@@ -47,7 +47,39 @@
     "quantity": "ಪ್ರಮಾಣ",
     "optional": "ಐಚ್ಛಿಕ",
     "author": "ಲೇಖಕ",
-    "category": "ವರ್ಗ"
+    "category": "ವರ್ಗ",
+    "bookManagement": "ಪುಸ್ತಕ ನಿರ್ವಹಣೆ",
+    "manageAndSellBooks": "ಪುಸ್ತಕಗಳನ್ನು ನಿರ್ವಹಿಸಿ ಮತ್ತು ಮಾರಾಟ ಮಾಡಿ",
+    "manageYourBookInventory": "ನಿಮ್ಮ ಪುಸ್ತಕ ದಾಸ್ತಾನನ್ನು ನಿರ್ವಹಿಸಿ ಮತ್ತು ಮಾರಾಟವನ್ನು ದಾಖಲಿಸಿ",
+    "orderManagement": "ಆದೇಶ ನಿರ್ವಹಣೆ",
+    "manageOrders": "ಆದೇಶಗಳನ್ನು ನಿರ್ವಹಿಸಿ",
+    "orderManagementDescription": "ನಿಮ್ಮ ಪುಸ್ತಕ ಆದೇಶಗಳನ್ನು ರಚಿಸಿ ಮತ್ತು ಟ್ರ್ಯಾಕ್ ಮಾಡಿ",
+    "analytics": "ವಿಶ್ಲೇಷಣೆ",
+    "trackYourStallPerformance": "ನಿಮ್ಮ ಮಳಿಗೆಯ ಕಾರ್ಯಕ್ಷಮತೆಯನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಿ",
+    "viewOrders": "ಆದೇಶಗಳನ್ನು ನೋಡಿ",
+    "newOrder": "ಹೊಸ ಆದೇಶ",
+    "welcomeToBookStore": "ಪುಸ್ತಕ ಅಂಗಡಿಗೆ ಸುಸ್ವಾಗತ",
+    "pleaseSelectStore": "ಮುಂದುವರೆಯಲು ದಯವಿಟ್ಟು ಅಂಗಡಿಯನ್ನು ಆಯ್ಕೆಮಾಡಿ",
+    "addStore": "ಅಂಗಡಿ ಸೇರಿಸಿ",
+    "sell": "ಮಾರಾಟ ಮಾಡಿ",
+    "search": "ಹುಡುಕಿ",
+    "salesHistory": "ಮಾರಾಟ ಇತಿಹಾಸ",
+    "timeFilter": "ಸಮಯ ಫಿಲ್ಟರ್",
+    "allTime": "ಎಲ್ಲಾ ಸಮಯ",
+    "today": "ಇಂದು",
+    "thisWeek": "ಈ ವಾರ",
+    "thisMonth": "ಈ ತಿಂಗಳು",
+    "thisYear": "ಈ ವರ್ಷ",
+    "paymentMethod": "ಪಾವತಿ ವಿಧಾನ",
+    "startDate": "ಪ್ರಾರಂಭ ದಿನಾಂಕ",
+    "endDate": "ಅಂತಿಮ ದಿನಾಂಕ",
+    "date": "ದಿನಾಂಕ",
+    "book": "ಪುಸ್ತಕ",
+    "buyer": "ಖರೀದಿದಾರ",
+    "amount": "ಮೊತ್ತ",
+    "noSales": "ಯಾವುದೇ ಮಾರಾಟಗಳು ಕಂಡುಬಂದಿಲ್ಲ",
+    "missingRequiredInformation": "ಅಗತ್ಯ ಮಾಹಿತಿ ಕಾಣೆಯಾಗಿದೆ",
+    "notEnoughBooks": "ದಾಸ್ತಾನಿನಲ್ಲಿ ಸಾಕಷ್ಟು ಪುಸ್ತಕಗಳಿಲ್ಲ"
   },
   "sell": {
     "title": "ಪುಸ್ತಕ ಮಾರಾಟ",
@@ -62,6 +94,13 @@
     "saleCompleted": "ಮಾರಾಟವು ಯಶಸ್ವಿಯಾಗಿ ಪೂರ್ಣಗೊಂಡಿದೆ",
     "failedToUpdateInventory": "ದಾಸ್ತಾನು ನವೀಕರಿಸಲು ವಿಫಲವಾಗಿದೆ",
     "failedToRecordSale": "ಮಾರಾಟವನ್ನು ದಾಖಲಿಸಲು ವಿಫಲವಾಗಿದೆ",
-    "failedToCompleteSale": "ಮಾರಾಟವನ್ನು ಪೂರ್ಣಗೊಳಿಸಲು ವಿಫಲವಾಗಿದೆ"
+    "failedToCompleteSale": "ಮಾರಾಟವನ್ನು ಪೂರ್ಣಗೊಳಿಸಲು ವಿಫಲವಾಗಿದೆ",
+    "newSale": "ಹೊಸ ಮಾರಾಟ"
+  },
+  "dashboard": {
+    "totalBooks": "ಒಟ್ಟು ಪುಸ್ತಕಗಳು",
+    "salesToday": "ಇಂದಿನ ಮಾರಾಟಗಳು",
+    "revenue": "ಆದಾಯ",
+    "lowStock": "ಕಡಿಮೆ ದಾಸ್ತಾನು"
   }
 }

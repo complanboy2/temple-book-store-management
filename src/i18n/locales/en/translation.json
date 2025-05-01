@@ -47,7 +47,39 @@
     "quantity": "Quantity",
     "optional": "Optional",
     "author": "Author",
-    "category": "Category"
+    "category": "Category",
+    "bookManagement": "Book Management",
+    "manageAndSellBooks": "Manage & Sell Books",
+    "manageYourBookInventory": "Manage your book inventory and record sales",
+    "orderManagement": "Order Management",
+    "manageOrders": "Manage Orders",
+    "orderManagementDescription": "Create and track your book orders",
+    "analytics": "Analytics",
+    "trackYourStallPerformance": "Track your stall's performance",
+    "viewOrders": "View Orders",
+    "newOrder": "New Order",
+    "welcomeToBookStore": "Welcome to Book Store",
+    "pleaseSelectStore": "Please select a store to continue",
+    "addStore": "Add Store",
+    "sell": "Sell",
+    "search": "Search",
+    "salesHistory": "Sales History",
+    "timeFilter": "Time Filter",
+    "allTime": "All Time",
+    "today": "Today",
+    "thisWeek": "This Week",
+    "thisMonth": "This Month",
+    "thisYear": "This Year",
+    "paymentMethod": "Payment Method",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "date": "Date",
+    "book": "Book",
+    "buyer": "Buyer",
+    "amount": "Amount",
+    "noSales": "No sales found",
+    "missingRequiredInformation": "Missing required information",
+    "notEnoughBooks": "Not enough books in inventory"
   },
   "sell": {
     "title": "Sell Book",
@@ -62,6 +94,13 @@
     "saleCompleted": "Sale completed successfully",
     "failedToUpdateInventory": "Failed to update inventory",
     "failedToRecordSale": "Failed to record sale",
-    "failedToCompleteSale": "Failed to complete sale"
+    "failedToCompleteSale": "Failed to complete sale",
+    "newSale": "New Sale"
+  },
+  "dashboard": {
+    "totalBooks": "Total Books",
+    "salesToday": "Sales Today",
+    "revenue": "Revenue",
+    "lowStock": "Low Stock"
   }
 }

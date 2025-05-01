@@ -47,7 +47,39 @@
     "quantity": "அளவு",
     "optional": "விருப்பத்தேர்வு",
     "author": "ஆசிரியர்",
-    "category": "வகை"
+    "category": "வகை",
+    "bookManagement": "புத்தக மேலாண்மை",
+    "manageAndSellBooks": "புத்தகங்களை நிர்வகிக்கவும் மற்றும் விற்கவும்",
+    "manageYourBookInventory": "உங்கள் புத்தக பட்டியலை நிர்வகிக்கவும் மற்றும் விற்பனையைப் பதிவுசெய்யவும்",
+    "orderManagement": "ஆர்டர் மேலாண்மை",
+    "manageOrders": "ஆர்டர்களை நிர்வகிக்கவும்",
+    "orderManagementDescription": "உங்கள் புத்தக ஆர்டர்களை உருவாக்கவும் மற்றும் கண்காணிக்கவும்",
+    "analytics": "பகுப்பாய்வு",
+    "trackYourStallPerformance": "உங்கள் நிலையத்தின் செயல்திறனைக் கண்காணிக்கவும்",
+    "viewOrders": "ஆர்டர்களைக் காண்க",
+    "newOrder": "புதிய ஆர்டர்",
+    "welcomeToBookStore": "புத்தக கடைக்கு வரவேற்கிறோம்",
+    "pleaseSelectStore": "தொடர ஒரு கடையைத் தேர்ந்தெடுக்கவும்",
+    "addStore": "கடை சேர்க்க",
+    "sell": "விற்க",
+    "search": "தேடு",
+    "salesHistory": "விற்பனை வரலாறு",
+    "timeFilter": "நேர வடிகட்டி",
+    "allTime": "எல்லா நேரமும்",
+    "today": "இன்று",
+    "thisWeek": "இந்த வாரம்",
+    "thisMonth": "இந்த மாதம்",
+    "thisYear": "இந்த ஆண்டு",
+    "paymentMethod": "பணம் செலுத்தும் முறை",
+    "startDate": "தொடக்க தேதி",
+    "endDate": "முடிவு தேதி",
+    "date": "தேதி",
+    "book": "புத்தகம்",
+    "buyer": "வாங்குபவர்",
+    "amount": "தொகை",
+    "noSales": "விற்பனை எதுவும் இல்லை",
+    "missingRequiredInformation": "தேவையான தகவல் காணவில்லை",
+    "notEnoughBooks": "பட்டியலில் போதுமான புத்தகங்கள் இல்லை"
   },
   "sell": {
     "title": "புத்தக விற்பனை",
@@ -62,6 +94,13 @@
     "saleCompleted": "விற்பனை வெற்றிகரமாக முடிந்தது",
     "failedToUpdateInventory": "பட்டியலை புதுப்பிக்க முடியவில்லை",
     "failedToRecordSale": "விற்பனையைப் பதிவுசெய்ய முடியவில்லை",
-    "failedToCompleteSale": "விற்பனையை முடிக்க முடியவில்லை"
+    "failedToCompleteSale": "விற்பனையை முடிக்க முடியவில்லை",
+    "newSale": "புதிய விற்பனை"
+  },
+  "dashboard": {
+    "totalBooks": "மொத்த புத்தகங்கள்",
+    "salesToday": "இன்றைய விற்பனை",
+    "revenue": "வருவாய்",
+    "lowStock": "குறைந்த இருப்பு"
   }
 }

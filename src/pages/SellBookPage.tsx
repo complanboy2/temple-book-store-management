@@ -41,9 +41,16 @@ const SellBookPage: React.FC = () => {
 
   useEffect(() => {
     const fetchBook = async () => {
-      const bookId = params.bookId;
+      const bookId = params.id;
       
-      if (!bookId || !currentStore) {
+      // If we're on the "/sell/new" route, redirect to books page
+      if (!bookId || bookId === "new") {
+        navigate('/books');
+        setIsLoading(false);
+        return;
+      }
+
+      if (!currentStore) {
         toast({
           title: t("common.error"),
           description: t("common.bookNotFound"),
@@ -104,7 +111,7 @@ const SellBookPage: React.FC = () => {
     };
 
     fetchBook();
-  }, [params.bookId, currentStore, navigate, toast]);
+  }, [params.id, currentStore, navigate, toast, t]);
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
@@ -235,6 +242,10 @@ const SellBookPage: React.FC = () => {
         showBackButton={true}
         backTo="/books"
       />
+      
+      <div className="bg-temple-maroon/80 py-2 px-4 text-center">
+        <h2 className="text-sm font-medium text-white">{t("common.bookStoreManager")}</h2>
+      </div>
       
       <main className="container mx-auto px-2 py-4 pb-20">
         {!isMobile && (

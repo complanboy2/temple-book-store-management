@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Search, BookOpen, BarChart2, BookIcon, Package } from "lucide-react";
@@ -91,7 +90,6 @@ const Index = () => {
 
   return (
     <div className="bg-temple-background min-h-screen pb-20">
-      <Header />
       <MobileHeader 
         title={t("common.templeBookStall")}
         showBackButton={false}
@@ -99,6 +97,10 @@ const Index = () => {
         onSearch={() => navigate("/search")}
         showStallSelector={stores.length > 1}
       />
+      
+      <div className="bg-temple-maroon/80 py-2 px-4 text-center">
+        <h2 className="text-sm font-medium text-white">{t("common.bookStoreManager")}</h2>
+      </div>
       
       {currentStore ? (
         <div className="mobile-container">

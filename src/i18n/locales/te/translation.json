@@ -47,7 +47,39 @@
     "quantity": "పరిమాణం",
     "optional": "ఐచ్ఛికం",
     "author": "రచయిత",
-    "category": "వర్గం"
+    "category": "వర్గం",
+    "bookManagement": "పుస్తక నిర్వహణ",
+    "manageAndSellBooks": "పుస్తకాలను నిర్వహించండి మరియు అమ్మండి",
+    "manageYourBookInventory": "మీ పుస్తకాల జాబితాను నిర్వహించండి మరియు అమ్మకాలను రికార్డ్ చేయండి",
+    "orderManagement": "ఆర్డర్ నిర్వహణ",
+    "manageOrders": "ఆర్డర్లను నిర్వహించండి",
+    "orderManagementDescription": "మీ పుస్తక ఆర్డర్లను సృష్టించండి మరియు ట్రాక్ చేయండి",
+    "analytics": "విశ్లేషణలు",
+    "trackYourStallPerformance": "మీ స్టాల్ పనితీరును ట్రాక్ చేయండి",
+    "viewOrders": "ఆర్డర్లను చూడండి",
+    "newOrder": "కొత్త ఆర్డర్",
+    "welcomeToBookStore": "పుస్తక స్టోర్‌కి స్వాగతం",
+    "pleaseSelectStore": "కొనసాగించడానికి దయచేసి ఒక స్టోర్‌ను ఎంచుకోండి",
+    "addStore": "స్టోర్ జోడించండి",
+    "sell": "అమ్మకం",
+    "search": "శోధన",
+    "salesHistory": "అమ్మకాల చరిత్ర",
+    "timeFilter": "సమయం ఫిల్టర్",
+    "allTime": "అన్ని సమయాలు",
+    "today": "ఈరోజు",
+    "thisWeek": "ఈ వారం",
+    "thisMonth": "ఈ నెల",
+    "thisYear": "ఈ సంవత్సరం",
+    "paymentMethod": "చెల్లింపు విధానం",
+    "startDate": "ప్రారంభ తేదీ",
+    "endDate": "ముగింపు తేదీ",
+    "date": "తేదీ",
+    "book": "పుస్తకం",
+    "buyer": "కొనుగోలుదారు",
+    "amount": "మొత్తం",
+    "noSales": "అమ్మకాలు కనుగొనబడలేదు",
+    "missingRequiredInformation": "అవసరమైన సమాచారం తప్పిపోయింది",
+    "notEnoughBooks": "జాబితాలో తగినన్ని పుస్తకాలు లేవు"
   },
   "sell": {
     "title": "పుస్తకం అమ్మకం",
@@ -62,6 +94,13 @@
     "saleCompleted": "అమ్మకం విజయవంతంగా పూర్తయింది",
     "failedToUpdateInventory": "ఇన్వెంటరీని అప్డేట్ చేయడంలో విఫలమైంది",
     "failedToRecordSale": "అమ్మకాన్ని రికార్డ్ చేయడంలో విఫలమైంది",
-    "failedToCompleteSale": "అమ్మకాన్ని పూర్తి చేయడంలో విఫలమైంది"
+    "failedToCompleteSale": "అమ్మకాన్ని పూర్తి చేయడంలో విఫలమైంది",
+    "newSale": "కొత్త అమ్మకం"
+  },
+  "dashboard": {
+    "totalBooks": "మొత్తం పుస్తకాలు",
+    "salesToday": "ఈరోజు అమ్మకాలు",
+    "revenue": "ఆదాయం",
+    "lowStock": "తక్కువ స్టాక్"
   }
 }

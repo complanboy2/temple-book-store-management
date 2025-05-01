@@ -47,7 +47,39 @@
     "quantity": "मात्रा",
     "optional": "वैकल्पिक",
     "author": "लेखक",
-    "category": "श्रेणी"
+    "category": "श्रेणी",
+    "bookManagement": "पुस्तक प्रबंधन",
+    "manageAndSellBooks": "पुस्तकें प्रबंधित करें और बेचें",
+    "manageYourBookInventory": "अपनी पुस्तक इन्वेंटरी प्रबंधित करें और बिक्री रिकॉर्ड करें",
+    "orderManagement": "ऑर्डर प्रबंधन",
+    "manageOrders": "ऑर्डर प्रबंधित करें",
+    "orderManagementDescription": "अपने पुस्तक ऑर्डर बनाएं और ट्रैक करें",
+    "analytics": "विश्लेषण",
+    "trackYourStallPerformance": "अपने स्टॉल के प्रदर्शन को ट्रैक करें",
+    "viewOrders": "ऑर्डर देखें",
+    "newOrder": "नया ऑर्डर",
+    "welcomeToBookStore": "पुस्तक स्टोर में आपका स्वागत है",
+    "pleaseSelectStore": "जारी रखने के लिए कृपया एक स्टोर चुनें",
+    "addStore": "स्टोर जोड़ें",
+    "sell": "बेचें",
+    "search": "खोजें",
+    "salesHistory": "बिक्री इतिहास",
+    "timeFilter": "समय फ़िल्टर",
+    "allTime": "सभी समय",
+    "today": "आज",
+    "thisWeek": "इस सप्ताह",
+    "thisMonth": "इस महीने",
+    "thisYear": "इस वर्ष",
+    "paymentMethod": "भुगतान का तरीका",
+    "startDate": "प्रारंभ तिथि",
+    "endDate": "अंतिम तिथि",
+    "date": "तिथि",
+    "book": "पुस्तक",
+    "buyer": "खरीदार",
+    "amount": "राशि",
+    "noSales": "कोई बिक्री नहीं मिली",
+    "missingRequiredInformation": "आवश्यक जानकारी गायब है",
+    "notEnoughBooks": "इन्वेंटरी में पर्याप्त पुस्तकें नहीं हैं"
   },
   "sell": {
     "title": "पुस्तक बेचें",
@@ -62,6 +94,13 @@
     "saleCompleted": "बिक्री सफलतापूर्वक पूरी हुई",
     "failedToUpdateInventory": "इन्वेंटरी अपडेट करने में विफल",
     "failedToRecordSale": "बिक्री रिकॉर्ड करने में विफल",
-    "failedToCompleteSale": "बिक्री पूरी करने में विफल"
+    "failedToCompleteSale": "बिक्री पूरी करने में विफल",
+    "newSale": "नई बिक्री"
+  },
+  "dashboard": {
+    "totalBooks": "कुल पुस्तकें",
+    "salesToday": "आज की बिक्री",
+    "revenue": "राजस्व",
+    "lowStock": "कम स्टॉक"
   }
 }

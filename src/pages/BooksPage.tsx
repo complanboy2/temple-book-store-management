@@ -93,8 +93,11 @@ const BooksPage: React.FC = () => {
         showSearchButton={true}
         showStallSelector={true}
         onSearch={() => navigate("/search")}
-        mediumBand={true}
       />
+      
+      <div className="bg-temple-maroon/80 py-2 px-4 text-center">
+        <h2 className="text-sm font-medium text-white">{t("common.bookStoreManager")}</h2>
+      </div>
       
       <main className="container mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
