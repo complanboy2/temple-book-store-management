@@ -1,7 +1,7 @@
 
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, BookOpen, BarChart2, PlusCircle, Menu, Settings } from "lucide-react";
+import { Home, BookOpen, BarChart2, PlusCircle, Menu, Settings, ShoppingCart } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStallContext } from "@/contexts/StallContext";
 import { useTranslation } from "react-i18next";
@@ -42,17 +42,15 @@ const MobileNavBar = () => {
           <span className="text-xs mt-1">{t("common.books")}</span>
         </button>
         
-        {isAdmin && (
-          <button
-            onClick={() => navigate("/add-book")}
-            className={`flex flex-col items-center justify-center w-full h-full ${
-              isActive("/add-book") ? "text-temple-saffron" : "text-gray-500"
-            }`}
-          >
-            <PlusCircle size={24} />
-            <span className="text-xs mt-1">{t("common.addBook")}</span>
-          </button>
-        )}
+        <button
+          onClick={() => navigate("/sell/new")}
+          className={`flex flex-col items-center justify-center w-full h-full ${
+            isActive("/sell") ? "text-temple-saffron" : "text-gray-500"
+          }`}
+        >
+          <ShoppingCart size={24} />
+          <span className="text-xs mt-1">{t("common.newSale")}</span>
+        </button>
         
         <button
           onClick={() => navigate("/sales")}
@@ -73,17 +71,6 @@ const MobileNavBar = () => {
           >
             <Menu size={24} />
             <span className="text-xs mt-1">{t("common.more")}</span>
-          </button>
-        )}
-        {isAdmin && (
-          <button
-            onClick={() => navigate("/settings")}
-            className={`flex flex-col items-center justify-center w-full h-full ${
-              isActive("/settings") ? "text-temple-saffron" : "text-gray-500"
-            }`}
-          >
-            <Settings size={24} />
-            <span className="text-xs mt-1">{t("common.settings")}</span>
           </button>
         )}
       </div>

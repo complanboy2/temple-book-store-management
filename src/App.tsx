@@ -38,7 +38,7 @@ function App() {
         <Route path="/complete-signup/:code" element={<CompleteSignupPage />} />
         <Route path="/" element={<Layout><Index /></Layout>} />
         <Route path="/books" element={<Layout><BooksPage /></Layout>} />
-        <Route path="/books/add" element={<Layout><AddBookPage /></Layout>} />
+        <Route path="/add-book" element={<Layout><AddBookPage /></Layout>} />
         <Route path="/books/:id" element={<Layout><AddBookPage /></Layout>} />
         <Route path="/sell/new" element={<Layout><SellBookPage /></Layout>} />
         <Route path="/sell/:id" element={<Layout><SellBookPage /></Layout>} />

@@ -57,8 +57,8 @@ const BooksPage: React.FC = () => {
     
     if (success) {
       toast({
-        title: "Success",
-        description: "Book deleted successfully",
+        title: t("common.success"),
+        description: t("common.bookDeletedSuccessfully"),
       });
     }
     
@@ -72,8 +72,8 @@ const BooksPage: React.FC = () => {
       navigate(`/sell/${book.id}`);
     } else {
       toast({
-        title: "Book Not Found",
-        description: t("common.bookNotFound"),
+        title: t("common.bookNotFound"),
+        description: t("common.bookNotFoundDescription"),
         variant: "destructive",
       });
     }
@@ -93,6 +93,7 @@ const BooksPage: React.FC = () => {
         showSearchButton={true}
         showStallSelector={true}
         onSearch={() => document.getElementById('searchInput')?.focus()}
+        mediumBand={true}
       />
       
       <main className="container mx-auto px-4 py-6">

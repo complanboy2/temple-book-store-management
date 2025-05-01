@@ -2,7 +2,6 @@
 import { Bell, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -55,6 +54,15 @@ const Header = () => {
                           onClick={() => navigate("/books")}
                         >
                           📚 {t("common.books")}
+                        </Button>
+                      </li>
+                      <li>
+                        <Button 
+                          variant="ghost" 
+                          className="w-full justify-start text-lg font-medium"
+                          onClick={() => navigate("/sell/new")}
+                        >
+                          💰 {t("common.newSale")}
                         </Button>
                       </li>
                       <li>
@@ -152,7 +160,7 @@ const Header = () => {
         </div>
       </header>
       <div className="bg-temple-maroon/80 py-2 px-4 text-center">
-        <h2 className="text-sm font-medium text-white">{t("common.templeBookStall")}</h2>
+        <h2 className="text-sm font-medium text-white">Book Store Manager</h2>
       </div>
     </>
   );
