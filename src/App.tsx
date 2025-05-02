@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   createBrowserRouter,
@@ -5,13 +6,13 @@ import {
   Navigate,
 } from "react-router-dom";
 import { useAuth } from "./contexts/AuthContext";
-import HomePage from "./pages/HomePage";
+import Index from "./pages/Index";
 import BooksPage from "./pages/BooksPage";
 import SalesPage from "./pages/SalesPage";
 import LoginPage from "./pages/LoginPage";
 import AddBookPage from "./pages/AddBookPage";
 import SellBookPage from "./pages/SellBookPage";
-import AdminPanelPage from "./pages/AdminPanelPage";
+import SuperAdminPage from "./pages/SuperAdminPage";
 import EditBookPage from "./pages/EditBookPage";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -28,7 +29,7 @@ const router = createBrowserRouter([
     path: "/",
     element: (
       <ProtectedRoute>
-        <HomePage />
+        <Index />
       </ProtectedRoute>
     ),
   },
@@ -80,7 +81,7 @@ const router = createBrowserRouter([
     path: "/admin",
     element: (
       <ProtectedRoute>
-        <AdminPanelPage />
+        <SuperAdminPage />
       </ProtectedRoute>
     ),
   },
