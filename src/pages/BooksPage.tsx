@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BookList from "@/components/BookList";
-import { supabase } from "@/integrations/supabase/client";
 import { useStallContext } from "@/contexts/StallContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
@@ -11,10 +11,9 @@ import ScannerButton from "@/components/ScannerButton";
 import BookImage from "@/components/BookImage";
 import { useToast } from "@/hooks/use-toast";
 import DeleteBookDialog from "@/components/DeleteBookDialog";
-import BookFilter from "@/components/BookFilter";
+import { useBookManager } from "@/hooks/useBookManager";
 
 const BooksPage = () => {
-  const [books, setBooks] = useState<Book[]>([]);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const navigate = useNavigate();
@@ -22,60 +21,17 @@ const BooksPage = () => {
   const { t } = useTranslation();
   const { isAdmin } = useAuth();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(true);
   
-  useEffect(() => {
-    const fetchBooks = async () => {
-      setIsLoading(true);
-      if (!currentStore) {
-        setBooks([]);
-        setIsLoading(false);
-        return;
-      }
-      
-      try {
-        const { data, error } = await supabase
-          .from('books')
-          .select('*')
-          .eq('stallid', currentStore);
-          
-        if (error) {
-          throw error;
-        }
-        
-        // Map database fields to Book type fields
-        const books = data.map(item => ({
-          id: item.id,
-          barcode: item.barcode,
-          name: item.name,
-          author: item.author,
-          category: item.category,
-          printingInstitute: item.printinginstitute,
-          originalPrice: item.originalprice,
-          salePrice: item.saleprice,
-          quantity: item.quantity,
-          stallId: item.stallid,
-          imageUrl: item.imageurl,
-          createdAt: new Date(item.createdat),
-          updatedAt: new Date(item.updatedat)
-        })) as Book[];
-        
-        setBooks(books);
-      } catch (error) {
-        console.error("Error fetching books:", error);
-        toast({
-          title: t("common.error"),
-          description: t("common.failedToLoadBooks"),
-          variant: "destructive",
-        });
-        setBooks([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchBooks();
-  }, [currentStore, toast, t]);
+  const {
+    filteredBooks: books,
+    isLoading,
+    searchTerm,
+    setSearchTerm,
+    selectedCategory,
+    setSelectedCategory,
+    categories,
+    deleteBook
+  } = useBookManager(currentStore);
   
   const handleScanComplete = (barcode: string) => {
     // Find the book by barcode
@@ -97,22 +53,14 @@ const BooksPage = () => {
     if (!selectedBook) return;
     
     try {
-      const { error } = await supabase
-        .from('books')
-        .delete()
-        .eq('id', selectedBook.id);
-        
-      if (error) {
-        throw error;
+      const success = await deleteBook(selectedBook.id);
+      
+      if (success) {
+        toast({
+          title: t("common.success"),
+          description: t("common.bookDeleted"),
+        });
       }
-      
-      toast({
-        title: t("common.success"),
-        description: t("common.bookDeleted"),
-      });
-      
-      // Refresh books
-      setBooks(books.filter(book => book.id !== selectedBook.id));
     } catch (error) {
       console.error("Error deleting book:", error);
       toast({
@@ -124,6 +72,11 @@ const BooksPage = () => {
       setIsDeleteDialogOpen(false);
       setSelectedBook(null);
     }
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSelectedCategory('');
   };
   
   return (
@@ -144,10 +97,7 @@ const BooksPage = () => {
           <div className="flex flex-col sm:flex-row gap-2">
             {isAdmin && (
               <ScannerButton
-                onScanComplete={(barcode) => {
-                  // Handle scan result
-                  handleScanComplete(barcode);
-                }}
+                onScanComplete={handleScanComplete}
               />
             )}
             
@@ -165,14 +115,23 @@ const BooksPage = () => {
           </div>
         </div>
         
-        <BookFilter 
-          onFilterChange={(filteredBooks) => setBooks(filteredBooks)} 
-          stallId={currentStore || ""}
-        />
+        <div className="mb-6">
+          <BookFilter
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            categories={categories}
+          />
+        </div>
         
         <BookList 
-          books={books} 
-          onEdit={book => navigate(`/books/${book.id}`)} 
+          books={books}
+          isLoading={isLoading}
+          searchTerm={searchTerm}
+          selectedCategory={selectedCategory}
+          onClearFilters={clearFilters}
+          onEdit={(book) => navigate(`/books/${book.id}`)}
           onDelete={(book) => {
             setSelectedBook(book);
             setIsDeleteDialogOpen(true);

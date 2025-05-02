@@ -1,8 +1,9 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "react-i18next";
+import { Book } from "@/types";
 import {
   Select,
   SelectContent,
@@ -12,21 +13,45 @@ import {
 } from "@/components/ui/select";
 
 interface BookFilterProps {
-  searchTerm: string;
-  setSearchTerm: (term: string) => void;
-  selectedCategory: string;
-  setSelectedCategory: (category: string) => void;
-  categories: string[];
+  searchTerm?: string;
+  setSearchTerm?: (term: string) => void;
+  selectedCategory?: string;
+  setSelectedCategory?: (category: string) => void;
+  categories?: string[];
+  stallId?: string;
+  onFilterChange?: (filteredBooks: Book[]) => void;
 }
 
 const BookFilter: React.FC<BookFilterProps> = ({
-  searchTerm,
-  setSearchTerm,
-  selectedCategory,
-  setSelectedCategory,
-  categories,
+  searchTerm: externalSearchTerm,
+  setSearchTerm: externalSetSearchTerm,
+  selectedCategory: externalSelectedCategory,
+  setSelectedCategory: externalSetSelectedCategory,
+  categories: externalCategories = [],
+  stallId,
+  onFilterChange,
 }) => {
   const { t } = useTranslation();
+  
+  // Internal state management if props are not provided
+  const [internalSearchTerm, setInternalSearchTerm] = useState("");
+  const [internalSelectedCategory, setInternalSelectedCategory] = useState("");
+  
+  // Use either external or internal state
+  const searchTerm = externalSearchTerm !== undefined ? externalSearchTerm : internalSearchTerm;
+  const setSearchTerm = externalSetSearchTerm || setInternalSearchTerm;
+  const selectedCategory = externalSelectedCategory !== undefined ? externalSelectedCategory : internalSelectedCategory;
+  const setSelectedCategory = externalSetSelectedCategory || setInternalSelectedCategory;
+  
+  const categories = externalCategories || [];
+
+  // Handle filtering if onFilterChange is provided
+  useEffect(() => {
+    if (onFilterChange && stallId) {
+      // This would need to actually fetch or filter books based on criteria
+      // For now, it's a stub that would be implemented when used with onFilterChange
+    }
+  }, [searchTerm, selectedCategory, stallId, onFilterChange]);
 
   return (
     <div className="flex flex-col md:flex-row gap-4 mb-6">

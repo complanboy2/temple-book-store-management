@@ -5,10 +5,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Barcode } from "lucide-react";
 
 interface ScannerButtonProps {
-  onCodeScanned: (code: string) => void;
+  onScanComplete?: (code: string) => void;
+  onCodeScanned?: (code: string) => void;
 }
 
-const ScannerButton: React.FC<ScannerButtonProps> = ({ onCodeScanned }) => {
+const ScannerButton: React.FC<ScannerButtonProps> = ({ onScanComplete, onCodeScanned }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [manualCode, setManualCode] = useState("");
 
@@ -21,7 +22,10 @@ const ScannerButton: React.FC<ScannerButtonProps> = ({ onCodeScanned }) => {
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (manualCode.trim()) {
-      onCodeScanned(manualCode);
+      // Support both callback names for backward compatibility
+      if (onCodeScanned) onCodeScanned(manualCode);
+      if (onScanComplete) onScanComplete(manualCode);
+      
       setManualCode("");
       setIsDialogOpen(false);
     }

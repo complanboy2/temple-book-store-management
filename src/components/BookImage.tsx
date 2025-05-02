@@ -2,7 +2,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
-interface BookImageProps {
+export interface BookImageProps {
   imageUrl?: string;
   className?: string;
   alt?: string;
@@ -14,12 +14,12 @@ const BookImage: React.FC<BookImageProps> = ({
   alt = "Book cover"
 }) => {
   return (
-    <div className={cn("w-full h-40 overflow-hidden rounded-md bg-gray-100", className)}>
+    <div className={cn("w-full h-40 overflow-hidden rounded-md bg-gray-100 flex items-center justify-center", className)}>
       {imageUrl ? (
         <img 
           src={imageUrl} 
           alt={alt}
-          className="w-full h-full object-contain" 
+          className="w-full h-full object-cover" 
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
