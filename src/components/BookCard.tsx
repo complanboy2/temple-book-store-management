@@ -45,32 +45,35 @@ const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete, onEdit, o
             onClick={() => onSell ? onSell() : onSelect(book)}
             variant="default"
           >
-            {onSell ? t("common.sell") : t("common.select")}
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            {t("common.sell")}
           </Button>
           
-          <div className="flex gap-2">
-            {isAdmin && onEdit && (
-              <Button
-                onClick={onEdit}
-                variant="ghost"
-                className="hover:text-primary"
-                title={t("common.edit")}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-            )}
-            
-            {isAdmin && onDelete && (
-              <Button
-                onClick={() => onDelete(book.id)}
-                variant="ghost"
-                className="text-destructive hover:text-destructive"
-                title={t("common.delete")}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
+          {isAdmin && (
+            <div className="flex gap-2">
+              {onEdit && (
+                <Button
+                  onClick={onEdit}
+                  variant="ghost"
+                  className="hover:text-primary"
+                  title={t("common.edit")}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              )}
+              
+              {onDelete && (
+                <Button
+                  onClick={() => onDelete(book.id)}
+                  variant="ghost"
+                  className="text-destructive hover:text-destructive"
+                  title={t("common.delete")}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

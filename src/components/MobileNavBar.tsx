@@ -21,11 +21,7 @@ const MobileNavBar = () => {
 
   // Handler for sell button to navigate directly to new sale page
   const handleSellClick = () => {
-    if (currentStore) {
-      navigate("/sell/new");
-    } else {
-      navigate("/books");
-    }
+    navigate("/sell/new");
   };
 
   return (

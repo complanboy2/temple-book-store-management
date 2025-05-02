@@ -17,6 +17,7 @@ import SellBookPage from "./pages/SellBookPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
 import EditBookPage from "./pages/EditBookPage";
 import NotFound from "./pages/NotFound";
+import Layout from "./components/Layout";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser } = useAuth();
@@ -33,7 +34,9 @@ const router = createBrowserRouter([
     path: "/",
     element: (
       <ProtectedRoute>
-        <Index />
+        <Layout>
+          <Index />
+        </Layout>
       </ProtectedRoute>
     ),
   },
@@ -41,7 +44,9 @@ const router = createBrowserRouter([
     path: "/books",
     element: (
       <ProtectedRoute>
-        <BooksPage />
+        <Layout>
+          <BooksPage />
+        </Layout>
       </ProtectedRoute>
     ),
   },
@@ -49,7 +54,9 @@ const router = createBrowserRouter([
     path: "/sales",
     element: (
       <ProtectedRoute>
-        <SalesPage />
+        <Layout>
+          <SalesPage />
+        </Layout>
       </ProtectedRoute>
     ),
   },
@@ -61,7 +68,9 @@ const router = createBrowserRouter([
     path: "/add-book",
     element: (
       <ProtectedRoute>
-        <AddBookPage />
+        <Layout>
+          <AddBookPage />
+        </Layout>
       </ProtectedRoute>
     ),
   },
@@ -69,7 +78,9 @@ const router = createBrowserRouter([
     path: "/sell/:bookId",
     element: (
       <ProtectedRoute>
-        <SellBookPage />
+        <Layout>
+          <SellBookPage />
+        </Layout>
       </ProtectedRoute>
     ),
   },
@@ -77,7 +88,9 @@ const router = createBrowserRouter([
     path: "/sell/new",
     element: (
       <ProtectedRoute>
-        <SellBookPage />
+        <Layout>
+          <SellBookPage />
+        </Layout>
       </ProtectedRoute>
     ),
   },
@@ -85,7 +98,9 @@ const router = createBrowserRouter([
     path: "/admin",
     element: (
       <ProtectedRoute>
-        <SuperAdminPage />
+        <Layout>
+          <SuperAdminPage />
+        </Layout>
       </ProtectedRoute>
     ),
   },
@@ -93,7 +108,9 @@ const router = createBrowserRouter([
     path: "/edit-book/:bookId",
     element: (
       <ProtectedRoute>
-        <EditBookPage />
+        <Layout>
+          <EditBookPage />
+        </Layout>
       </ProtectedRoute>
     ),
   },

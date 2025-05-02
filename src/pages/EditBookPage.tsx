@@ -7,11 +7,28 @@ import { Book } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import MobileHeader from "@/components/MobileHeader";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 const EditBookPage = () => {
   const { bookId } = useParams<{ bookId: string }>();
   const [book, setBook] = useState<Book | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    author: "",
+    category: "",
+    printingInstitute: "",
+    originalPrice: 0,
+    salePrice: 0,
+    quantity: 0,
+    barcode: ""
+  });
+  
   const { currentStore } = useStallContext();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -65,6 +82,16 @@ const EditBookPage = () => {
         };
 
         setBook(bookData);
+        setFormData({
+          name: bookData.name,
+          author: bookData.author,
+          category: bookData.category || "",
+          printingInstitute: bookData.printingInstitute || "",
+          originalPrice: bookData.originalPrice,
+          salePrice: bookData.salePrice,
+          quantity: bookData.quantity,
+          barcode: bookData.barcode || ""
+        });
       } catch (error) {
         console.error("Error fetching book details:", error);
         toast({
@@ -80,6 +107,60 @@ const EditBookPage = () => {
 
     fetchBookDetails();
   }, [bookId, currentStore, navigate, toast, t]);
+  
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    
+    if (name === "originalPrice" || name === "salePrice" || name === "quantity") {
+      const numValue = parseFloat(value);
+      setFormData((prev) => ({ ...prev, [name]: isNaN(numValue) ? 0 : numValue }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!book || !currentStore) return;
+    
+    try {
+      setIsSaving(true);
+      
+      const { error } = await supabase
+        .from("books")
+        .update({
+          name: formData.name,
+          author: formData.author,
+          category: formData.category,
+          printinginstitute: formData.printingInstitute,
+          originalprice: formData.originalPrice,
+          saleprice: formData.salePrice,
+          quantity: formData.quantity,
+          barcode: formData.barcode || null,
+          updatedat: new Date().toISOString()
+        })
+        .eq("id", book.id)
+        .eq("stallid", currentStore);
+        
+      if (error) throw error;
+      
+      toast({
+        title: t("common.success"),
+        description: t("common.bookUpdated"),
+      });
+      
+      navigate("/books");
+    } catch (error) {
+      console.error("Error updating book:", error);
+      toast({
+        title: t("common.error"),
+        description: t("common.failedToUpdateBook"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -98,39 +179,132 @@ const EditBookPage = () => {
       />
       
       <main className="container mx-auto px-4 py-6">
+        <h1 className="text-2xl font-bold text-temple-maroon mb-6">{t("common.editBook")}</h1>
+        
         {book ? (
-          <>
-            <h1 className="text-2xl font-bold text-temple-maroon mb-6">{t("common.editBook")}</h1>
-            
-            {/* This is where your book edit form would go */}
-            <pre className="bg-gray-100 p-4 rounded overflow-auto">
-              {JSON.stringify(book, null, 2)}
-            </pre>
-            
-            <div className="mt-6">
-              <button
-                onClick={() => navigate("/books")}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded mr-2"
-              >
-                {t("common.cancel")}
-              </button>
-              <button
-                onClick={() => navigate("/books")}
-                className="bg-temple-saffron hover:bg-temple-saffron/90 text-white px-4 py-2 rounded"
-              >
-                {t("common.save")}
-              </button>
-            </div>
-          </>
+          <Card className="p-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">{t("common.bookName")}</Label>
+                <Input 
+                  id="name" 
+                  name="name" 
+                  value={formData.name} 
+                  onChange={handleChange} 
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="author">{t("common.author")}</Label>
+                <Input 
+                  id="author" 
+                  name="author" 
+                  value={formData.author} 
+                  onChange={handleChange} 
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="category">{t("common.category")}</Label>
+                <Input 
+                  id="category" 
+                  name="category" 
+                  value={formData.category} 
+                  onChange={handleChange} 
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="printingInstitute">{t("common.printingInstitute")}</Label>
+                <Input 
+                  id="printingInstitute" 
+                  name="printingInstitute" 
+                  value={formData.printingInstitute} 
+                  onChange={handleChange} 
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="originalPrice">{t("common.originalPrice")}</Label>
+                  <Input 
+                    id="originalPrice" 
+                    name="originalPrice" 
+                    type="number" 
+                    value={formData.originalPrice} 
+                    onChange={handleChange} 
+                    required
+                    min={0}
+                    step={0.01}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="salePrice">{t("common.salePrice")}</Label>
+                  <Input 
+                    id="salePrice" 
+                    name="salePrice" 
+                    type="number" 
+                    value={formData.salePrice} 
+                    onChange={handleChange} 
+                    required
+                    min={0}
+                    step={0.01}
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="quantity">{t("common.quantity")}</Label>
+                <Input 
+                  id="quantity" 
+                  name="quantity" 
+                  type="number" 
+                  value={formData.quantity} 
+                  onChange={handleChange} 
+                  required
+                  min={0}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="barcode">{t("common.barcode")}</Label>
+                <Input 
+                  id="barcode" 
+                  name="barcode" 
+                  value={formData.barcode} 
+                  onChange={handleChange} 
+                />
+              </div>
+              
+              <div className="flex justify-end gap-4 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate("/books")}
+                >
+                  {t("common.cancel")}
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isSaving}
+                >
+                  {isSaving ? t("common.saving") : t("common.save")}
+                </Button>
+              </div>
+            </form>
+          </Card>
         ) : (
           <div className="text-center py-12">
             <p className="text-lg text-muted-foreground">{t("common.bookNotFound")}</p>
-            <button
+            <Button
               onClick={() => navigate("/books")}
-              className="mt-4 text-temple-saffron hover:underline"
+              className="mt-4"
             >
               {t("common.backToBooks")}
-            </button>
+            </Button>
           </div>
         )}
       </main>
