@@ -4,16 +4,18 @@ import { Book } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { Trash2 } from "lucide-react";
+import { Trash2, Edit, ShoppingCart } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface BookCardProps {
   book: Book;
   onSelect: (book: Book) => void;
   onDelete?: (bookId: string) => void;
+  onEdit?: () => void;
+  onSell?: () => void;
 }
 
-const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete }) => {
+const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete, onEdit, onSell }) => {
   const { currentUser } = useAuth();
   const isAdmin = currentUser?.role === "admin";
 
@@ -44,15 +46,37 @@ const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete }) => {
             Select
           </Button>
           
-          {isAdmin && onDelete && (
-            <Button
-              onClick={() => onDelete(book.id)}
-              variant="ghost"
-              className="text-destructive hover:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {isAdmin && onEdit && (
+              <Button
+                onClick={onEdit}
+                variant="ghost"
+                className="hover:text-primary"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
+            
+            {isAdmin && onSell && (
+              <Button
+                onClick={onSell}
+                variant="ghost"
+                className="hover:text-temple-saffron"
+              >
+                <ShoppingCart className="h-4 w-4" />
+              </Button>
+            )}
+            
+            {isAdmin && onDelete && (
+              <Button
+                onClick={() => onDelete(book.id)}
+                variant="ghost"
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
