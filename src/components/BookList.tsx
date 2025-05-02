@@ -14,7 +14,6 @@ interface BookListProps {
   onBookSelect?: (book: Book) => void;
   onDeleteBook?: (bookId: string) => void;
   onClearFilters?: () => void;
-  // Additional props used in BooksPage.tsx
   onEdit?: (book: Book) => void;
   onDelete?: (book: Book) => void;
   onSell?: (book: Book) => void;

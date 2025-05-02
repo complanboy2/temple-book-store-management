@@ -20,6 +20,7 @@ const BookImage: React.FC<BookImageProps> = ({
           src={imageUrl} 
           alt={alt}
           className="w-full h-full object-cover" 
+          loading="lazy"
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">

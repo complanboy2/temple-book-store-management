@@ -4,17 +4,28 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Home, BookOpen, BarChart2, Menu, ShoppingCart } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
+import { useStallContext } from "@/contexts/StallContext";
 
 const MobileNavBar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAdmin } = useAuth();
   const { t } = useTranslation();
+  const { currentStore } = useStallContext();
   
   const isActive = (path: string) => {
     if (path === "/" && location.pathname === "/") return true;
     if (path !== "/" && location.pathname.startsWith(path)) return true;
     return false;
+  };
+
+  // Handler for sell button to navigate directly to new sale page
+  const handleSellClick = () => {
+    if (currentStore) {
+      navigate("/sell/new");
+    } else {
+      navigate("/books");
+    }
   };
 
   return (
@@ -41,7 +52,7 @@ const MobileNavBar = () => {
         </button>
         
         <button
-          onClick={() => navigate("/books")} // Navigate to books first
+          onClick={handleSellClick}
           className={`flex flex-col items-center justify-center w-full h-full ${
             isActive("/sell") ? "text-temple-saffron" : "text-gray-500"
           }`}

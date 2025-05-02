@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Trash2, Edit, ShoppingCart } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from "react-i18next";
 
 interface BookCardProps {
   book: Book;
@@ -18,6 +19,7 @@ interface BookCardProps {
 const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete, onEdit, onSell }) => {
   const { currentUser } = useAuth();
   const isAdmin = currentUser?.role === "admin";
+  const { t } = useTranslation();
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -34,16 +36,16 @@ const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete, onEdit, o
       </CardHeader>
       <CardContent className="p-4">
         <CardTitle className="text-lg mb-2">{book.name}</CardTitle>
-        <p className="text-sm text-muted-foreground mb-1">Author: {book.author}</p>
-        <p className="text-sm text-muted-foreground mb-2">Stock: {book.quantity}</p>
+        <p className="text-sm text-muted-foreground mb-1">{t("common.author")}: {book.author}</p>
+        <p className="text-sm text-muted-foreground mb-2">{t("common.quantity")}: {book.quantity}</p>
         <p className="font-medium text-temple-saffron mb-4">₹{book.salePrice}</p>
         
         <div className="flex justify-between items-center">
           <Button 
-            onClick={() => onSelect(book)}
+            onClick={() => onSell ? onSell() : onSelect(book)}
             variant="default"
           >
-            Select
+            {onSell ? t("common.sell") : t("common.select")}
           </Button>
           
           <div className="flex gap-2">
@@ -52,18 +54,9 @@ const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete, onEdit, o
                 onClick={onEdit}
                 variant="ghost"
                 className="hover:text-primary"
+                title={t("common.edit")}
               >
                 <Edit className="h-4 w-4" />
-              </Button>
-            )}
-            
-            {isAdmin && onSell && (
-              <Button
-                onClick={onSell}
-                variant="ghost"
-                className="hover:text-temple-saffron"
-              >
-                <ShoppingCart className="h-4 w-4" />
               </Button>
             )}
             
@@ -72,6 +65,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete, onEdit, o
                 onClick={() => onDelete(book.id)}
                 variant="ghost"
                 className="text-destructive hover:text-destructive"
+                title={t("common.delete")}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

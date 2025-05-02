@@ -49,6 +49,28 @@ const BooksPage = () => {
     }
   };
   
+  // Handle book editing - navigate to edit page with book ID
+  const handleEditBook = (book: Book) => {
+    if (book && book.id) {
+      navigate(`/edit-book/${book.id}`);
+    }
+  };
+  
+  // Handle book selling - navigate to sell page with book ID
+  const handleSellBook = (book: Book) => {
+    if (book && book.id) {
+      if (book.quantity > 0) {
+        navigate(`/sell/${book.id}`);
+      } else {
+        toast({
+          title: t("common.error"),
+          description: t("sell.outOfStock"),
+          variant: "destructive",
+        });
+      }
+    }
+  };
+  
   // Handle book deletion
   const handleDeleteBook = async () => {
     if (!selectedBook) return;
@@ -132,29 +154,20 @@ const BooksPage = () => {
           searchTerm={searchTerm}
           selectedCategory={selectedCategory}
           onClearFilters={clearFilters}
-          onEdit={(book) => navigate(`/books/${book.id}`)}
+          onBookSelect={(book) => handleSellBook(book)}
+          onEdit={handleEditBook}
           onDelete={(book) => {
             setSelectedBook(book);
             setIsDeleteDialogOpen(true);
           }}
-          onSell={(book) => {
-            if (book.quantity > 0) {
-              navigate(`/sell/${book.id}`);
-            } else {
-              toast({
-                title: t("common.error"),
-                description: t("sell.outOfStock"),
-                variant: "destructive",
-              });
-            }
-          }}
+          onSell={handleSellBook}
           ImageComponent={BookImage}
         />
       </main>
       
       <DeleteBookDialog
         isOpen={isDeleteDialogOpen}
-        bookName={selectedBook?.name || ""}
+        bookTitle={selectedBook?.name || ""}
         onClose={() => setIsDeleteDialogOpen(false)}
         onDelete={handleDeleteBook}
       />

@@ -63,7 +63,12 @@
     "amount": "Amount",
     "noSales": "No sales found",
     "startDate": "Start Date",
-    "endDate": "End Date"
+    "endDate": "End Date",
+    "select": "Select",
+    "bookDeleted": "Book deleted successfully",
+    "deleteBookFailed": "Failed to delete book",
+    "confirmDelete": "Are you sure you want to delete",
+    "deleteBookConfirmation": "This action cannot be undone."
   },
   "sell": {
     "sellBook": "Sell Book",

@@ -1,6 +1,5 @@
 
 import React from "react";
-import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,52 +10,33 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useTranslation } from "react-i18next";
 
 interface DeleteBookDialogProps {
   isOpen: boolean;
-  onOpenChange?: (open: boolean) => void;
-  onConfirm?: () => void;
-  // Additional props used in BooksPage.tsx
-  bookName?: string;
-  onClose?: () => void;
-  onDelete?: () => Promise<void> | void;
+  bookTitle: string;
+  onClose: () => void;
+  onDelete: () => void;
 }
 
-const DeleteBookDialog: React.FC<DeleteBookDialogProps> = ({
-  isOpen,
-  onOpenChange,
-  onConfirm,
-  bookName,
-  onClose,
-  onDelete
-}) => {
+const DeleteBookDialog = ({ isOpen, bookTitle, onClose, onDelete }: DeleteBookDialogProps) => {
   const { t } = useTranslation();
-
-  // Support multiple callback patterns
-  const handleOpenChange = (open: boolean) => {
-    if (onOpenChange) onOpenChange(open);
-    if (!open && onClose) onClose();
-  };
-
-  const handleConfirm = () => {
-    if (onConfirm) onConfirm();
-    if (onDelete) onDelete();
-  };
-
+  
   return (
-    <AlertDialog open={isOpen} onOpenChange={handleOpenChange}>
+    <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t("common.confirmDelete")}</AlertDialogTitle>
+          <AlertDialogTitle>{t("common.deleteBook")}</AlertDialogTitle>
           <AlertDialogDescription>
-            {bookName 
-              ? t("common.deleteSpecificBookConfirmation", { bookName }) 
-              : t("common.deleteBookConfirmation")}
+            {t("common.confirmDelete")} <strong>"{bookTitle}"</strong>? {t("common.deleteBookConfirmation")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-          <AlertDialogAction onClick={handleConfirm} className="bg-red-500 hover:bg-red-600">
+          <AlertDialogCancel onClick={onClose}>{t("common.cancel")}</AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={onDelete}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
             {t("common.delete")}
           </AlertDialogAction>
         </AlertDialogFooter>
