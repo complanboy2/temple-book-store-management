@@ -41,7 +41,7 @@ const MobileNavBar = () => {
         </button>
         
         <button
-          onClick={() => navigate("/sell/new")}
+          onClick={() => navigate("/books")} // Navigate to books first
           className={`flex flex-col items-center justify-center w-full h-full ${
             isActive("/sell") ? "text-temple-saffron" : "text-gray-500"
           }`}

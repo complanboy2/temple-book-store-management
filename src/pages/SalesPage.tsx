@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { 
   Select, 
@@ -30,6 +28,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import ExportSalesButton from "@/components/ExportSalesButton";
 import MobileHeader from "@/components/MobileHeader";
+import { Plus } from "lucide-react";
 
 const SalesPage = () => {
   const [sales, setSales] = useState<Sale[]>([]);
@@ -222,10 +221,6 @@ const SalesPage = () => {
         backTo="/" 
         showStallSelector={true}
       />
-
-      <div className="bg-temple-maroon/80 py-2 px-4 text-center">
-        <h2 className="text-sm font-medium text-white">{t("common.bookStoreManager")}</h2>
-      </div>
       
       <main className="container mx-auto px-4 py-6 pb-20">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
