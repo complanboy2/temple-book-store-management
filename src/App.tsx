@@ -4,6 +4,8 @@ import {
   createBrowserRouter,
   RouterProvider,
   Navigate,
+  Route,
+  Routes,
 } from "react-router-dom";
 import { useAuth } from "./contexts/AuthContext";
 import Index from "./pages/Index";
@@ -14,6 +16,7 @@ import AddBookPage from "./pages/AddBookPage";
 import SellBookPage from "./pages/SellBookPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
 import EditBookPage from "./pages/EditBookPage";
+import NotFound from "./pages/NotFound";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser } = useAuth();
@@ -24,6 +27,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return React.Children.only(children);
 };
 
+// Create router configuration outside of the component
 const router = createBrowserRouter([
   {
     path: "/",
@@ -92,6 +96,10 @@ const router = createBrowserRouter([
         <EditBookPage />
       </ProtectedRoute>
     ),
+  },
+  {
+    path: "*",
+    element: <NotFound />,
   },
 ]);
 
