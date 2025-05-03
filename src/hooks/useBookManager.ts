@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Book } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -11,84 +11,93 @@ export const useBookManager = (stallId: string | null) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
+  const [lastFetchTime, setLastFetchTime] = useState(0);
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  useEffect(() => {
-    const fetchBooks = async () => {
-      setIsLoading(true);
+  const fetchBooks = useCallback(async (forceRefresh = false) => {
+    if (!stallId) {
+      console.log("No store selected, cannot fetch books");
+      setBooks([]);
+      setFilteredBooks([]);
+      setIsLoading(false);
+      return;
+    }
+
+    const now = Date.now();
+    const CACHE_TIME = 60000; // 1 minute in milliseconds
+    
+    // Skip refetching if we fetched recently, unless forced
+    if (!forceRefresh && now - lastFetchTime < CACHE_TIME && books.length > 0) {
+      console.log("Using cached books data, last fetch was", (now - lastFetchTime) / 1000, "seconds ago");
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      console.log(`Fetching books for store ID: ${stallId}`);
       
-      if (!stallId) {
-        console.log("No store selected, cannot fetch books");
+      const { data, error } = await supabase
+        .from("books")
+        .select("*")
+        .eq("stallid", stallId)
+        .order('createdat', { ascending: false });
+        
+      if (error) {
+        console.error("Error fetching books from Supabase:", error);
+        toast({
+          title: t("common.error"),
+          description: t("common.failedToLoadBooks"),
+          variant: "destructive",
+        });
         setBooks([]);
         setFilteredBooks([]);
         setIsLoading(false);
         return;
       }
 
-      console.log(`Fetching books for store ID: ${stallId}`);
+      if (data && Array.isArray(data)) {
+        // Transform API result to local Book type
+        const result: Book[] = data.map((row: any) => ({
+          id: row.id,
+          barcode: row.barcode ?? undefined,
+          name: row.name,
+          author: row.author,
+          category: row.category ?? "",
+          printingInstitute: row.printinginstitute ?? "",
+          originalPrice: row.originalprice,
+          salePrice: row.saleprice,
+          quantity: row.quantity,
+          stallId: row.stallid,
+          imageUrl: row.imageurl,
+          createdAt: row.createdat ? new Date(row.createdat) : new Date(),
+          updatedAt: row.updatedat ? new Date(row.updatedat) : new Date()
+        }));
 
-      try {
-        console.log("Making Supabase query for books");
-        const { data, error } = await supabase
-          .from("books")
-          .select("*")
-          .eq("stallid", stallId)
-          .order('createdat', { ascending: false });
-          
-        if (error) {
-          console.error("Error fetching books from Supabase:", error);
-          toast({
-            title: "Error",
-            description: "Error fetching books. Please try again.",
-            variant: "destructive",
-          });
-          setBooks([]);
-          setFilteredBooks([]);
-          setIsLoading(false);
-          return;
-        }
-
-        console.log("Supabase returned books data:", data);
-
-        if (data && Array.isArray(data)) {
-          // Transform API result to local Book type
-          const result: Book[] = data.map((row: any) => ({
-            id: row.id,
-            barcode: row.barcode ?? undefined,
-            name: row.name,
-            author: row.author,
-            category: row.category ?? "",
-            printingInstitute: row.printinginstitute ?? "",
-            originalPrice: row.originalprice,
-            salePrice: row.saleprice,
-            quantity: row.quantity,
-            stallId: row.stallid,
-            imageUrl: row.imageurl,
-            createdAt: row.createdat ? new Date(row.createdat) : new Date(),
-            updatedAt: row.updatedat ? new Date(row.updatedat) : new Date()
-          }));
-
-          console.log(`Fetched ${result.length} books for store ${stallId}`);
-          setBooks(result);
-          setFilteredBooks(result);
-        }
-      } catch (err) {
-        console.error("Unexpected error fetching books:", err);
-        toast({
-          title: "Error",
-          description: "Unexpected error fetching books. Please try again.",
-          variant: "destructive",
-        });
-        setBooks([]);
-        setFilteredBooks([]);
-      } finally {
-        setIsLoading(false);
+        console.log(`Fetched ${result.length} books for store ${stallId}`);
+        setLastFetchTime(now);
+        setBooks(result);
+        setFilteredBooks(result);
       }
-    };
-
-    fetchBooks();
+    } catch (err) {
+      console.error("Unexpected error fetching books:", err);
+      toast({
+        title: t("common.error"),
+        description: t("common.failedToLoadBooks"),
+        variant: "destructive",
+      });
+      setBooks([]);
+      setFilteredBooks([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, [stallId, toast, t]);
+
+  useEffect(() => {
+    fetchBooks();
+  }, [fetchBooks]);
 
   useEffect(() => {
     let results = books;
@@ -118,38 +127,33 @@ export const useBookManager = (stallId: string | null) => {
       if (error) {
         console.error("Error deleting book:", error);
         toast({
-          title: "Error",
-          description: "Failed to delete book. Please try again.",
+          title: t("common.error"),
+          description: t("common.deleteBookFailed"),
           variant: "destructive",
         });
         return false;
       }
       
-      // Remove the deleted book from state
+      // Update local state
       const updatedBooks = books.filter(book => book.id !== bookId);
       setBooks(updatedBooks);
       
       // Update filtered books
-      setFilteredBooks(updatedBooks.filter(book => 
-        (!selectedCategory || book.category === selectedCategory) &&
-        (!searchTerm || 
-          book.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (book.category && book.category.toLowerCase().includes(searchTerm.toLowerCase()))
-        )
-      ));
+      setFilteredBooks(prevFiltered => 
+        prevFiltered.filter(book => book.id !== bookId)
+      );
       
       toast({
-        title: "Success",
-        description: "Book deleted successfully",
+        title: t("common.success"),
+        description: t("common.bookDeleted"),
       });
       
       return true;
     } catch (err) {
       console.error("Unexpected error deleting book:", err);
       toast({
-        title: "Error",
-        description: "An unexpected error occurred while deleting the book",
+        title: t("common.error"),
+        description: t("common.deleteBookFailed"),
         variant: "destructive",
       });
       return false;
@@ -172,5 +176,6 @@ export const useBookManager = (stallId: string | null) => {
     isLoading,
     categories,
     deleteBook,
+    refreshBooks: () => fetchBooks(true),
   };
 };

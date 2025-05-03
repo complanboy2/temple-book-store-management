@@ -21,8 +21,9 @@ const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete, onEdit, o
   const isAdmin = currentUser?.role === "admin";
   const { t } = useTranslation();
 
-  const handleSellClick = (e: React.MouseEvent) => {
+  const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (onSell) {
       onSell(book);
     } else {
@@ -32,6 +33,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete, onEdit, o
 
   const handleEditClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (onEdit) {
       onEdit(book);
     }
@@ -58,9 +60,10 @@ const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete, onEdit, o
         
         <div className="flex justify-between items-center">
           <Button 
-            onClick={handleSellClick}
+            onClick={handleClick}
             variant="default"
             type="button"
+            disabled={book.quantity <= 0}
           >
             <ShoppingCart className="h-4 w-4 mr-2" />
             {t("common.sell")}
@@ -84,6 +87,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete, onEdit, o
                 <Button
                   onClick={(e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     if (onDelete) onDelete(book.id);
                   }}
                   variant="ghost"

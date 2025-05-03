@@ -5,6 +5,7 @@ import BookCard from "@/components/BookCard";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import BookImage, { BookImageProps } from "@/components/BookImage";
+import { Loader2 } from "lucide-react";
 
 interface BookListProps {
   books: Book[];
@@ -37,21 +38,22 @@ const BookList: React.FC<BookListProps> = ({
 
   if (isLoading) {
     return (
-      <div className="text-center py-12">
-        <p className="text-lg text-muted-foreground">{t("common.loading")}...</p>
+      <div className="flex flex-col items-center justify-center py-16 text-temple-maroon">
+        <Loader2 className="h-12 w-12 animate-spin mb-4" />
+        <p className="text-lg">{t("common.loading")}...</p>
       </div>
     );
   }
 
   if (books.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-lg text-muted-foreground">{t("common.noBooks")}</p>
+      <div className="flex flex-col items-center justify-center py-16 text-temple-maroon">
+        <p className="text-lg mb-4">{t("common.noBooks")}</p>
         {(searchTerm || selectedCategory) && onClearFilters && (
           <Button
             onClick={onClearFilters}
-            variant="link"
-            className="mt-2 text-temple-saffron"
+            variant="outline"
+            className="mt-2 border-temple-saffron text-temple-saffron hover:bg-temple-saffron/10"
           >
             {t("common.clearFilters")}
           </Button>
@@ -61,7 +63,7 @@ const BookList: React.FC<BookListProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
       {books.map((book) => (
         <BookCard 
           key={book.id} 

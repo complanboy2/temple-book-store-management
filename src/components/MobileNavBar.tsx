@@ -19,9 +19,10 @@ const MobileNavBar = () => {
     return false;
   };
 
-  // Handler for sell button to navigate directly to new sale page
-  const handleSellClick = () => {
-    navigate("/sell/new");
+  // Handler for sell button to navigate directly to books page
+  const handleSellClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigate("/books");
   };
 
   return (

@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import BookList from "@/components/BookList";
 import BookFilter from "@/components/BookFilter";
@@ -31,8 +31,14 @@ const BooksPage = () => {
     selectedCategory,
     setSelectedCategory,
     categories,
-    deleteBook
+    deleteBook,
+    refreshBooks
   } = useBookManager(currentStore);
+  
+  // Refresh books data when component mounts or when current store changes
+  useEffect(() => {
+    refreshBooks();
+  }, [currentStore]);
   
   const handleScanComplete = (barcode: string) => {
     // Find the book by barcode
@@ -60,6 +66,7 @@ const BooksPage = () => {
   const handleSellBook = (book: Book) => {
     if (book && book.id) {
       if (book.quantity > 0) {
+        console.log("Selling book:", book.id, book.name);
         navigate(`/sell/${book.id}`);
       } else {
         toast({
