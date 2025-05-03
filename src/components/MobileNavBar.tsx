@@ -69,9 +69,9 @@ const MobileNavBar = () => {
         
         {isAdmin && (
           <button
-            onClick={() => navigate("/admin")}
+            onClick={() => navigate("/settings")}
             className={`flex flex-col items-center justify-center w-full h-full ${
-              isActive("/admin") || isActive("/reports") ? "text-temple-saffron" : "text-gray-500"
+              isActive("/admin") || isActive("/settings") || isActive("/reports") ? "text-temple-saffron" : "text-gray-500"
             }`}
           >
             <Menu size={24} />

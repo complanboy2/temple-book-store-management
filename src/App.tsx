@@ -4,8 +4,6 @@ import {
   createBrowserRouter,
   RouterProvider,
   Navigate,
-  Route,
-  Routes,
 } from "react-router-dom";
 import { useAuth } from "./contexts/AuthContext";
 import Index from "./pages/Index";
@@ -18,6 +16,7 @@ import SuperAdminPage from "./pages/SuperAdminPage";
 import EditBookPage from "./pages/EditBookPage";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/Layout";
+import SettingsPage from "./pages/SettingsPage";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser } = useAuth();
@@ -100,6 +99,16 @@ const router = createBrowserRouter([
       <ProtectedRoute>
         <Layout>
           <SuperAdminPage />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/settings",
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <SettingsPage />
         </Layout>
       </ProtectedRoute>
     ),

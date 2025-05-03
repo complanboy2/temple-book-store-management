@@ -154,7 +154,7 @@ const BooksPage = () => {
           searchTerm={searchTerm}
           selectedCategory={selectedCategory}
           onClearFilters={clearFilters}
-          onBookSelect={(book) => handleSellBook(book)}
+          onBookSelect={handleSellBook}
           onEdit={handleEditBook}
           onDelete={(book) => {
             setSelectedBook(book);

@@ -12,14 +12,28 @@ interface BookCardProps {
   book: Book;
   onSelect: (book: Book) => void;
   onDelete?: (bookId: string) => void;
-  onEdit?: () => void;
-  onSell?: () => void;
+  onEdit?: (book: Book) => void;
+  onSell?: (book: Book) => void;
 }
 
 const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete, onEdit, onSell }) => {
   const { currentUser } = useAuth();
   const isAdmin = currentUser?.role === "admin";
   const { t } = useTranslation();
+
+  const handleSellClick = () => {
+    if (onSell) {
+      onSell(book);
+    } else {
+      onSelect(book);
+    }
+  };
+
+  const handleEditClick = () => {
+    if (onEdit) {
+      onEdit(book);
+    }
+  };
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -42,7 +56,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete, onEdit, o
         
         <div className="flex justify-between items-center">
           <Button 
-            onClick={() => onSell ? onSell() : onSelect(book)}
+            onClick={handleSellClick}
             variant="default"
           >
             <ShoppingCart className="h-4 w-4 mr-2" />
@@ -53,7 +67,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete, onEdit, o
             <div className="flex gap-2">
               {onEdit && (
                 <Button
-                  onClick={onEdit}
+                  onClick={handleEditClick}
                   variant="ghost"
                   className="hover:text-primary"
                   title={t("common.edit")}

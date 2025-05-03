@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Search, BookOpen, BarChart2, BookIcon, Package } from "lucide-react";
@@ -231,7 +232,7 @@ const Index = () => {
                       <Button 
                         variant="outline"
                         className="flex-1 justify-center border-temple-gold/30 text-temple-maroon flex items-center"
-                        onClick={() => navigate("/admin")}
+                        onClick={() => navigate("/settings")}
                       >
                         <BookOpen size={16} className="mr-1" /> {t("common.more")}
                       </Button>
@@ -258,7 +259,7 @@ const Index = () => {
           <h2 className="text-xl font-bold text-temple-maroon">{t("common.welcomeToBookStore")}</h2>
           <p className="text-gray-600 mb-6 text-center">{t("common.pleaseSelectStore")}</p>
           <Button 
-            onClick={() => navigate("/admin")} 
+            onClick={() => navigate("/settings")} 
             className="bg-temple-saffron hover:bg-temple-saffron/90"
           >
             <Plus size={16} className="mr-1" /> {t("common.addStore")}
