@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ImageUpload from "@/components/ImageUpload";
-import { uploadBookImage } from "@/services/imageService";
+import { getImageUrl } from "@/services/imageService";
 
 const EditBookPage = () => {
   const { bookId } = useParams<{ bookId: string }>();
@@ -171,9 +171,15 @@ const EditBookPage = () => {
       
       // Upload new image if selected
       if (selectedImage) {
-        const uploadResult = await uploadBookImage(selectedImage);
-        if (uploadResult) {
-          imageUrl = uploadResult.url;
+        const metadata = {
+          author: formData.author,
+          name: formData.name,
+          printingInstitute: formData.printingInstitute
+        };
+        
+        const uploadUrl = await getImageUrl(selectedImage, metadata);
+        if (uploadUrl) {
+          imageUrl = uploadUrl;
         }
       }
       
@@ -240,7 +246,14 @@ const EditBookPage = () => {
                 <Label htmlFor="image">{t("common.image")}</Label>
                 <ImageUpload 
                   initialImageUrl={book.imageUrl} 
-                  onImageChange={handleImageChange}
+                  onImageUploaded={(url) => {
+                    // We'll handle this in handleSubmit
+                  }}
+                  bookMetadata={{
+                    author: formData.author,
+                    name: formData.name,
+                    printingInstitute: formData.printingInstitute
+                  }}
                 />
               </div>
 
@@ -276,7 +289,7 @@ const EditBookPage = () => {
                     <SelectValue placeholder={t("common.selectCategory")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">{t("common.uncategorized")}</SelectItem>
+                    <SelectItem value="uncategorized">{t("common.uncategorized")}</SelectItem>
                     {categories.map((category) => (
                       <SelectItem key={category} value={category}>
                         {category}
