@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { getImageUrl } from "@/services/imageService";
 import { useTranslation } from "react-i18next";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { cn } from "@/lib/utils";
 
 interface ImageUploadProps {
   initialImageUrl?: string;
@@ -14,13 +15,15 @@ interface ImageUploadProps {
     name?: string;
     printingInstitute?: string;
   };
+  className?: string; // Add className prop
 }
 
 const ImageUpload: React.FC<ImageUploadProps> = ({
   initialImageUrl,
   onImageUploaded,
   onImageChange,
-  bookMetadata = {}
+  bookMetadata = {},
+  className
 }) => {
   const [imageUrl, setImageUrl] = useState<string | undefined>(initialImageUrl);
   const [isUploading, setIsUploading] = useState(false);
@@ -70,7 +73,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   };
 
   return (
-    <div className="w-full">
+    <div className={cn("w-full", className)}>
       <input 
         type="file" 
         id="book-image" 
