@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ImageUpload from "@/components/ImageUpload";
 import { getImageUrl } from "@/services/imageService";
+import { useAuth } from "@/contexts/AuthContext";
 
 const EditBookPage = () => {
   const { bookId } = useParams<{ bookId: string }>();
@@ -32,39 +33,71 @@ const EditBookPage = () => {
   });
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
+  const [authors, setAuthors] = useState<string[]>([]);
+  const [institutes, setInstitutes] = useState<string[]>([]);
   
   const { currentStore } = useStallContext();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { currentUser } = useAuth();
 
-  // Fetch all available categories
+  // Fetch all available categories, authors, and institutes
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchMetadata = async () => {
       if (!currentStore) return;
       
       try {
-        const { data, error } = await supabase
+        // Fetch categories
+        const { data: categoriesData, error: categoriesError } = await supabase
           .from("books")
           .select("category")
           .eq("stallid", currentStore)
           .not("category", "is", null);
           
-        if (!error && data) {
-          // Extract unique categories
-          const uniqueCategories = Array.from(new Set(data
+        // Fetch authors
+        const { data: authorsData, error: authorsError } = await supabase
+          .from("books")
+          .select("author")
+          .eq("stallid", currentStore)
+          .not("author", "is", null);
+          
+        // Fetch printing institutes
+        const { data: institutesData, error: institutesError } = await supabase
+          .from("books")
+          .select("printinginstitute")
+          .eq("stallid", currentStore)
+          .not("printinginstitute", "is", null);
+          
+        if (!categoriesError && categoriesData) {
+          const uniqueCategories = Array.from(new Set(categoriesData
             .map(item => item.category)
             .filter(Boolean)
           )).sort();
-          
           setCategories(uniqueCategories);
         }
+        
+        if (!authorsError && authorsData) {
+          const uniqueAuthors = Array.from(new Set(authorsData
+            .map(item => item.author)
+            .filter(Boolean)
+          )).sort();
+          setAuthors(uniqueAuthors);
+        }
+        
+        if (!institutesError && institutesData) {
+          const uniqueInstitutes = Array.from(new Set(institutesData
+            .map(item => item.printinginstitute)
+            .filter(Boolean)
+          )).sort();
+          setInstitutes(uniqueInstitutes);
+        }
       } catch (error) {
-        console.error("Error fetching categories:", error);
+        console.error("Error fetching metadata:", error);
       }
     };
     
-    fetchCategories();
+    fetchMetadata();
   }, [currentStore]);
 
   useEffect(() => {
@@ -162,7 +195,7 @@ const EditBookPage = () => {
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!book || !currentStore) return;
+    if (!book || !currentStore || !currentUser) return;
     
     try {
       setIsSaving(true);
@@ -171,6 +204,7 @@ const EditBookPage = () => {
       
       // Upload new image if selected
       if (selectedImage) {
+        console.log("Uploading new image...");
         const metadata = {
           author: formData.author,
           name: formData.name,
@@ -179,9 +213,25 @@ const EditBookPage = () => {
         
         const uploadUrl = await getImageUrl(selectedImage, metadata);
         if (uploadUrl) {
+          console.log("Image uploaded successfully:", uploadUrl);
           imageUrl = uploadUrl;
+        } else {
+          console.error("Failed to upload image");
         }
       }
+      
+      console.log("Updating book with data:", {
+        name: formData.name,
+        author: formData.author,
+        category: formData.category || null,
+        printinginstitute: formData.printingInstitute || null,
+        originalprice: formData.originalPrice,
+        saleprice: formData.salePrice,
+        quantity: formData.quantity,
+        barcode: formData.barcode || null,
+        updatedat: new Date().toISOString(),
+        imageurl: imageUrl
+      });
       
       const { error } = await supabase
         .from("books")
@@ -246,9 +296,8 @@ const EditBookPage = () => {
                 <Label htmlFor="image">{t("common.image")}</Label>
                 <ImageUpload 
                   initialImageUrl={book.imageUrl} 
-                  onImageUploaded={(url) => {
-                    // We'll handle this in handleSubmit
-                  }}
+                  onImageChange={handleImageChange}
+                  onImageUploaded={() => {}}
                   bookMetadata={{
                     author: formData.author,
                     name: formData.name,
@@ -270,13 +319,31 @@ const EditBookPage = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="author">{t("common.author")}</Label>
-                <Input 
-                  id="author" 
-                  name="author" 
-                  value={formData.author} 
-                  onChange={handleInputChange} 
-                  required
-                />
+                {authors.length > 0 ? (
+                  <Select 
+                    value={formData.author} 
+                    onValueChange={(value) => handleSelectChange("author", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t("common.selectAuthor")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {authors.map((author) => (
+                        <SelectItem key={author} value={author}>
+                          {author}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input 
+                    id="author" 
+                    name="author" 
+                    value={formData.author} 
+                    onChange={handleInputChange} 
+                    required
+                  />
+                )}
               </div>
               
               <div className="space-y-2">
@@ -301,12 +368,30 @@ const EditBookPage = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="printingInstitute">{t("common.printingInstitute")}</Label>
-                <Input 
-                  id="printingInstitute" 
-                  name="printingInstitute" 
-                  value={formData.printingInstitute} 
-                  onChange={handleInputChange} 
-                />
+                {institutes.length > 0 ? (
+                  <Select 
+                    value={formData.printingInstitute} 
+                    onValueChange={(value) => handleSelectChange("printingInstitute", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t("common.selectInstitute")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {institutes.map((institute) => (
+                        <SelectItem key={institute} value={institute}>
+                          {institute}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input 
+                    id="printingInstitute" 
+                    name="printingInstitute" 
+                    value={formData.printingInstitute} 
+                    onChange={handleInputChange}
+                  />
+                )}
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -360,6 +445,12 @@ const EditBookPage = () => {
                   value={formData.barcode} 
                   onChange={handleInputChange} 
                 />
+              </div>
+              
+              <div className="pt-4 border-t">
+                <p className="text-sm text-muted-foreground mb-4">
+                  {t("common.lastUpdatedBy")}: {currentUser?.name || "Unknown"}
+                </p>
               </div>
               
               <div className="flex justify-end gap-4 pt-4">

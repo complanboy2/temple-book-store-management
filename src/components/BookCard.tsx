@@ -26,7 +26,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete, onEdit, o
     e.stopPropagation();
     if (onSell) {
       onSell(book);
-    } else {
+    } else if (book.quantity > 0) {
       onSelect(book);
     }
   };

@@ -37,7 +37,8 @@ export const useBookManager = (stallId: string | null) => {
     setIsLoading(true);
     
     try {
-      console.log(`Fetching books for store ID: ${stallId}`);
+      console.log("Fetching books for store ID:", stallId);
+      console.log("Making Supabase query for books");
       
       const { data, error } = await supabase
         .from("books")
@@ -59,6 +60,7 @@ export const useBookManager = (stallId: string | null) => {
       }
 
       if (data && Array.isArray(data)) {
+        console.log("Supabase returned books data:", data);
         // Transform API result to local Book type
         const result: Book[] = data.map((row: any) => ({
           id: row.id,

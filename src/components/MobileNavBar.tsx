@@ -22,7 +22,7 @@ const MobileNavBar = () => {
   // Handler for sell button to navigate directly to books page
   const handleSellClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    navigate("/books");
+    navigate("/sell/new");
   };
 
   return (

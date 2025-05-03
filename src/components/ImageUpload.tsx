@@ -1,16 +1,14 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { Upload, X } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import { getImageUrl } from "@/services/imageService";
 import { useTranslation } from "react-i18next";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface ImageUploadProps {
   initialImageUrl?: string;
-  onImageUploaded: (imageUrl: string) => void;
-  className?: string;
+  onImageUploaded: (url: string) => void;
+  onImageChange?: (file: File | null) => void;
   bookMetadata?: {
     author?: string;
     name?: string;
@@ -18,129 +16,110 @@ interface ImageUploadProps {
   };
 }
 
-const ImageUpload: React.FC<ImageUploadProps> = ({ initialImageUrl, onImageUploaded, className = "", bookMetadata }) => {
+const ImageUpload: React.FC<ImageUploadProps> = ({
+  initialImageUrl,
+  onImageUploaded,
+  onImageChange,
+  bookMetadata = {}
+}) => {
   const [imageUrl, setImageUrl] = useState<string | undefined>(initialImageUrl);
   const [isUploading, setIsUploading] = useState(false);
-  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
 
-  const placeholderImage = "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=300&h=400&fit=crop";
-  
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    
-    const file = files[0];
-    
-    // Check file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: t("common.error"),
-        description: t("common.imageSizeTooLarge"),
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Check file type
-    if (!file.type.startsWith("image/")) {
-      toast({
-        title: t("common.error"),
-        description: t("common.invalidImageType"),
-        variant: "destructive"
-      });
-      return;
-    }
-    
+    const file = e.target.files?.[0];
+    if (!file) return;
+
     try {
       setIsUploading(true);
       
-      // Use enhanced image service function with metadata
+      // First, notify parent of file selection
+      if (onImageChange) {
+        onImageChange(file);
+      }
+      
+      // For immediate preview without waiting for upload
+      const objectUrl = URL.createObjectURL(file);
+      setImageUrl(objectUrl);
+
+      // Handle actual upload if needed immediately
       const uploadUrl = await getImageUrl(file, bookMetadata);
       
       if (uploadUrl) {
         setImageUrl(uploadUrl);
         onImageUploaded(uploadUrl);
-        
-        toast({
-          title: t("common.success"),
-          description: t("common.imageUploadedSuccessfully"),
-        });
-      } else {
-        throw new Error(t("common.failedToUploadImage"));
       }
+      
     } catch (error) {
-      console.error("Error in image upload:", error);
-      toast({
-        title: t("common.error"),
-        description: t("common.failedToUploadImage"),
-        variant: "destructive"
-      });
+      console.error("Error uploading image:", error);
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleRemoveImage = () => {
+  const removeImage = () => {
     setImageUrl(undefined);
-    onImageUploaded("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    if (onImageChange) {
+      onImageChange(null);
+    }
+    onImageUploaded('');
   };
 
   return (
-    <div className={className}>
-      <div className="mb-3">
-        <p className="text-sm font-medium mb-1">{t("common.bookCoverImage")}</p>
-        <p className="text-xs text-muted-foreground">{t("common.uploadCoverImageOptional")}</p>
-      </div>
+    <div className="w-full">
+      <input 
+        type="file" 
+        id="book-image" 
+        accept="image/*"
+        onChange={handleImageUpload}
+        className="hidden"
+        ref={fileInputRef}
+      />
+
+      {imageUrl ? (
+        <div className="relative mb-4">
+          <AspectRatio ratio={4/3} className="bg-muted overflow-hidden rounded-lg border">
+            <img 
+              src={imageUrl} 
+              alt={t("common.bookCover")} 
+              className="object-contain w-full h-full" 
+            />
+          </AspectRatio>
+          <div className="flex justify-end mt-2">
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm"
+              onClick={removeImage}
+            >
+              {t("common.remove")}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div 
+          onClick={() => fileInputRef.current?.click()}
+          className="cursor-pointer border-2 border-dashed border-gray-300 rounded-md p-6 flex flex-col items-center justify-center"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <p className="text-sm font-medium mb-1">{t("common.bookCoverImage")}</p>
+          <p className="text-xs text-gray-500 mb-2">{t("common.uploadCoverImageOptional")}</p>
+          <p className="text-xs text-gray-500">{t("common.clickToUpload")}</p>
+          <p className="text-xs text-gray-500">{t("common.orDragAndDrop")}</p>
+        </div>
+      )}
       
-      <div className="border border-dashed border-muted rounded-lg p-2 bg-muted/30 max-w-[300px] mx-auto">
-        <AspectRatio ratio={3/4} className="bg-muted relative">
-          {imageUrl ? (
-            <>
-              <img 
-                src={imageUrl} 
-                alt={t("common.bookCover")} 
-                className="object-cover w-full h-full rounded-md"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = placeholderImage;
-                  toast({
-                    title: t("common.error"),
-                    description: t("common.failedToLoadImage"),
-                    variant: "destructive"
-                  });
-                }}
-              />
-              <Button 
-                size="icon" 
-                variant="destructive" 
-                className="absolute top-2 right-2 h-8 w-8"
-                onClick={handleRemoveImage}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full">
-              <Upload className="h-8 w-8 mb-2 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground text-center">
-                {t("common.clickToUpload")}<br />{t("common.orDragAndDrop")}
-              </p>
-              <input 
-                type="file"
-                accept="image/*"
-                className="absolute inset-0 opacity-0 cursor-pointer"
-                onChange={handleImageUpload}
-                disabled={isUploading}
-              />
-              {isUploading && (
-                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                  <p className="text-white">{t("common.uploading")}...</p>
-                </div>
-              )}
-            </div>
-          )}
-        </AspectRatio>
-      </div>
+      {isUploading && (
+        <div className="mt-2 text-center">
+          <p className="text-sm text-gray-500">{t("common.uploading")}...</p>
+        </div>
+      )}
     </div>
   );
 };

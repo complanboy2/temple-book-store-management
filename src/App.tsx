@@ -18,6 +18,10 @@ import NotFound from "./pages/NotFound";
 import Layout from "./components/Layout";
 import SettingsPage from "./pages/SettingsPage";
 import MetadataManagerPage from "./pages/MetadataManagerPage";
+import SearchPage from "./pages/SearchPage";
+import OrdersPage from "./pages/OrdersPage";
+import OrderManagementPage from "./pages/OrderManagementPage";
+import ReportsPage from "./pages/ReportsPage";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser } = useAuth();
@@ -75,7 +79,7 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: "/sell/:bookId",
+    path: "/sell/:id",
     element: (
       <ProtectedRoute>
         <Layout>
@@ -130,6 +134,46 @@ const router = createBrowserRouter([
       <ProtectedRoute>
         <Layout>
           <EditBookPage />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/search",
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <SearchPage />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/orders",
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <OrdersPage />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/orders/new",
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <OrderManagementPage />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/reports",
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <ReportsPage />
         </Layout>
       </ProtectedRoute>
     ),
