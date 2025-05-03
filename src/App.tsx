@@ -17,6 +17,7 @@ import EditBookPage from "./pages/EditBookPage";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/Layout";
 import SettingsPage from "./pages/SettingsPage";
+import MetadataManagerPage from "./pages/MetadataManagerPage";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser } = useAuth();
@@ -109,6 +110,16 @@ const router = createBrowserRouter([
       <ProtectedRoute>
         <Layout>
           <SettingsPage />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/metadata-manager",
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <MetadataManagerPage />
         </Layout>
       </ProtectedRoute>
     ),

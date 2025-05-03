@@ -21,7 +21,8 @@ const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete, onEdit, o
   const isAdmin = currentUser?.role === "admin";
   const { t } = useTranslation();
 
-  const handleSellClick = () => {
+  const handleSellClick = (e: React.MouseEvent) => {
+    e.preventDefault();
     if (onSell) {
       onSell(book);
     } else {
@@ -29,7 +30,8 @@ const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete, onEdit, o
     }
   };
 
-  const handleEditClick = () => {
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.preventDefault();
     if (onEdit) {
       onEdit(book);
     }
@@ -52,12 +54,13 @@ const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete, onEdit, o
         <CardTitle className="text-lg mb-2">{book.name}</CardTitle>
         <p className="text-sm text-muted-foreground mb-1">{t("common.author")}: {book.author}</p>
         <p className="text-sm text-muted-foreground mb-2">{t("common.quantity")}: {book.quantity}</p>
-        <p className="font-medium text-temple-saffron mb-4">₹{book.salePrice}</p>
+        <p className="font-medium text-temple-saffron mb-4 text-right">₹{book.salePrice}</p>
         
         <div className="flex justify-between items-center">
           <Button 
             onClick={handleSellClick}
             variant="default"
+            type="button"
           >
             <ShoppingCart className="h-4 w-4 mr-2" />
             {t("common.sell")}
@@ -71,6 +74,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete, onEdit, o
                   variant="ghost"
                   className="hover:text-primary"
                   title={t("common.edit")}
+                  type="button"
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
@@ -78,10 +82,14 @@ const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete, onEdit, o
               
               {onDelete && (
                 <Button
-                  onClick={() => onDelete(book.id)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (onDelete) onDelete(book.id);
+                  }}
                   variant="ghost"
                   className="text-destructive hover:text-destructive"
                   title={t("common.delete")}
+                  type="button"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

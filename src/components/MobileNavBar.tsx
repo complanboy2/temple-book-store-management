@@ -1,7 +1,7 @@
 
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, BookOpen, BarChart2, Menu, ShoppingCart } from "lucide-react";
+import { Home, BookOpen, BarChart2, Settings, ShoppingCart } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 import { useStallContext } from "@/contexts/StallContext";
@@ -74,7 +74,7 @@ const MobileNavBar = () => {
               isActive("/admin") || isActive("/settings") || isActive("/reports") ? "text-temple-saffron" : "text-gray-500"
             }`}
           >
-            <Menu size={24} />
+            <Settings size={24} />
             <span className="text-xs mt-1">{t("common.more")}</span>
           </button>
         )}

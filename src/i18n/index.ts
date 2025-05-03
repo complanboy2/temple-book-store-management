@@ -33,6 +33,7 @@ const resources = {
   }
 };
 
+// Initialize i18next
 i18n
   // detect user language
   .use(LanguageDetector)
@@ -49,7 +50,18 @@ i18n
     detection: {
       order: ['localStorage', 'navigator'],
       caches: ['localStorage']
+    },
+    react: {
+      useSuspense: false // This prevents issues with SSR and React 18
     }
   });
+
+// Ensure default language is loaded
+const savedLanguage = localStorage.getItem('i18nextLng');
+if (savedLanguage) {
+  i18n.changeLanguage(savedLanguage);
+} else {
+  i18n.changeLanguage('en');
+}
 
 export default i18n;
