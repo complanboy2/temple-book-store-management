@@ -43,13 +43,19 @@ const ProfilePage = () => {
   });
   
   const onSubmit = async (values: ProfileValues) => {
+    if (!currentUser) return;
+    
     setIsLoading(true);
     try {
-      await updateUserProfile({
+      // Make sure we preserve all required User properties
+      const updatedUser = {
+        ...currentUser,
         name: values.name,
         email: values.email,
         phone: values.phone || "",
-      });
+      };
+      
+      await updateUserProfile(updatedUser);
       
       toast({
         title: t("common.success"),

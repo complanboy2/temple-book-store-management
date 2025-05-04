@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Book } from "@/types";
 import { generateId } from "@/services/storageService";
+import { useAuth } from "@/contexts/AuthContext";
 
 const NewOrderPage: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
@@ -23,6 +24,7 @@ const NewOrderPage: React.FC = () => {
   
   const navigate = useNavigate();
   const { currentStore } = useStallContext();
+  const { currentUser } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -113,19 +115,39 @@ const NewOrderPage: React.FC = () => {
       const orderId = generateId();
       const orderDate = new Date();
       
+      // Fixed: use the correct structure for orders table
       const { error } = await supabase
         .from('orders')
         .insert({
           id: orderId,
-          bookid: selectedBookId,
-          quantity: quantity,
+          customername: "Store Order", // Default name for store orders
           status: 'pending',
           stallid: currentStore,
+          adminid: currentUser?.id || "",
+          totalamount: selectedBook.salePrice * quantity,
+          orderdate: orderDate.toISOString(),
+          paymentstatus: "pending",
           createdat: orderDate.toISOString()
         });
       
       if (error) {
         console.error("Error creating order:", error);
+        throw new Error(t("common.failedToCreateOrder"));
+      }
+
+      // Now create the order item
+      const { error: itemError } = await supabase
+        .from('order_items')
+        .insert({
+          orderid: orderId,
+          bookid: selectedBookId,
+          quantity: quantity,
+          priceatorder: selectedBook.salePrice,
+          fulfilled: 0
+        });
+
+      if (itemError) {
+        console.error("Error creating order item:", itemError);
         throw new Error(t("common.failedToCreateOrder"));
       }
 
