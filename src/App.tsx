@@ -26,7 +26,7 @@ import ReportsPage from "./pages/ReportsPage";
 import MetadataManagerPage from "./pages/MetadataManagerPage";
 import OrderManagementPage from "./pages/OrderManagementPage";
 import OrdersPage from "./pages/OrdersPage";
-import ProfilePage from "./pages/ProfilePage"; // Import the ProfilePage
+import ProfilePage from "./pages/ProfilePage";
 
 function App() {
   const isMobile = useIsMobile();
@@ -68,7 +68,7 @@ function App() {
               <Route path="/metadata" element={<MetadataManagerPage />} />
               <Route path="/orders" element={<OrdersPage />} />
               <Route path="/order-management" element={<OrderManagementPage />} />
-              <Route path="/profile" element={<ProfilePage />} /> {/* Add ProfilePage route */}
+              <Route path="/profile" element={<ProfilePage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             {isMobile && <MobileNavBar />}

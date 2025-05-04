@@ -118,6 +118,15 @@ const Header = () => {
                         <Button 
                           variant="ghost" 
                           className="w-full justify-start text-lg font-medium"
+                          onClick={() => navigate("/profile")}
+                        >
+                          👤 {t("common.profile")}
+                        </Button>
+                      </li>
+                      <li>
+                        <Button 
+                          variant="ghost" 
+                          className="w-full justify-start text-lg font-medium"
                           onClick={() => navigate("/privacy-policy")}
                         >
                           📜 {t("common.privacyPolicy")}
