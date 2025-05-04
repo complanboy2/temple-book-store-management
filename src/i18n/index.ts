@@ -41,7 +41,7 @@ const newEnTranslations = {
     saving: "Saving...",
     selectABook: "Please select a book",
     selectBook: "Select Book",
-    sellerName: "Seller", // Changed 'seller' to 'sellerName' to avoid duplicate
+    sellerName: "Seller", 
     templeBookStall: "Temple Book Stall",
     unknownError: "Unknown error occurred",
     welcomeToBookStore: "Welcome to Book Store",
@@ -72,9 +72,9 @@ const newEnTranslations = {
     trackYourStallPerformance: "Track sales and performance metrics",
     sell: "Sell",
     newSale: "New Sale",
-    createNewStoreDescription: "Create a new book stall",
+    createNewStore: "Create a new book stall",
     more: "More",
-    // Added missing common translations that were causing duplicates
+    // Add other common translations that were missing
     home: "Home",
     books: "Books",
     sales: "Sales",
