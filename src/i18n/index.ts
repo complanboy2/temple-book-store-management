@@ -1,4 +1,3 @@
-
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
@@ -91,8 +90,7 @@ const additionalTranslationsEN = {
     quantitySold: "Quantity Sold",
     publisher: "Publisher",
     category: "Category",
-    author: "Author",
-    seller: "Seller"
+    author: "Author"
   },
   settings: {
     title: "Settings",
