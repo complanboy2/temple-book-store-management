@@ -71,7 +71,7 @@ const BookList: React.FC<BookListProps> = ({
           onSelect={onSell || onBookSelect || (() => {})}
           onDelete={onDeleteBook ? () => onDeleteBook(book.id) : onDelete ? () => onDelete(book) : undefined}
           onEdit={onEdit ? () => onEdit(book) : undefined}
-          onSell={onSell}
+          onSell={onSell ? () => onSell(book) : undefined}
         />
       ))}
     </div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
@@ -14,6 +13,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useStallContext } from "@/contexts/StallContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -40,6 +40,10 @@ interface Order {
   updatedAt: Date;
   stallId: string;
   personnelId: string;
+  orderedBy?: string;
+  printingInstituteName?: string;
+  contactPersonName?: string;
+  contactPersonMobile?: string;
 }
 
 // Define OrderItem type
@@ -58,6 +62,9 @@ const OrderManagementPage = () => {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
+  const [printingInstituteName, setPrintingInstituteName] = useState("");
+  const [contactPersonName, setContactPersonName] = useState("");
+  const [contactPersonMobile, setContactPersonMobile] = useState("");
   const [orderItems, setOrderItems] = useState<{bookId: string, quantity: number}[]>([
     { bookId: "", quantity: 1 }
   ]);
@@ -68,7 +75,7 @@ const OrderManagementPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { t } = useTranslation();
-
+  
   useEffect(() => {
     if (!currentUser || !currentUser.canRestock) {  // Fixed: canRestock instead of canrestock
       navigate("/");
@@ -253,6 +260,7 @@ const OrderManagementPage = () => {
               buyername: customerName,
               buyerphone: customerPhone || null,
               personnelid: currentUser.id,
+              personnelname: currentUser.name, // Include seller name
               stallid: currentStore,
               synced: true
             });
@@ -273,6 +281,9 @@ const OrderManagementPage = () => {
       setCustomerName("");
       setCustomerPhone("");
       setCustomerEmail("");
+      setPrintingInstituteName("");
+      setContactPersonName("");
+      setContactPersonMobile("");
       setOrderItems([{ bookId: "", quantity: 1 }]);
       setNotes("");
 
@@ -329,7 +340,23 @@ const OrderManagementPage = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Order By - Logged in user */}
+                <div className="space-y-1">
+                  <Label>Order By</Label>
+                  <p className="text-sm border p-2 rounded-md bg-muted/30">{currentUser?.name}</p>
+                </div>
+
+                {/* Printing Institute Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="printingInstituteName">Printing Institute Name</Label>
+                    <Input 
+                      id="printingInstituteName"
+                      value={printingInstituteName}
+                      onChange={(e) => setPrintingInstituteName(e.target.value)}
+                    />
+                  </div>
+                  
                   <div className="space-y-2">
                     <Label htmlFor="customerName">Customer Name *</Label>
                     <Input 
@@ -339,7 +366,30 @@ const OrderManagementPage = () => {
                       required
                     />
                   </div>
+                </div>
+                
+                {/* Contact Person Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="contactPersonName">Contact Person Name</Label>
+                    <Input 
+                      id="contactPersonName"
+                      value={contactPersonName}
+                      onChange={(e) => setContactPersonName(e.target.value)}
+                    />
+                  </div>
                   
+                  <div className="space-y-2">
+                    <Label htmlFor="contactPersonMobile">Contact Person Mobile</Label>
+                    <Input 
+                      id="contactPersonMobile"
+                      value={contactPersonMobile}
+                      onChange={(e) => setContactPersonMobile(e.target.value)}
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="customerPhone">Customer Phone</Label>
                     <Input 
@@ -348,16 +398,16 @@ const OrderManagementPage = () => {
                       onChange={(e) => setCustomerPhone(e.target.value)}
                     />
                   </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="customerEmail">Customer Email</Label>
-                  <Input 
-                    id="customerEmail"
-                    type="email"
-                    value={customerEmail}
-                    onChange={(e) => setCustomerEmail(e.target.value)}
-                  />
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="customerEmail">Customer Email</Label>
+                    <Input 
+                      id="customerEmail"
+                      type="email"
+                      value={customerEmail}
+                      onChange={(e) => setCustomerEmail(e.target.value)}
+                    />
+                  </div>
                 </div>
                 
                 <div className="space-y-4">
@@ -440,10 +490,11 @@ const OrderManagementPage = () => {
                 
                 <div className="space-y-2">
                   <Label htmlFor="notes">Notes</Label>
-                  <Input 
+                  <Textarea
                     id="notes"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
+                    rows={3}
                   />
                 </div>
                 
@@ -455,7 +506,7 @@ const OrderManagementPage = () => {
                   
                   <Button 
                     type="submit" 
-                    className="w-full" 
+                    className="w-full bg-temple-maroon hover:bg-temple-maroon/90" 
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (

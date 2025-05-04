@@ -74,7 +74,7 @@ const OrdersPage: React.FC = () => {
   const [fulfillDialogOpen, setFulfillDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [fulfillQuantities, setFulfillQuantities] = useState<Record<string, number>>({});
-
+  
   const { currentUser } = useAuth();
   const { currentStore } = useStallContext();
   const { toast } = useToast();
@@ -86,6 +86,9 @@ const OrdersPage: React.FC = () => {
     customerName: z.string().min(1, "Customer name is required"),
     customerPhone: z.string().optional(),
     customerEmail: z.string().email().optional().or(z.literal("")),
+    printingInstituteName: z.string().optional(),
+    contactPersonName: z.string().optional(),
+    contactPersonMobile: z.string().optional(),
     notes: z.string().optional(),
     paymentMethod: z.string().optional(),
     paymentStatus: z.enum(["pending", "partially_paid", "paid", "refunded"]),
@@ -97,6 +100,9 @@ const OrdersPage: React.FC = () => {
       customerName: "",
       customerPhone: "",
       customerEmail: "",
+      printingInstituteName: "",
+      contactPersonName: "",
+      contactPersonMobile: "",
       notes: "",
       paymentMethod: "",
       paymentStatus: "pending",
@@ -299,10 +305,14 @@ const OrdersPage: React.FC = () => {
       paymentMethod: data.paymentMethod,
       notes: data.notes,
       adminId: currentUser.id,
+      orderedBy: currentUser.name, // Add orderedBy field
       stallId: currentStore,
       createdAt: new Date(),
       updatedAt: new Date(),
-      synced: false
+      synced: false,
+      printingInstituteName: data.printingInstituteName,
+      contactPersonName: data.contactPersonName,
+      contactPersonMobile: data.contactPersonMobile,
     };
     
     // Save to storage
@@ -320,6 +330,29 @@ const OrdersPage: React.FC = () => {
       title: "Success",
       description: "Order created successfully",
     });
+  };
+  
+  // Add function to add low stock items
+  const addLowStockItems = (threshold: number) => {
+    const lowStockBooks = books.filter(book => book.quantity <= threshold && book.quantity > 0);
+    
+    lowStockBooks.forEach(book => {
+      if (!selectedBooks[book.id]) {
+        handleAddBook(book.id);
+      }
+    });
+    
+    if (lowStockBooks.length === 0) {
+      toast({
+        title: "No Books Found",
+        description: `No books with quantity less than or equal to ${threshold} found in inventory.`,
+      });
+    } else {
+      toast({
+        title: "Books Added",
+        description: `Added ${lowStockBooks.length} low stock books to your order.`,
+      });
+    }
   };
   
   // Open fulfill order dialog
@@ -464,17 +497,38 @@ const OrdersPage: React.FC = () => {
                   New Order
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px]">
+              <DialogContent className="sm:max-w-[600px] w-[95%] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Create New Order</DialogTitle>
                   <DialogDescription>
-                    Add books and customer details to create a new order.
+                    Add books and order details to create a new order.
                   </DialogDescription>
                 </DialogHeader>
                 
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(handleCreateOrder)} className="space-y-4">
+                    {/* Order By - Auto populated with logged in user */}
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">Order By</p>
+                      <p className="text-sm border p-2 rounded-md bg-muted/30">{currentUser?.name}</p>
+                    </div>
+                    
+                    {/* Printing Institute Information */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="printingInstituteName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Printing Institute Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter printing institute name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
                       <FormField
                         control={form.control}
                         name="customerName"
@@ -488,7 +542,41 @@ const OrdersPage: React.FC = () => {
                           </FormItem>
                         )}
                       />
+                    </div>
+                    
+                    {/* Contact Person Information */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="contactPersonName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Contact Person Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter contact person name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       
+                      <FormField
+                        control={form.control}
+                        name="contactPersonMobile"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Contact Person Mobile</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter contact person mobile" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    {/* Customer Contact */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
                         name="customerPhone"
@@ -502,9 +590,7 @@ const OrdersPage: React.FC = () => {
                           </FormItem>
                         )}
                       />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      
                       <FormField
                         control={form.control}
                         name="customerEmail"
@@ -518,7 +604,9 @@ const OrdersPage: React.FC = () => {
                           </FormItem>
                         )}
                       />
-                      
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
                         name="paymentStatus"
@@ -546,9 +634,7 @@ const OrdersPage: React.FC = () => {
                           </FormItem>
                         )}
                       />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      
                       <FormField
                         control={form.control}
                         name="paymentMethod"
@@ -588,6 +674,7 @@ const OrdersPage: React.FC = () => {
                             <Textarea
                               placeholder="Add any special instructions or notes"
                               {...field}
+                              className="min-h-[80px]"
                             />
                           </FormControl>
                           <FormMessage />
@@ -597,7 +684,32 @@ const OrdersPage: React.FC = () => {
                     
                     {/* Book selection */}
                     <div className="space-y-2">
-                      <h3 className="text-sm font-medium">Add Books to Order</h3>
+                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-2 md:space-y-0">
+                        <h3 className="text-sm font-medium">Add Books to Order</h3>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Input
+                            type="number"
+                            placeholder="Qty threshold"
+                            className="w-32"
+                            min="1"
+                            id="threshold-input"
+                          />
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              const input = document.getElementById('threshold-input') as HTMLInputElement;
+                              const threshold = parseInt(input?.value || '5');
+                              addLowStockItems(threshold);
+                            }}
+                          >
+                            Add Low Stock
+                          </Button>
+                        </div>
+                      </div>
+                      
                       <Select onValueChange={handleAddBook}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a book" />
@@ -605,28 +717,28 @@ const OrdersPage: React.FC = () => {
                         <SelectContent>
                           {books.map((book) => (
                             <SelectItem key={book.id} value={book.id}>
-                              {book.name} - ₹{book.salePrice}
+                              {book.name} - ₹{book.salePrice} (Qty: {book.quantity})
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                       
                       {Object.keys(selectedBooks).length > 0 ? (
-                        <div className="border rounded-md mt-2">
+                        <div className="border rounded-md mt-2 overflow-x-auto">
                           <Table>
                             <TableHeader>
                               <TableRow>
                                 <TableHead>Book</TableHead>
-                                <TableHead>Price</TableHead>
-                                <TableHead>Qty</TableHead>
-                                <TableHead>Total</TableHead>
-                                <TableHead></TableHead>
+                                <TableHead className="whitespace-nowrap">Price</TableHead>
+                                <TableHead className="whitespace-nowrap">Qty</TableHead>
+                                <TableHead className="whitespace-nowrap">Total</TableHead>
+                                <TableHead className="w-[80px]"></TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
                               {Object.values(selectedBooks).map((book) => (
                                 <TableRow key={book.id}>
-                                  <TableCell>{book.name}</TableCell>
+                                  <TableCell className="font-medium">{book.name}</TableCell>
                                   <TableCell>₹{book.price}</TableCell>
                                   <TableCell>
                                     <Input
@@ -674,7 +786,7 @@ const OrdersPage: React.FC = () => {
                       )}
                     </div>
                     
-                    <DialogFooter>
+                    <DialogFooter className="pt-4">
                       <Button
                         type="button"
                         variant="outline"

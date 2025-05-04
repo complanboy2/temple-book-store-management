@@ -53,6 +53,7 @@ export interface Sale {
   buyerName?: string;
   buyerPhone?: string;
   personnelId: string;
+  personnelName?: string; // Adding sellerName field
   stallId: string;
   createdAt: Date;
   synced: boolean;
@@ -102,10 +103,15 @@ export interface Order {
   paymentMethod?: string;
   notes?: string;
   adminId: string;
+  orderedBy?: string; // Person who created the order
   stallId: string;
   createdAt: Date;
   updatedAt: Date;
   synced: boolean;
+  // New fields for printing institute and contact person
+  printingInstituteName?: string;
+  contactPersonName?: string;
+  contactPersonMobile?: string;
 }
 
 export interface OrderItem {

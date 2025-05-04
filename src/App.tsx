@@ -1,192 +1,82 @@
 
-import React from 'react';
-import {
-  createBrowserRouter,
-  RouterProvider,
-  Navigate,
-} from "react-router-dom";
-import { useAuth } from "./contexts/AuthContext";
-import Index from "./pages/Index";
-import BooksPage from "./pages/BooksPage";
-import SalesPage from "./pages/SalesPage";
+import React, { useEffect, useState } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import "./App.css";
+import { Toaster } from "@/components/ui/sonner";
+import DashboardPage from "./pages/DashboardPage";
 import LoginPage from "./pages/LoginPage";
+import BooksPage from "./pages/BooksPage";
 import AddBookPage from "./pages/AddBookPage";
-import SellBookPage from "./pages/SellBookPage";
-import SuperAdminPage from "./pages/SuperAdminPage";
 import EditBookPage from "./pages/EditBookPage";
-import NotFound from "./pages/NotFound";
-import Layout from "./components/Layout";
-import SettingsPage from "./pages/SettingsPage";
-import MetadataManagerPage from "./pages/MetadataManagerPage";
+import SalesPage from "./pages/SalesPage";
 import SearchPage from "./pages/SearchPage";
-import OrdersPage from "./pages/OrdersPage";
-import OrderManagementPage from "./pages/OrderManagementPage";
+import NotFound from "./pages/NotFound";
+import AdminPage from "./pages/AdminPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import SuperAdminPage from "./pages/SuperAdminPage";
+import CompleteSignupPage from "./pages/CompleteSignupPage";
+import { AuthProvider } from "./contexts/AuthContext";
+import { StallProvider } from "./contexts/StallContext";
+import Index from "./pages/Index";
+import MobileNavBar from "./components/MobileNavBar";
+import { useIsMobile } from "./hooks/use-mobile";
+import SellBookPage from "./pages/SellBookPage";
+import SettingsPage from "./pages/SettingsPage";
 import ReportsPage from "./pages/ReportsPage";
-
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { currentUser } = useAuth();
-  if (!currentUser) {
-    return <Navigate to="/login" />;
-  }
-
-  return React.Children.only(children);
-};
-
-// Create router configuration outside of the component
-const router = createBrowserRouter([
-  {
-    path: "/",
-    element: (
-      <ProtectedRoute>
-        <Layout>
-          <Index />
-        </Layout>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/books",
-    element: (
-      <ProtectedRoute>
-        <Layout>
-          <BooksPage />
-        </Layout>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/sales",
-    element: (
-      <ProtectedRoute>
-        <Layout>
-          <SalesPage />
-        </Layout>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/login",
-    element: <LoginPage />,
-  },
-  {
-    path: "/add-book",
-    element: (
-      <ProtectedRoute>
-        <Layout>
-          <AddBookPage />
-        </Layout>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/sell/:id",
-    element: (
-      <ProtectedRoute>
-        <Layout>
-          <SellBookPage />
-        </Layout>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/sell/new",
-    element: (
-      <ProtectedRoute>
-        <Layout>
-          <SellBookPage />
-        </Layout>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/admin",
-    element: (
-      <ProtectedRoute>
-        <Layout>
-          <SuperAdminPage />
-        </Layout>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/settings",
-    element: (
-      <ProtectedRoute>
-        <Layout>
-          <SettingsPage />
-        </Layout>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/metadata-manager",
-    element: (
-      <ProtectedRoute>
-        <Layout>
-          <MetadataManagerPage />
-        </Layout>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/edit-book/:bookId",
-    element: (
-      <ProtectedRoute>
-        <Layout>
-          <EditBookPage />
-        </Layout>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/search",
-    element: (
-      <ProtectedRoute>
-        <Layout>
-          <SearchPage />
-        </Layout>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/orders",
-    element: (
-      <ProtectedRoute>
-        <Layout>
-          <OrdersPage />
-        </Layout>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/orders/new",
-    element: (
-      <ProtectedRoute>
-        <Layout>
-          <OrderManagementPage />
-        </Layout>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/reports",
-    element: (
-      <ProtectedRoute>
-        <Layout>
-          <ReportsPage />
-        </Layout>
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "*",
-    element: <NotFound />,
-  },
-]);
+import MetadataManagerPage from "./pages/MetadataManagerPage";
+import OrderManagementPage from "./pages/OrderManagementPage";
+import OrdersPage from "./pages/OrdersPage";
+import ProfilePage from "./pages/ProfilePage"; // Import the ProfilePage
 
 function App() {
+  const isMobile = useIsMobile();
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => {
+    // We need to wait for the mobile check to be completed
+    // before we can render the app
+    if (typeof isMobile === "boolean") {
+      setInitialized(true);
+    }
+  }, [isMobile]);
+
+  if (!initialized) {
+    return <div className="loading" />;
+  }
+
   return (
-    <RouterProvider router={router} />
+    <AuthProvider>
+      <StallProvider>
+        <Router>
+          <div className={isMobile ? "pb-16" : ""}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/complete-signup" element={<CompleteSignupPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/books" element={<BooksPage />} />
+              <Route path="/books/add" element={<AddBookPage />} />
+              <Route path="/books/edit/:id" element={<EditBookPage />} />
+              <Route path="/sales" element={<SalesPage />} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/super-admin" element={<SuperAdminPage />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+              <Route path="/sell/:mode" element={<SellBookPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/reports" element={<ReportsPage />} />
+              <Route path="/metadata" element={<MetadataManagerPage />} />
+              <Route path="/orders" element={<OrdersPage />} />
+              <Route path="/order-management" element={<OrderManagementPage />} />
+              <Route path="/profile" element={<ProfilePage />} /> {/* Add ProfilePage route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            {isMobile && <MobileNavBar />}
+          </div>
+          <Toaster position="top-center" />
+        </Router>
+      </StallProvider>
+    </AuthProvider>
   );
 }
 
