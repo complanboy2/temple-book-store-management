@@ -11,6 +11,7 @@ interface AuthContextType {
   register: (name: string, email: string, phone: string, password: string, role: UserRole, instituteId: string) => Promise<User>;
   inviteUser: (name: string, email: string, phone: string, role: UserRole) => Promise<string>;
   completeRegistration: (inviteCode: string, password: string) => Promise<User>;
+  updateUserProfile: (user: User) => void; // Add this line
   isAuthenticated: boolean;
   isAdmin: boolean;
   isLoading: boolean;
@@ -227,6 +228,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCurrentUser(null);
   };
 
+  // Add the updateUserProfile function
+  const updateUserProfile = (user: User) => {
+    setUser(user);
+    setCurrentUser(user);
+  };
+
   const value = {
     currentUser,
     login,
@@ -234,6 +241,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     register,
     inviteUser,
     completeRegistration,
+    updateUserProfile, // Add this line to include in the context value
     isAuthenticated: !!currentUser,
     isAdmin: currentUser?.role === "admin" || currentUser?.role === "super_admin",
     isLoading,

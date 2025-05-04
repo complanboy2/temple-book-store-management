@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -58,13 +57,11 @@ const ProfilePage: React.FC = () => {
       if (error) throw error;
       
       // Update local state
-      if (updateUserProfile) {
-        updateUserProfile({
-          ...currentUser,
-          name,
-          phone
-        });
-      }
+      updateUserProfile({
+        ...currentUser,
+        name,
+        phone
+      });
       
       toast({
         title: "Profile Updated",
