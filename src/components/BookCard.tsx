@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 interface BookCardProps {
   book: Book;
   onSelect: (book: Book) => void;
-  onDelete?: (bookId: string) => void;
+  onDelete?: (book: Book) => void;
   onEdit?: (book: Book) => void;
   onSell?: (book: Book) => void;
 }
@@ -88,7 +88,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete, onEdit, o
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    if (onDelete) onDelete(book.id);
+                    if (onDelete) onDelete(book);
                   }}
                   variant="ghost"
                   className="text-destructive hover:text-destructive"

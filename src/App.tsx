@@ -27,6 +27,7 @@ import MetadataManagerPage from "./pages/MetadataManagerPage";
 import OrderManagementPage from "./pages/OrderManagementPage";
 import OrdersPage from "./pages/OrdersPage";
 import ProfilePage from "./pages/ProfilePage";
+import NewOrderPage from "./pages/NewOrderPage";
 
 function App() {
   const isMobile = useIsMobile();
@@ -62,11 +63,13 @@ function App() {
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/super-admin" element={<SuperAdminPage />} />
               <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-              <Route path="/sell/:mode" element={<SellBookPage />} />
+              <Route path="/sell/:id" element={<SellBookPage />} />
+              <Route path="/sell/new" element={<SellBookPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/metadata" element={<MetadataManagerPage />} />
               <Route path="/orders" element={<OrdersPage />} />
+              <Route path="/orders/new" element={<NewOrderPage />} />
               <Route path="/order-management" element={<OrderManagementPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="*" element={<NotFound />} />

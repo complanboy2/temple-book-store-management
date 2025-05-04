@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -242,10 +243,6 @@ const SellBookPage: React.FC = () => {
         showBackButton={true}
         backTo="/books"
       />
-      
-      <div className="bg-temple-maroon/80 py-2 px-4 text-center">
-        <h2 className="text-sm font-medium text-white">{t("common.bookStoreManager")}</h2>
-      </div>
       
       <main className="container mx-auto px-2 py-4 pb-20">
         {!isMobile && (

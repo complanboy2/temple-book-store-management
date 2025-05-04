@@ -21,7 +21,7 @@ const MobileNavBar = () => {
 
   // Handler for sell button to navigate directly to books page for selling
   const handleSellClick = () => {
-    navigate("/sell/new");
+    navigate("/books");
   };
 
   return (

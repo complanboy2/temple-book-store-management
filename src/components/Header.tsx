@@ -1,14 +1,21 @@
 
-import { Bell, Menu } from "lucide-react";
+import { Bell, Menu, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-const Header = () => {
+interface HeaderProps {
+  showBackButton?: boolean;
+  backTo?: string;
+  title?: string;
+}
+
+const Header = ({ showBackButton = false, backTo = "/", title }: HeaderProps) => {
   const { currentUser, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
 
   const handleLogout = () => {
@@ -21,6 +28,17 @@ const Header = () => {
       <header className="bg-gradient-to-r from-temple-saffron to-temple-gold py-4 px-4 shadow-md sticky top-0 z-40">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-2">
+            {showBackButton && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-white mr-2"
+                onClick={() => navigate(backTo)}
+              >
+                <ChevronLeft size={24} />
+              </Button>
+            )}
+            
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="text-white">
@@ -60,7 +78,7 @@ const Header = () => {
                         <Button 
                           variant="ghost" 
                           className="w-full justify-start text-lg font-medium"
-                          onClick={() => navigate("/sell/new")}
+                          onClick={() => navigate("/books")}
                         >
                           💰 {t("common.newSale")}
                         </Button>
@@ -147,7 +165,9 @@ const Header = () => {
                 </div>
               </SheetContent>
             </Sheet>
-            <h1 className="text-xl font-bold text-white" onClick={() => navigate("/")}>{t("common.templeBookStall")}</h1>
+            <h1 className="text-xl font-bold text-white" onClick={() => navigate("/")}>
+              {title || t("common.templeBookStall")}
+            </h1>
           </div>
           
           <div className="flex items-center space-x-2">

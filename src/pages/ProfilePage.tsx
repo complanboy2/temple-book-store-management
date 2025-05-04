@@ -1,82 +1,65 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
+import MobileHeader from "@/components/MobileHeader";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
-const ProfilePage: React.FC = () => {
+const profileSchema = z.object({
+  name: z.string().min(2, {
+    message: "Name must be at least 2 characters.",
+  }),
+  email: z.string().email({
+    message: "Please enter a valid email.",
+  }),
+  phone: z.string().optional(),
+});
+
+type ProfileValues = z.infer<typeof profileSchema>;
+
+const ProfilePage = () => {
   const { currentUser, updateUserProfile } = useAuth();
-  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [role, setRole] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const form = useForm<ProfileValues>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      name: currentUser?.name || "",
+      email: currentUser?.email || "",
+      phone: currentUser?.phone || "",
+    },
+  });
   
-  useEffect(() => {
-    if (!currentUser) {
-      navigate("/login");
-      return;
-    }
-    
-    setName(currentUser.name || "");
-    setEmail(currentUser.email || "");
-    setPhone(currentUser.phone || "");
-    setRole(currentUser.role || "");
-  }, [currentUser, navigate]);
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!currentUser) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to update your profile",
-        variant: "destructive",
-      });
-      return;
-    }
-    
+  const onSubmit = async (values: ProfileValues) => {
     setIsLoading(true);
-    
     try {
-      // Update user profile in Supabase
-      const { error } = await supabase
-        .from('users')
-        .update({
-          name,
-          phone
-        })
-        .eq('id', currentUser.id);
-      
-      if (error) throw error;
-      
-      // Update local state
-      updateUserProfile({
-        ...currentUser,
-        name,
-        phone
+      await updateUserProfile({
+        name: values.name,
+        email: values.email,
+        phone: values.phone || "",
       });
       
       toast({
-        title: "Profile Updated",
-        description: "Your profile has been updated successfully",
+        title: t("common.success"),
+        description: t("profile.profileUpdated"),
       });
     } catch (error) {
       console.error("Error updating profile:", error);
       toast({
-        title: "Error",
-        description: "Failed to update profile",
+        title: t("common.error"),
+        description: t("profile.updateFailed"),
         variant: "destructive",
       });
     } finally {
@@ -84,103 +67,93 @@ const ProfilePage: React.FC = () => {
     }
   };
   
+  if (!currentUser) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p>{t("common.loading")}...</p>
+      </div>
+    );
+  }
+  
   return (
-    <div className="min-h-screen bg-temple-background">
-      <Header />
+    <div className="min-h-screen bg-temple-background pb-20">
+      <MobileHeader 
+        title={t("profile.title")} 
+        showBackButton={true}
+        backTo="/"
+      />
       
       <main className="container mx-auto px-4 py-6">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-temple-maroon">
-            {t("common.profile")}
-          </h1>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              className="border-temple-maroon text-temple-maroon"
-              onClick={() => navigate(-1)}
-            >
-              {t("common.back")}
-            </Button>
-            <Button 
-              variant="outline" 
-              className="border-temple-maroon text-temple-maroon"
-              onClick={() => navigate("/")}
-            >
-              {t("common.home")}
-            </Button>
-          </div>
-        </div>
-        
         <Card className="temple-card">
           <CardHeader>
-            <CardTitle>{t("common.profile")}</CardTitle>
-            <CardDescription>{t("common.updateYourPersonalInformation")}</CardDescription>
+            <CardTitle className="text-lg text-temple-maroon">{t("profile.myProfile")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">{t("common.name")}</Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("profile.name")}</FormLabel>
+                      <FormControl>
+                        <Input placeholder={t("profile.enterName")} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="email">{t("common.email")}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  disabled
+                
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("profile.email")}</FormLabel>
+                      <FormControl>
+                        <Input placeholder={t("profile.enterEmail")} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                <p className="text-xs text-muted-foreground">
-                  {t("common.emailCannotBeChanged")}
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="phone">{t("common.phone")}</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("profile.phone")} ({t("common.optional")})</FormLabel>
+                      <FormControl>
+                        <Input placeholder={t("profile.enterPhone")} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="role">{t("common.role")}</Label>
-                <Input
-                  id="role"
-                  value={role}
-                  disabled
-                />
-                <p className="text-xs text-muted-foreground">
-                  {t("common.roleCannotBeChanged")}
-                </p>
-              </div>
-              
-              <Button
-                type="submit"
-                className="bg-temple-saffron hover:bg-temple-gold text-white w-full md:w-auto"
-                disabled={isLoading}
-              >
-                {isLoading ? t("common.updating") : t("common.updateProfile")}
-              </Button>
-            </form>
+                
+                <div className="flex flex-col sm:flex-row justify-between gap-3">
+                  <Button 
+                    type="submit" 
+                    className="flex-1"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? t("common.saving") : t("common.saveChanges")}
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => navigate("/")}
+                  >
+                    {t("common.cancel")}
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </CardContent>
-          <CardFooter className="flex justify-center border-t pt-4">
-            <Button
-              variant="outline"
-              className="border-temple-maroon text-temple-maroon"
-              onClick={() => navigate("/settings")}
-            >
-              {t("common.settings")}
-            </Button>
-          </CardFooter>
         </Card>
       </main>
     </div>

@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, BookOpen, BarChart2, BookIcon, Package } from "lucide-react";
+import { Plus, Search, BarChart2, BookIcon, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MobileHeader from "@/components/MobileHeader";
-import Header from "@/components/Header";
 import { useStallContext } from "@/contexts/StallContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -104,7 +103,7 @@ const Index = () => {
       </div>
       
       {currentStore ? (
-        <div className="mobile-container">
+        <div className="mobile-container px-4 py-6">
           {/* Stats Cards */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             <Card className="bg-white border-temple-gold/20 shadow-sm">
@@ -117,14 +116,14 @@ const Index = () => {
             <Card className="bg-white border-temple-gold/20 shadow-sm">
               <CardContent className="p-4">
                 <h3 className="text-sm text-gray-600 mb-1">{t("dashboard.salesToday")}</h3>
-                <p className="text-2xl font-bold text-temple-maroon">{isLoading ? "..." : todaySales}</p>
+                <p className="text-2xl font-bold text-temple-saffron">{isLoading ? "..." : todaySales}</p>
               </CardContent>
             </Card>
             
             <Card className="bg-white border-temple-gold/20 shadow-sm">
               <CardContent className="p-4">
                 <h3 className="text-sm text-gray-600 mb-1">{t("dashboard.revenue")}</h3>
-                <p className="text-2xl font-bold text-temple-maroon">
+                <p className="text-2xl font-bold text-green-600">
                   {isLoading ? "..." : `₹${totalRevenue.toFixed(2)}`}
                 </p>
               </CardContent>
@@ -163,7 +162,7 @@ const Index = () => {
                     <Button 
                       variant="outline"
                       className="flex-1 justify-center border-temple-gold/30 text-temple-maroon flex items-center"
-                      onClick={() => navigate("/sell/new")}
+                      onClick={() => navigate("/books")}
                     >
                       <Plus size={16} className="mr-1" /> {t("common.sell")}
                     </Button>
@@ -234,7 +233,7 @@ const Index = () => {
                         className="flex-1 justify-center border-temple-gold/30 text-temple-maroon flex items-center"
                         onClick={() => navigate("/settings")}
                       >
-                        <BookOpen size={16} className="mr-1" /> {t("common.more")}
+                        <BookIcon size={16} className="mr-1" /> {t("common.more")}
                       </Button>
                     </div>
                   </div>

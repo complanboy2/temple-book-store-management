@@ -38,7 +38,7 @@ const BooksPage = () => {
   // Refresh books data when component mounts or when current store changes
   useEffect(() => {
     refreshBooks();
-  }, [currentStore]);
+  }, [currentStore, refreshBooks]);
   
   const handleScanComplete = (barcode: string) => {
     // Find the book by barcode
@@ -58,7 +58,7 @@ const BooksPage = () => {
   // Handle book editing - navigate to edit page with book ID
   const handleEditBook = (book: Book) => {
     if (book && book.id) {
-      navigate(`/edit-book/${book.id}`);
+      navigate(`/books/edit/${book.id}`);
     }
   };
   
@@ -133,7 +133,7 @@ const BooksPage = () => {
             
             {isAdmin && (
               <button 
-                onClick={() => navigate("/add-book")}
+                onClick={() => navigate("/books/add")}
                 className="bg-temple-saffron hover:bg-temple-saffron/90 text-white px-4 py-2 rounded flex items-center justify-center"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
