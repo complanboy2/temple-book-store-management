@@ -74,6 +74,7 @@ const newEnTranslations = {
     newSale: "New Sale",
     createNewStoreDescription: "Create a new book stall",
     more: "More",
+    // Added missing common translations that were causing duplicates
     home: "Home",
     books: "Books",
     sales: "Sales",
