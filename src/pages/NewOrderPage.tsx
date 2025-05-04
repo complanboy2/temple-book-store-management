@@ -115,7 +115,7 @@ const NewOrderPage: React.FC = () => {
       const orderId = generateId();
       const orderDate = new Date();
       
-      // Fixed: use the correct structure for orders table
+      // Create order without customer name
       const { error } = await supabase
         .from('orders')
         .insert({
@@ -135,7 +135,7 @@ const NewOrderPage: React.FC = () => {
         throw new Error(t("common.failedToCreateOrder"));
       }
 
-      // Now create the order item
+      // Create the order item
       const { error: itemError } = await supabase
         .from('order_items')
         .insert({
