@@ -60,7 +60,9 @@ export const useBookManager = (stallId: string | null) => {
       }
 
       if (data && Array.isArray(data)) {
+        console.log(`Fetched ${data.length} books for store ${stallId}`);
         console.log("Supabase returned books data:", data);
+        
         // Transform API result to local Book type
         const result: Book[] = data.map((row: any) => ({
           id: row.id,
@@ -78,10 +80,14 @@ export const useBookManager = (stallId: string | null) => {
           updatedAt: row.updatedat ? new Date(row.updatedat) : new Date()
         }));
 
-        console.log(`Fetched ${result.length} books for store ${stallId}`);
         setLastFetchTime(now);
         setBooks(result);
         setFilteredBooks(result);
+      } else {
+        // Handle case when data is null or not an array
+        console.warn("Unexpected data format returned from Supabase:", data);
+        setBooks([]);
+        setFilteredBooks([]);
       }
     } catch (err) {
       console.error("Unexpected error fetching books:", err);
@@ -95,14 +101,20 @@ export const useBookManager = (stallId: string | null) => {
     } finally {
       setIsLoading(false);
     }
-  }, [stallId, toast, t]);
+  }, [stallId, toast, t, books.length, lastFetchTime]);
 
   useEffect(() => {
     fetchBooks();
   }, [fetchBooks]);
 
   useEffect(() => {
-    let results = books;
+    if (!books || books.length === 0) {
+      setFilteredBooks([]);
+      return;
+    }
+    
+    let results = [...books];
+    
     if (searchTerm) {
       results = results.filter(book => 
         book.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -110,9 +122,11 @@ export const useBookManager = (stallId: string | null) => {
         (book.category && book.category.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
+    
     if (selectedCategory) {
       results = results.filter(book => book.category === selectedCategory);
     }
+    
     setFilteredBooks(results);
   }, [searchTerm, selectedCategory, books]);
 

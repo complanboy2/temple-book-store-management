@@ -13,6 +13,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { User } from "@/types";
 
 const profileSchema = z.object({
   name: z.string().min(2, {
@@ -48,7 +49,7 @@ const ProfilePage = () => {
     setIsLoading(true);
     try {
       // Make sure we preserve all required User properties
-      const updatedUser = {
+      const updatedUser: User = {
         ...currentUser,
         name: values.name,
         email: values.email,
@@ -76,7 +77,7 @@ const ProfilePage = () => {
   if (!currentUser) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p>{t("common.loading")}...</p>
+        <p>{t("common.loading")}</p>
       </div>
     );
   }

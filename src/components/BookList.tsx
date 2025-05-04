@@ -40,12 +40,12 @@ const BookList: React.FC<BookListProps> = ({
     return (
       <div className="flex flex-col items-center justify-center py-16 text-temple-maroon">
         <Loader2 className="h-12 w-12 animate-spin mb-4" />
-        <p className="text-lg">{t("common.loading")}...</p>
+        <p className="text-lg">{t("common.loading")}</p>
       </div>
     );
   }
 
-  if (books.length === 0) {
+  if (!books || books.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-temple-maroon">
         <p className="text-lg mb-4">{t("common.noBooks")}</p>
