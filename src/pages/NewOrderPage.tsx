@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Book } from "@/types";
 import { generateId } from "@/services/storageService";
 import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
 const NewOrderPage: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
@@ -75,6 +76,11 @@ const NewOrderPage: React.FC = () => {
         }
       } catch (error) {
         console.error("Unexpected error:", error);
+        toast({
+          title: t("common.error"),
+          description: t("common.failedToLoadBooks"),
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
@@ -115,19 +121,19 @@ const NewOrderPage: React.FC = () => {
       const orderId = generateId();
       const orderDate = new Date();
       
-      // Create order without customer name
+      // Create order without customer name field
       const { error } = await supabase
         .from('orders')
         .insert({
           id: orderId,
-          customername: "Store Order", // Default name for store orders
           status: 'pending',
           stallid: currentStore,
           adminid: currentUser?.id || "",
           totalamount: selectedBook.salePrice * quantity,
           orderdate: orderDate.toISOString(),
           paymentstatus: "pending",
-          createdat: orderDate.toISOString()
+          createdat: orderDate.toISOString(),
+          customername: "Store Order" // Default value for required field
         });
       
       if (error) {
@@ -183,49 +189,62 @@ const NewOrderPage: React.FC = () => {
             <CardTitle className="text-lg text-temple-maroon">{t("common.createNewOrder")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleCreateOrder} className="space-y-6">
-              <div className="grid gap-2">
-                <Label htmlFor="book">{t("common.selectBook")}</Label>
-                <Select 
-                  value={selectedBookId} 
-                  onValueChange={setSelectedBookId}
-                  disabled={isLoading || books.length === 0}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder={t("common.selectBook")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {books.map((book) => (
-                      <SelectItem key={book.id} value={book.id}>
-                        {book.name} - {book.author} (₹{book.salePrice})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin mb-2" />
+                <p>{t("common.loading")}</p>
               </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="quantity">{t("common.quantity")}</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  value={quantity}
-                  onChange={handleQuantityChange}
-                  min={1}
-                  className="max-w-xs"
-                />
-              </div>
+            ) : (
+              <form onSubmit={handleCreateOrder} className="space-y-6">
+                <div className="grid gap-2">
+                  <Label htmlFor="book">{t("common.selectBook")}</Label>
+                  <Select 
+                    value={selectedBookId} 
+                    onValueChange={setSelectedBookId}
+                    disabled={books.length === 0}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder={t("common.selectBook")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {books.length > 0 ? (
+                        books.map((book) => (
+                          <SelectItem key={book.id} value={book.id}>
+                            {book.name} - {book.author} (₹{book.salePrice})
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="no-books" disabled>
+                          {t("common.noBooks")}
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="quantity">{t("common.quantity")}</Label>
+                  <Input
+                    id="quantity"
+                    type="number"
+                    value={quantity}
+                    onChange={handleQuantityChange}
+                    min={1}
+                    className="max-w-xs"
+                  />
+                </div>
 
-              <div className="pt-4">
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={isSubmitting || !selectedBookId || isLoading}
-                >
-                  {isSubmitting ? t("common.processing") : t("common.createOrder")}
-                </Button>
-              </div>
-            </form>
+                <div className="pt-4">
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={isSubmitting || !selectedBookId || books.length === 0}
+                  >
+                    {isSubmitting ? t("common.processing") : t("common.createOrder")}
+                  </Button>
+                </div>
+              </form>
+            )}
           </CardContent>
         </Card>
       </main>

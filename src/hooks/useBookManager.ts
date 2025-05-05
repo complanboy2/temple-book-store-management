@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Book } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -12,12 +12,13 @@ export const useBookManager = (stallId: string | null) => {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [lastFetchTime, setLastFetchTime] = useState(0);
+  const isMounted = useRef(true);
   const { toast } = useToast();
   const { t } = useTranslation();
 
   const fetchBooks = useCallback(async (forceRefresh = false) => {
-    if (!stallId) {
-      console.log("No store selected, cannot fetch books");
+    if (!stallId || !isMounted.current) {
+      console.log("No store selected or component unmounted, cannot fetch books");
       setBooks([]);
       setFilteredBooks([]);
       setIsLoading(false);
@@ -38,7 +39,6 @@ export const useBookManager = (stallId: string | null) => {
     
     try {
       console.log("Fetching books for store ID:", stallId);
-      console.log("Making Supabase query for books");
       
       const { data, error } = await supabase
         .from("books")
@@ -61,7 +61,6 @@ export const useBookManager = (stallId: string | null) => {
 
       if (data && Array.isArray(data)) {
         console.log(`Fetched ${data.length} books for store ${stallId}`);
-        console.log("Supabase returned books data:", data);
         
         // Transform API result to local Book type
         const result: Book[] = data.map((row: any) => ({
@@ -80,14 +79,18 @@ export const useBookManager = (stallId: string | null) => {
           updatedAt: row.updatedat ? new Date(row.updatedat) : new Date()
         }));
 
-        setLastFetchTime(now);
-        setBooks(result);
-        setFilteredBooks(result);
+        if (isMounted.current) {
+          setLastFetchTime(now);
+          setBooks(result);
+          setFilteredBooks(result);
+        }
       } else {
         // Handle case when data is null or not an array
         console.warn("Unexpected data format returned from Supabase:", data);
-        setBooks([]);
-        setFilteredBooks([]);
+        if (isMounted.current) {
+          setBooks([]);
+          setFilteredBooks([]);
+        }
       }
     } catch (err) {
       console.error("Unexpected error fetching books:", err);
@@ -96,15 +99,24 @@ export const useBookManager = (stallId: string | null) => {
         description: t("common.failedToLoadBooks"),
         variant: "destructive",
       });
-      setBooks([]);
-      setFilteredBooks([]);
+      if (isMounted.current) {
+        setBooks([]);
+        setFilteredBooks([]);
+      }
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
     }
   }, [stallId, toast, t, books.length, lastFetchTime]);
 
   useEffect(() => {
+    isMounted.current = true;
     fetchBooks();
+    
+    return () => {
+      isMounted.current = false;
+    };
   }, [fetchBooks]);
 
   useEffect(() => {
