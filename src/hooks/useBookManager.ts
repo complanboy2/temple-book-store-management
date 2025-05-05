@@ -13,15 +13,18 @@ export const useBookManager = (stallId: string | null) => {
   const [isLoading, setIsLoading] = useState(true);
   const [lastFetchTime, setLastFetchTime] = useState(0);
   const isMounted = useRef(true);
+  const fetchInProgress = useRef(false);
   const { toast } = useToast();
   const { t } = useTranslation();
 
   const fetchBooks = useCallback(async (forceRefresh = false) => {
-    if (!stallId || !isMounted.current) {
-      console.log("No store selected or component unmounted, cannot fetch books");
-      setBooks([]);
-      setFilteredBooks([]);
-      setIsLoading(false);
+    if (!stallId || !isMounted.current || fetchInProgress.current) {
+      if (!stallId) {
+        console.log("No store selected, cannot fetch books");
+      }
+      if (fetchInProgress.current) {
+        console.log("Fetch already in progress, skipping");
+      }
       return;
     }
 
@@ -31,13 +34,13 @@ export const useBookManager = (stallId: string | null) => {
     // Skip refetching if we fetched recently, unless forced
     if (!forceRefresh && now - lastFetchTime < CACHE_TIME && books.length > 0) {
       console.log("Using cached books data, last fetch was", (now - lastFetchTime) / 1000, "seconds ago");
-      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
-    
     try {
+      fetchInProgress.current = true;
+      setIsLoading(true);
+      
       console.log("Fetching books for store ID:", stallId);
       
       const { data, error } = await supabase
@@ -53,9 +56,6 @@ export const useBookManager = (stallId: string | null) => {
           description: t("common.failedToLoadBooks"),
           variant: "destructive",
         });
-        setBooks([]);
-        setFilteredBooks([]);
-        setIsLoading(false);
         return;
       }
 
@@ -104,6 +104,7 @@ export const useBookManager = (stallId: string | null) => {
         setFilteredBooks([]);
       }
     } finally {
+      fetchInProgress.current = false;
       if (isMounted.current) {
         setIsLoading(false);
       }
@@ -117,7 +118,7 @@ export const useBookManager = (stallId: string | null) => {
     return () => {
       isMounted.current = false;
     };
-  }, [fetchBooks]);
+  }, [stallId]);
 
   useEffect(() => {
     if (!books || books.length === 0) {

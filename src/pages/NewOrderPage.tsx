@@ -121,7 +121,7 @@ const NewOrderPage: React.FC = () => {
       const orderId = generateId();
       const orderDate = new Date();
       
-      // Create order without customer name field
+      // Create order with "Store Order" as default for customer name
       const { error } = await supabase
         .from('orders')
         .insert({

@@ -1,10 +1,9 @@
 
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, BookOpen, ShoppingCart, Settings, BarChart2 } from "lucide-react";
+import { Home, BookOpen, ShoppingCart, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
-import { useStallContext } from "@/contexts/StallContext";
 
 const MobileNavBar = () => {
   const navigate = useNavigate();

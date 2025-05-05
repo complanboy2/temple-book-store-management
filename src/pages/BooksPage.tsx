@@ -37,7 +37,10 @@ const BooksPage = () => {
   
   // Refresh books data when component mounts or when current store changes
   useEffect(() => {
-    refreshBooks();
+    if (currentStore) {
+      console.log("BooksPage: Refreshing books for store:", currentStore);
+      refreshBooks();
+    }
   }, [currentStore, refreshBooks]);
   
   const handleScanComplete = (barcode: string) => {

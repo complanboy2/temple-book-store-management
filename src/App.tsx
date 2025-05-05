@@ -49,7 +49,7 @@ function App() {
     <AuthProvider>
       <StallProvider>
         <Router>
-          <div className={isMobile ? "pb-16" : ""}>
+          <div className={isMobile ? "pb-20" : ""}>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<LoginPage />} />
@@ -81,6 +81,6 @@ function App() {
       </StallProvider>
     </AuthProvider>
   );
-}
+};
 
 export default App;
