@@ -1,7 +1,7 @@
 
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, BookOpen, ShoppingCart, Settings } from "lucide-react";
+import { Home, BookOpen, ShoppingCart, MoreHorizontal } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 
@@ -18,7 +18,7 @@ const MobileNavBar = () => {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-temple-gold/30 shadow-lg z-40 pb-safe">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-temple-gold/30 shadow-lg z-50 pb-safe">
       <div className="flex justify-around items-center h-16">
         <button
           onClick={() => navigate("/")}
@@ -41,7 +41,7 @@ const MobileNavBar = () => {
         </button>
         
         <button
-          onClick={() => navigate("/books")} // Navigate to books page for selling
+          onClick={() => navigate("/books")} // This will be the entry point to sell flow
           className={`flex flex-col items-center justify-center w-full h-full ${
             isActive("/sell") ? "text-temple-saffron" : "text-gray-500"
           }`}
@@ -57,7 +57,7 @@ const MobileNavBar = () => {
             "text-temple-saffron" : "text-gray-500"
           }`}
         >
-          <Settings size={24} />
+          <MoreHorizontal size={24} />
           <span className="text-xs mt-1">{t("common.more")}</span>
         </button>
       </div>

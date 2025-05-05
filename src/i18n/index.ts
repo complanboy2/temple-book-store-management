@@ -1,4 +1,3 @@
-
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
@@ -76,7 +75,6 @@ const newEnTranslations = {
     newSale: "New Sale",
     createNewStore: "Create a new book stall",
     more: "More",
-    // Add other common translations that were missing
     home: "Home",
     books: "Books",
     sales: "Sales",

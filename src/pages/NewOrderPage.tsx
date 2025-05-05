@@ -56,26 +56,31 @@ const NewOrderPage: React.FC = () => {
           return;
         }
 
-        console.log(`NewOrderPage: Fetched ${data?.length || 0} books`);
-        const formattedBooks = data.map((item): Book => ({
-          id: item.id,
-          barcode: item.barcode || "",
-          name: item.name,
-          author: item.author,
-          category: item.category || "",
-          printingInstitute: item.printinginstitute || "",
-          originalPrice: item.originalprice,
-          salePrice: item.saleprice,
-          quantity: item.quantity,
-          stallId: item.stallid,
-          imageUrl: item.imageurl,
-          createdAt: new Date(item.createdat),
-          updatedAt: new Date(item.updatedat)
-        }));
+        if (data && Array.isArray(data)) {
+          console.log(`NewOrderPage: Fetched ${data.length} books`);
+          const formattedBooks = data.map((item): Book => ({
+            id: item.id,
+            barcode: item.barcode || "",
+            name: item.name,
+            author: item.author,
+            category: item.category || "",
+            printingInstitute: item.printinginstitute || "",
+            originalPrice: item.originalprice,
+            salePrice: item.saleprice,
+            quantity: item.quantity,
+            stallId: item.stallid,
+            imageUrl: item.imageurl,
+            createdAt: new Date(item.createdat),
+            updatedAt: new Date(item.updatedat)
+          }));
 
-        setBooks(formattedBooks);
-        if (formattedBooks.length > 0) {
-          setSelectedBookId(formattedBooks[0].id);
+          setBooks(formattedBooks);
+          if (formattedBooks.length > 0) {
+            setSelectedBookId(formattedBooks[0].id);
+          }
+        } else {
+          console.warn("Unexpected data format from Supabase:", data);
+          setBooks([]);
         }
       } catch (error) {
         console.error("Unexpected error:", error);
@@ -124,6 +129,7 @@ const NewOrderPage: React.FC = () => {
       const orderId = generateId();
       const orderDate = new Date();
       
+      // Create the order entry
       const { error } = await supabase
         .from('orders')
         .insert({
@@ -135,7 +141,7 @@ const NewOrderPage: React.FC = () => {
           orderdate: orderDate.toISOString(),
           paymentstatus: "pending",
           createdat: orderDate.toISOString(),
-          customername: "Store Order" // Required by database schema, using fixed value
+          customername: "Store Order" // Required field but using fixed value
         });
       
       if (error) {
@@ -242,7 +248,14 @@ const NewOrderPage: React.FC = () => {
                     className="w-full" 
                     disabled={isSubmitting || !selectedBookId || books.length === 0}
                   >
-                    {isSubmitting ? t("common.processing") : t("common.createOrder")}
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {t("common.processing")}
+                      </>
+                    ) : (
+                      t("common.createOrder")
+                    )}
                   </Button>
                 </div>
               </form>

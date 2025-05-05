@@ -22,6 +22,9 @@ export const useBookManager = (stallId: string | null) => {
     // Guard clauses to prevent redundant fetches
     if (!stallId) {
       console.log("No store selected, cannot fetch books");
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
       return;
     }
     
@@ -72,7 +75,7 @@ export const useBookManager = (stallId: string | null) => {
         // Transform API result to local Book type
         const result: Book[] = data.map((row: any) => ({
           id: row.id,
-          barcode: row.barcode ?? undefined,
+          barcode: row.barcode ?? "",
           name: row.name,
           author: row.author,
           category: row.category ?? "",
@@ -127,7 +130,7 @@ export const useBookManager = (stallId: string | null) => {
         setIsLoading(false);
       }
     }
-  }, [stallId, toast, t]); // Remove books.length and lastFetchTime from dependencies
+  }, [stallId, toast, t, books.length]);
 
   // Initial fetch on mount or stallId change
   useEffect(() => {
@@ -139,7 +142,7 @@ export const useBookManager = (stallId: string | null) => {
     }
     
     // No cleanup needed for this effect
-  }, [stallId]); // Remove fetchBooks from dependencies
+  }, [stallId, fetchBooks]);
 
   // Setup mount/unmount handling
   useEffect(() => {

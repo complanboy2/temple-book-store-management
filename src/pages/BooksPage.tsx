@@ -35,14 +35,7 @@ const BooksPage = () => {
     refreshBooks
   } = useBookManager(currentStore);
   
-  // Only refresh once when component mounts
-  useEffect(() => {
-    console.log("BooksPage mounted, store ID:", currentStore);
-    
-    // We don't need to call refreshBooks here as it's handled by the hook
-    // This prevents duplicate data fetching
-  }, []); // Empty dependency array to run only on mount
-  
+  // Handle scan completion
   const handleScanComplete = (barcode: string) => {
     // Find the book by barcode
     const book = books.find(book => book.barcode === barcode);
