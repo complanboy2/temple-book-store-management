@@ -81,6 +81,6 @@ function App() {
       </StallProvider>
     </AuthProvider>
   );
-};
+}
 
 export default App;

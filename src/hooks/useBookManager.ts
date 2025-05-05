@@ -18,13 +18,18 @@ export const useBookManager = (stallId: string | null) => {
   const { t } = useTranslation();
 
   const fetchBooks = useCallback(async (forceRefresh = false) => {
-    if (!stallId || !isMounted.current || fetchInProgress.current) {
-      if (!stallId) {
-        console.log("No store selected, cannot fetch books");
-      }
-      if (fetchInProgress.current) {
-        console.log("Fetch already in progress, skipping");
-      }
+    // Guard clauses to prevent redundant fetches
+    if (!stallId) {
+      console.log("No store selected, cannot fetch books");
+      return;
+    }
+    
+    if (!isMounted.current) {
+      return;
+    }
+    
+    if (fetchInProgress.current) {
+      console.log("Fetch already in progress, skipping");
       return;
     }
 
@@ -99,10 +104,6 @@ export const useBookManager = (stallId: string | null) => {
         description: t("common.failedToLoadBooks"),
         variant: "destructive",
       });
-      if (isMounted.current) {
-        setBooks([]);
-        setFilteredBooks([]);
-      }
     } finally {
       fetchInProgress.current = false;
       if (isMounted.current) {
@@ -111,15 +112,21 @@ export const useBookManager = (stallId: string | null) => {
     }
   }, [stallId, toast, t, books.length, lastFetchTime]);
 
+  // Initial fetch and cleanup
   useEffect(() => {
     isMounted.current = true;
-    fetchBooks();
+    
+    // Only fetch if stallId exists
+    if (stallId) {
+      fetchBooks();
+    }
     
     return () => {
       isMounted.current = false;
     };
-  }, [stallId]);
+  }, [stallId, fetchBooks]);
 
+  // Filter books when search term or category changes
   useEffect(() => {
     if (!books || books.length === 0) {
       setFilteredBooks([]);
@@ -143,6 +150,7 @@ export const useBookManager = (stallId: string | null) => {
     setFilteredBooks(results);
   }, [searchTerm, selectedCategory, books]);
 
+  // Delete book functionality
   const deleteBook = async (bookId: string) => {
     if (!stallId) return false;
     
@@ -166,16 +174,9 @@ export const useBookManager = (stallId: string | null) => {
       // Update local state
       const updatedBooks = books.filter(book => book.id !== bookId);
       setBooks(updatedBooks);
-      
-      // Update filtered books
       setFilteredBooks(prevFiltered => 
         prevFiltered.filter(book => book.id !== bookId)
       );
-      
-      toast({
-        title: t("common.success"),
-        description: t("common.bookDeleted"),
-      });
       
       return true;
     } catch (err) {
@@ -205,6 +206,6 @@ export const useBookManager = (stallId: string | null) => {
     isLoading,
     categories,
     deleteBook,
-    refreshBooks: () => fetchBooks(true),
+    refreshBooks: useCallback(() => fetchBooks(true), [fetchBooks]),
   };
 };
