@@ -35,13 +35,13 @@ const BooksPage = () => {
     refreshBooks
   } = useBookManager(currentStore);
   
-  // Refresh books data when component mounts or when current store changes
+  // Only refresh once when component mounts
   useEffect(() => {
-    if (currentStore) {
-      console.log("BooksPage: Refreshing books for store:", currentStore);
-      refreshBooks();
-    }
-  }, [currentStore, refreshBooks]);
+    console.log("BooksPage mounted, store ID:", currentStore);
+    
+    // We don't need to call refreshBooks here as it's handled by the hook
+    // This prevents duplicate data fetching
+  }, []); // Empty dependency array to run only on mount
   
   const handleScanComplete = (barcode: string) => {
     // Find the book by barcode
@@ -89,21 +89,13 @@ const BooksPage = () => {
       const success = await deleteBook(selectedBook.id);
       
       if (success) {
-        toast({
-          title: t("common.success"),
-          description: t("common.bookDeleted"),
-        });
+        // Toast is already shown in deleteBook function
+        setIsDeleteDialogOpen(false);
+        setSelectedBook(null);
       }
     } catch (error) {
       console.error("Error deleting book:", error);
-      toast({
-        title: t("common.error"),
-        description: t("common.deleteBookFailed"),
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeleteDialogOpen(false);
-      setSelectedBook(null);
+      // Error toast already shown in deleteBook function
     }
   };
 

@@ -38,6 +38,8 @@ const NewOrderPage: React.FC = () => {
 
       try {
         setIsLoading(true);
+        console.log("NewOrderPage: Fetching books for store ID:", currentStore);
+        
         const { data, error } = await supabase
           .from('books')
           .select('*')
@@ -54,6 +56,7 @@ const NewOrderPage: React.FC = () => {
           return;
         }
 
+        console.log(`NewOrderPage: Fetched ${data?.length || 0} books`);
         const formattedBooks = data.map((item): Book => ({
           id: item.id,
           barcode: item.barcode || "",
@@ -132,7 +135,7 @@ const NewOrderPage: React.FC = () => {
           orderdate: orderDate.toISOString(),
           paymentstatus: "pending",
           createdat: orderDate.toISOString(),
-          customername: "Store Order" // Default value for required field
+          customername: "Store Order" // Required by database schema, using fixed value
         });
       
       if (error) {

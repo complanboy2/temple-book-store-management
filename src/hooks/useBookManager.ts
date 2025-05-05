@@ -17,6 +17,7 @@ export const useBookManager = (stallId: string | null) => {
   const { toast } = useToast();
   const { t } = useTranslation();
 
+  // Stable fetch function that doesn't recreate on each render
   const fetchBooks = useCallback(async (forceRefresh = false) => {
     // Guard clauses to prevent redundant fetches
     if (!stallId) {
@@ -25,6 +26,7 @@ export const useBookManager = (stallId: string | null) => {
     }
     
     if (!isMounted.current) {
+      console.log("Component unmounted, skipping fetch");
       return;
     }
     
@@ -38,7 +40,7 @@ export const useBookManager = (stallId: string | null) => {
     
     // Skip refetching if we fetched recently, unless forced
     if (!forceRefresh && now - lastFetchTime < CACHE_TIME && books.length > 0) {
-      console.log("Using cached books data, last fetch was", (now - lastFetchTime) / 1000, "seconds ago");
+      console.log(`Using cached books data, last fetch was ${(now - lastFetchTime) / 1000} seconds ago`);
       return;
     }
 
@@ -87,7 +89,22 @@ export const useBookManager = (stallId: string | null) => {
         if (isMounted.current) {
           setLastFetchTime(now);
           setBooks(result);
-          setFilteredBooks(result);
+          
+          // Apply current filters to new data
+          let filtered = [...result];
+          if (searchTerm) {
+            filtered = filtered.filter(book => 
+              book.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              (book.category && book.category.toLowerCase().includes(searchTerm.toLowerCase()))
+            );
+          }
+          
+          if (selectedCategory) {
+            filtered = filtered.filter(book => book.category === selectedCategory);
+          }
+          
+          setFilteredBooks(filtered);
         }
       } else {
         // Handle case when data is null or not an array
@@ -110,21 +127,29 @@ export const useBookManager = (stallId: string | null) => {
         setIsLoading(false);
       }
     }
-  }, [stallId, toast, t, books.length, lastFetchTime]);
+  }, [stallId, toast, t]); // Remove books.length and lastFetchTime from dependencies
 
-  // Initial fetch and cleanup
+  // Initial fetch on mount or stallId change
   useEffect(() => {
-    isMounted.current = true;
+    console.log("useEffect for initial fetch triggered with stallId:", stallId);
     
     // Only fetch if stallId exists
     if (stallId) {
-      fetchBooks();
+      fetchBooks(true); // Force refresh on stallId change
     }
     
+    // No cleanup needed for this effect
+  }, [stallId]); // Remove fetchBooks from dependencies
+
+  // Setup mount/unmount handling
+  useEffect(() => {
+    isMounted.current = true;
+    
     return () => {
+      console.log("Component unmounting, cleaning up");
       isMounted.current = false;
     };
-  }, [stallId, fetchBooks]);
+  }, []);
 
   // Filter books when search term or category changes
   useEffect(() => {
@@ -178,6 +203,11 @@ export const useBookManager = (stallId: string | null) => {
         prevFiltered.filter(book => book.id !== bookId)
       );
       
+      toast({
+        title: t("common.success"),
+        description: t("common.bookDeleted"),
+      });
+      
       return true;
     } catch (err) {
       console.error("Unexpected error deleting book:", err);
@@ -196,6 +226,12 @@ export const useBookManager = (stallId: string | null) => {
     .filter(Boolean)
   )).sort();
 
+  // Create a stable refreshBooks function
+  const refreshBooks = useCallback(() => {
+    console.log("Manual refresh requested");
+    return fetchBooks(true);
+  }, [fetchBooks]);
+
   return {
     books,
     filteredBooks,
@@ -206,6 +242,6 @@ export const useBookManager = (stallId: string | null) => {
     isLoading,
     categories,
     deleteBook,
-    refreshBooks: useCallback(() => fetchBooks(true), [fetchBooks]),
+    refreshBooks,
   };
 };

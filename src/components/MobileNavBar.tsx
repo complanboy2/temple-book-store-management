@@ -17,11 +17,6 @@ const MobileNavBar = () => {
     return false;
   };
 
-  // Handler for sell button to navigate directly to books page for selling
-  const handleSellClick = () => {
-    navigate("/books");
-  };
-
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-temple-gold/30 shadow-lg z-40 pb-safe">
       <div className="flex justify-around items-center h-16">
@@ -46,7 +41,7 @@ const MobileNavBar = () => {
         </button>
         
         <button
-          onClick={handleSellClick}
+          onClick={() => navigate("/books")} // Navigate to books page for selling
           className={`flex flex-col items-center justify-center w-full h-full ${
             isActive("/sell") ? "text-temple-saffron" : "text-gray-500"
           }`}
@@ -58,7 +53,8 @@ const MobileNavBar = () => {
         <button
           onClick={() => navigate("/settings")}
           className={`flex flex-col items-center justify-center w-full h-full ${
-            isActive("/admin") || isActive("/settings") || isActive("/reports") ? "text-temple-saffron" : "text-gray-500"
+            isActive("/settings") || isActive("/admin") || isActive("/reports") ? 
+            "text-temple-saffron" : "text-gray-500"
           }`}
         >
           <Settings size={24} />
