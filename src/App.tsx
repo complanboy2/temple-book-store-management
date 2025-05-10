@@ -11,7 +11,6 @@ import EditBookPage from "./pages/EditBookPage";
 import SalesPage from "./pages/SalesPage";
 import SearchPage from "./pages/SearchPage";
 import NotFound from "./pages/NotFound";
-import AdminPage from "./pages/AdminPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import CompleteSignupPage from "./pages/CompleteSignupPage";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -27,6 +26,7 @@ import OrderManagementPage from "./pages/OrderManagementPage";
 import OrdersPage from "./pages/OrdersPage";
 import ProfilePage from "./pages/ProfilePage";
 import NewOrderPage from "./pages/NewOrderPage";
+import SellMultipleBooksPage from "./pages/SellMultipleBooksPage";
 
 function App() {
   const isMobile = useIsMobile();
@@ -60,10 +60,10 @@ function App() {
               <Route path="/books/edit/:id" element={<EditBookPage />} />
               <Route path="/sales" element={<SalesPage />} />
               <Route path="/search" element={<SearchPage />} />
-              <Route path="/admin" element={<AdminPage />} />
               <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
               <Route path="/sell/:id" element={<SellBookPage />} />
               <Route path="/sell/new" element={<SellBookPage />} />
+              <Route path="/sell-multiple" element={<SellMultipleBooksPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/metadata" element={<MetadataManagerPage />} />

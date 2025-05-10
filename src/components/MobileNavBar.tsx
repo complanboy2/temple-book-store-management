@@ -1,69 +1,71 @@
 
-import React from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { Home, BookOpen, ShoppingCart, Settings } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useTranslation } from "react-i18next";
+import React from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Book, Home, Package2, Search, ShoppingCart, PieChart, LayoutGrid } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
-const MobileNavBar = () => {
-  const navigate = useNavigate();
+const MobileNavBar: React.FC = () => {
   const location = useLocation();
-  const { isAdmin } = useAuth();
+  const navigate = useNavigate();
   const { t } = useTranslation();
-  
-  // Enhanced active state detection to properly highlight the current section
-  const isActive = (path: string) => {
-    if (path === "/" && location.pathname === "/") return true;
-    if (path !== "/" && location.pathname.startsWith(path)) return true;
-    return false;
+
+  const navigateIfNotCurrent = (path: string) => {
+    if (location.pathname !== path) {
+      navigate(path);
+    }
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-temple-gold/30 shadow-lg z-50 pb-safe">
-      <div className="flex justify-around items-center h-16">
-        {/* Home Button */}
+    <div className="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 z-10">
+      <div className="grid grid-cols-5 h-full text-xs text-temple-dark">
         <button
-          onClick={() => navigate("/")}
-          className={`flex flex-col items-center justify-center w-full h-full ${
-            isActive("/") ? "text-temple-saffron" : "text-gray-500"
+          onClick={() => navigateIfNotCurrent('/dashboard')}
+          className={`flex flex-col items-center justify-center ${
+            location.pathname === '/dashboard' ? 'text-temple-maroon' : ''
           }`}
         >
-          <Home size={24} />
-          <span className="text-xs mt-1">{t("common.home")}</span>
+          <Home className={`h-5 w-5 ${location.pathname === '/dashboard' ? 'text-temple-maroon' : ''}`} />
+          <span className="mt-1">{t('common.home')}</span>
         </button>
         
-        {/* Books Button */}
         <button
-          onClick={() => navigate("/books")}
-          className={`flex flex-col items-center justify-center w-full h-full ${
-            isActive("/books") ? "text-temple-saffron" : "text-gray-500"
+          onClick={() => navigateIfNotCurrent('/books')}
+          className={`flex flex-col items-center justify-center ${
+            location.pathname === '/books' || location.pathname.startsWith('/books/') ? 'text-temple-maroon' : ''
           }`}
         >
-          <BookOpen size={24} />
-          <span className="text-xs mt-1">{t("common.books")}</span>
+          <Book className={`h-5 w-5 ${location.pathname === '/books' || location.pathname.startsWith('/books/') ? 'text-temple-maroon' : ''}`} />
+          <span className="mt-1">{t('common.books')}</span>
         </button>
         
-        {/* Sell Button */}
         <button
-          onClick={() => navigate("/sell/new")}
-          className={`flex flex-col items-center justify-center w-full h-full ${
-            isActive("/sell") ? "text-temple-saffron" : "text-gray-500"
+          onClick={() => navigateIfNotCurrent('/sell-multiple')}
+          className={`flex flex-col items-center justify-center ${
+            location.pathname === '/sell-multiple' ? 'text-temple-maroon' : ''
           }`}
         >
-          <ShoppingCart size={24} />
-          <span className="text-xs mt-1">{t("common.sell")}</span>
+          <ShoppingCart className={`h-5 w-5 ${location.pathname === '/sell-multiple' ? 'text-temple-maroon' : ''}`} />
+          <span className="mt-1">{t('common.sell')}</span>
         </button>
         
-        {/* Settings/More Button */}
         <button
-          onClick={() => navigate("/settings")}
-          className={`flex flex-col items-center justify-center w-full h-full ${
-            isActive("/settings") || isActive("/admin") || isActive("/reports") ? 
-            "text-temple-saffron" : "text-gray-500"
+          onClick={() => navigateIfNotCurrent('/search')}
+          className={`flex flex-col items-center justify-center ${
+            location.pathname === '/search' ? 'text-temple-maroon' : ''
           }`}
         >
-          <Settings size={24} />
-          <span className="text-xs mt-1">{t("common.more")}</span>
+          <Search className={`h-5 w-5 ${location.pathname === '/search' ? 'text-temple-maroon' : ''}`} />
+          <span className="mt-1">{t('common.search')}</span>
+        </button>
+        
+        <button
+          onClick={() => navigateIfNotCurrent('/reports')}
+          className={`flex flex-col items-center justify-center ${
+            location.pathname === '/reports' ? 'text-temple-maroon' : ''
+          }`}
+        >
+          <PieChart className={`h-5 w-5 ${location.pathname === '/reports' ? 'text-temple-maroon' : ''}`} />
+          <span className="mt-1">{t('common.reports')}</span>
         </button>
       </div>
     </div>

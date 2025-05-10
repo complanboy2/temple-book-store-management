@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -48,8 +49,35 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
     buyerInfo: false,
     personnel: false
   });
+  const [personnelNames, setPersonnelNames] = useState<Record<string, string>>({});
   const { toast } = useToast();
   const { currentStore } = useStallContext();
+
+  useEffect(() => {
+    const fetchPersonnelData = async () => {
+      if (!currentStore) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('stall_personnel')
+          .select('id, name')
+          .eq('stall_id', currentStore);
+          
+        if (error) throw error;
+        
+        const nameMap: Record<string, string> = {};
+        data.forEach(person => {
+          nameMap[person.id] = person.name;
+        });
+        
+        setPersonnelNames(nameMap);
+      } catch (error) {
+        console.error("Error fetching personnel data:", error);
+      }
+    };
+    
+    fetchPersonnelData();
+  }, [currentStore]);
 
   const handleFieldChange = (field: keyof ExportFields, value: boolean) => {
     setFields(prev => ({ ...prev, [field]: value }));
@@ -149,6 +177,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
 
     sales.forEach((sale, index) => {
       const bookDetails = bookDetailsMap[sale.bookId] || { name: 'Unknown', author: 'Unknown', price: 0 };
+      const sellerName = personnelNames[sale.personnelId] || sale.personnelId || 'Unknown';
       
       html += `
         <tr>
@@ -159,7 +188,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
           ${fields.amount ? `<td>₹${sale.totalAmount.toFixed(2)}</td>` : ''}
           ${fields.paymentMethod ? `<td>${sale.paymentMethod}</td>` : ''}
           ${fields.buyerInfo ? `<td>${sale.buyerName || 'N/A'}${sale.buyerPhone ? ` (${sale.buyerPhone})` : ''}</td>` : ''}
-          ${fields.personnel ? `<td>${sale.personnelId}</td>` : ''}
+          ${fields.personnel ? `<td>${sellerName}</td>` : ''}
         </tr>
         ${(index + 1) % 20 === 0 ? '<tr class="page-break"><td colspan="8"></td></tr>' : ''}
       `;

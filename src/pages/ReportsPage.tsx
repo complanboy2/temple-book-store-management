@@ -45,6 +45,7 @@ const ReportsPage: React.FC = () => {
   const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 7)); // Default to last 7 days
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
   const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
+  const [personnelNames, setPersonnelNames] = useState<Record<string, string>>({});
   const { isAdmin } = useAuth();
   const { currentStore } = useStallContext();
   const navigate = useNavigate();
@@ -88,6 +89,23 @@ const ReportsPage: React.FC = () => {
           
         if (salesError) {
           throw new Error(`Error fetching sales: ${salesError.message}`);
+        }
+        
+        // Fetch personnel data to map IDs to names
+        const { data: personnelData, error: personnelError } = await supabase
+          .from('stall_personnel')
+          .select('id, name')
+          .eq('stall_id', currentStore);
+          
+        if (personnelError) {
+          console.error("Error fetching personnel data:", personnelError);
+        } else {
+          // Create a mapping of personnel IDs to names
+          const nameMap: Record<string, string> = {};
+          personnelData.forEach(person => {
+            nameMap[person.id] = person.name;
+          });
+          setPersonnelNames(nameMap);
         }
         
         // Convert to proper format - map database fields to our types
@@ -305,7 +323,7 @@ const ReportsPage: React.FC = () => {
       csvData = 'Date,Book,Seller,Quantity,Amount,Payment Method\n';
       filteredSales.forEach(sale => {
         const book = books.find(b => b.id === sale.bookId);
-        csvData += `${new Date(sale.createdAt).toLocaleDateString()},${book?.name || 'Unknown'},${sale.personnelId || 'Unknown'},${sale.quantity},${sale.totalAmount},${sale.paymentMethod}\n`;
+        csvData += `${new Date(sale.createdAt).toLocaleDateString()},${book?.name || 'Unknown'},${personnelNames[sale.personnelId] || sale.personnelId || 'Unknown'},${sale.quantity},${sale.totalAmount},${sale.paymentMethod}\n`;
       });
     } else if (reportType === 'category') {
       csvData = 'Category,Quantity Sold\n';
@@ -441,7 +459,116 @@ const ReportsPage: React.FC = () => {
           </div>
         ) : (
           <>
-            {/* Charts Section */}
+            {/* Detailed Sales Table - Now shown first */}
+            <Card className="temple-card overflow-hidden bg-white border border-gray-200 shadow-md mb-6">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 bg-gradient-to-r from-[#0EA5E9]/20 to-white border-b">
+                <CardTitle className="text-lg text-temple-maroon">{t("common.detailedReport")}</CardTitle>
+                <Button 
+                  onClick={exportReport}
+                  variant="outline"
+                  className="border-temple-maroon text-temple-maroon hover:bg-temple-maroon/10 flex items-center gap-2"
+                  disabled={
+                    (reportType === 'daily' && filteredSales.length === 0) ||
+                    (reportType === 'category' && categoryData.length === 0) ||
+                    (reportType === 'author' && authorData.length === 0) ||
+                    (reportType === 'institute' && instituteData.length === 0)
+                  }
+                >
+                  <Download className="h-4 w-4" />
+                  {t("common.exportCSV")}
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      {reportType === 'daily' || reportType === 'weekly' || reportType === 'monthly' ? (
+                        <>
+                          <TableHead>{t("common.date")}</TableHead>
+                          <TableHead>{t("common.book")}</TableHead>
+                          <TableHead>{t("common.seller")}</TableHead>
+                          <TableHead>{t("common.quantity")}</TableHead>
+                          <TableHead className="text-right">{t("common.amount")}</TableHead>
+                        </>
+                      ) : (
+                        <>
+                          <TableHead>{reportType === 'category' ? t("common.category") : 
+                                      reportType === 'author' ? t("common.author") : t("common.publisher")}</TableHead>
+                          <TableHead className="text-right">{t("common.quantitySold")}</TableHead>
+                        </>
+                      )}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {reportType === 'daily' || reportType === 'weekly' || reportType === 'monthly' ? (
+                      getCurrentData().map((sale: Sale) => {
+                        const book = books.find(b => b.id === sale.bookId);
+                        return (
+                          <TableRow key={sale.id}>
+                            <TableCell>{new Date(sale.createdAt).toLocaleDateString()}</TableCell>
+                            <TableCell>{book?.name || t("common.unknownBook")}</TableCell>
+                            <TableCell>{personnelNames[sale.personnelId] || t("common.unknownSeller")}</TableCell>
+                            <TableCell>{sale.quantity}</TableCell>
+                            <TableCell className="text-right font-semibold">₹{sale.totalAmount}</TableCell>
+                          </TableRow>
+                        );
+                      })
+                    ) : (
+                      getCurrentData().map((item: any, index: number) => (
+                        <TableRow key={index}>
+                          <TableCell>{item.name}</TableCell>
+                          <TableCell className="text-right font-semibold">{item.value}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                    
+                    {getCurrentData().length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={reportType === 'daily' || reportType === 'weekly' || reportType === 'monthly' ? 5 : 2} className="text-center py-6">
+                          {t("common.noDataAvailable")}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+                
+                {totalPages > 1 && (
+                  <div className="mt-4 flex justify-center">
+                    <Pagination>
+                      <PaginationContent>
+                        {currentPage > 1 && (
+                          <PaginationItem>
+                            <PaginationPrevious onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} />
+                          </PaginationItem>
+                        )}
+                        
+                        {[...Array(Math.min(totalPages, 5))].map((_, i) => {
+                          const pageNum = i + 1;
+                          return (
+                            <PaginationItem key={pageNum}>
+                              <PaginationLink 
+                                isActive={currentPage === pageNum}
+                                onClick={() => setCurrentPage(pageNum)}
+                              >
+                                {pageNum}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        })}
+                        
+                        {currentPage < totalPages && (
+                          <PaginationItem>
+                            <PaginationNext onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} />
+                          </PaginationItem>
+                        )}
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            {/* Charts Section - Now shown after the detailed report */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
               {/* Sales Trend Chart */}
               <Card className="temple-card overflow-hidden bg-white border border-gray-200 shadow-md">
@@ -521,115 +648,6 @@ const ReportsPage: React.FC = () => {
                 </CardContent>
               </Card>
             </div>
-            
-            {/* Detailed Sales Table */}
-            <Card className="temple-card overflow-hidden bg-white border border-gray-200 shadow-md mb-6">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 bg-gradient-to-r from-[#0EA5E9]/20 to-white border-b">
-                <CardTitle className="text-lg text-temple-maroon">{t("common.detailedReport")}</CardTitle>
-                <Button 
-                  onClick={exportReport}
-                  variant="outline"
-                  className="border-temple-maroon text-temple-maroon hover:bg-temple-maroon/10 flex items-center gap-2"
-                  disabled={
-                    (reportType === 'daily' && filteredSales.length === 0) ||
-                    (reportType === 'category' && categoryData.length === 0) ||
-                    (reportType === 'author' && authorData.length === 0) ||
-                    (reportType === 'institute' && instituteData.length === 0)
-                  }
-                >
-                  <Download className="h-4 w-4" />
-                  {t("common.exportCSV")}
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      {reportType === 'daily' || reportType === 'weekly' || reportType === 'monthly' ? (
-                        <>
-                          <TableHead>{t("common.date")}</TableHead>
-                          <TableHead>{t("common.book")}</TableHead>
-                          <TableHead>{t("common.seller")}</TableHead>
-                          <TableHead>{t("common.quantity")}</TableHead>
-                          <TableHead className="text-right">{t("common.amount")}</TableHead>
-                        </>
-                      ) : (
-                        <>
-                          <TableHead>{reportType === 'category' ? t("common.category") : 
-                                      reportType === 'author' ? t("common.author") : t("common.publisher")}</TableHead>
-                          <TableHead className="text-right">{t("common.quantitySold")}</TableHead>
-                        </>
-                      )}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {reportType === 'daily' || reportType === 'weekly' || reportType === 'monthly' ? (
-                      getCurrentData().map((sale: Sale) => {
-                        const book = books.find(b => b.id === sale.bookId);
-                        return (
-                          <TableRow key={sale.id}>
-                            <TableCell>{new Date(sale.createdAt).toLocaleDateString()}</TableCell>
-                            <TableCell>{book?.name || t("common.unknownBook")}</TableCell>
-                            <TableCell>{sale.personnelId || t("common.unknownSeller")}</TableCell>
-                            <TableCell>{sale.quantity}</TableCell>
-                            <TableCell className="text-right font-semibold">₹{sale.totalAmount}</TableCell>
-                          </TableRow>
-                        );
-                      })
-                    ) : (
-                      getCurrentData().map((item: any, index: number) => (
-                        <TableRow key={index}>
-                          <TableCell>{item.name}</TableCell>
-                          <TableCell className="text-right font-semibold">{item.value}</TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                    
-                    {getCurrentData().length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={reportType === 'daily' || reportType === 'weekly' || reportType === 'monthly' ? 5 : 2} className="text-center py-6">
-                          {t("common.noDataAvailable")}
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-                
-                {totalPages > 1 && (
-                  <div className="mt-4 flex justify-center">
-                    <Pagination>
-                      <PaginationContent>
-                        {currentPage > 1 && (
-                          <PaginationItem>
-                            <PaginationPrevious onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} />
-                          </PaginationItem>
-                        )}
-                        
-                        {[...Array(Math.min(totalPages, 5))].map((_, i) => {
-                          const pageNum = i + 1;
-                          return (
-                            <PaginationItem key={pageNum}>
-                              <PaginationLink 
-                                isActive={currentPage === pageNum}
-                                onClick={() => setCurrentPage(pageNum)}
-                              >
-                                {pageNum}
-                              </PaginationLink>
-                            </PaginationItem>
-                          );
-                        })}
-                        
-                        {currentPage < totalPages && (
-                          <PaginationItem>
-                            <PaginationNext onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} />
-                          </PaginationItem>
-                        )}
-                      </PaginationContent>
-                    </Pagination>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </>
         )}
       </main>
