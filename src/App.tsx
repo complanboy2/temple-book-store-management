@@ -13,7 +13,6 @@ import SearchPage from "./pages/SearchPage";
 import NotFound from "./pages/NotFound";
 import AdminPage from "./pages/AdminPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
-import SuperAdminPage from "./pages/SuperAdminPage";
 import CompleteSignupPage from "./pages/CompleteSignupPage";
 import { AuthProvider } from "./contexts/AuthContext";
 import { StallProvider } from "./contexts/StallContext";
@@ -62,7 +61,6 @@ function App() {
               <Route path="/sales" element={<SalesPage />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/admin" element={<AdminPage />} />
-              <Route path="/super-admin" element={<SuperAdminPage />} />
               <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
               <Route path="/sell/:id" element={<SellBookPage />} />
               <Route path="/sell/new" element={<SellBookPage />} />

@@ -87,6 +87,13 @@ export const cacheBookDetails = (book: Book): void => {
     };
     
     localStorage.setItem(`book_details_${book.id}`, JSON.stringify(cache));
+    
+    // Also cache the image if available
+    if (book.imageUrl) {
+      cacheImage(book.imageUrl).catch(error => 
+        console.warn(`Failed to cache image for book ${book.id}: ${error}`)
+      );
+    }
   } catch (error) {
     console.error("Error caching book details:", error);
   }
@@ -117,6 +124,8 @@ interface ImageCache {
 
 export const cacheImage = async (imageUrl: string): Promise<string | null> => {
   try {
+    if (!imageUrl) return null;
+    
     // Create a hash of the URL to use as a key
     const urlHash = CryptoJS.MD5(imageUrl).toString();
     const cacheKey = `img_${urlHash}`;
@@ -128,11 +137,13 @@ export const cacheImage = async (imageUrl: string): Promise<string | null> => {
       const isExpired = Date.now() - cache.timestamp > CACHE_EXPIRY.IMAGES;
 
       if (!isExpired) {
+        console.log("Using cached image from localStorage");
         return cache.dataUrl;
       }
     }
 
     // Fetch the image and convert to data URL
+    console.log("Fetching image to cache:", imageUrl);
     const response = await fetch(imageUrl);
     if (!response.ok) throw new Error("Failed to fetch image");
     
@@ -167,6 +178,8 @@ export const cacheImage = async (imageUrl: string): Promise<string | null> => {
 };
 
 export const getCachedImage = (imageUrl: string): string | null => {
+  if (!imageUrl) return null;
+  
   try {
     const urlHash = CryptoJS.MD5(imageUrl).toString();
     const cacheKey = `img_${urlHash}`;
@@ -178,6 +191,7 @@ export const getCachedImage = (imageUrl: string): string | null => {
     const isExpired = Date.now() - cache.timestamp > CACHE_EXPIRY.IMAGES;
 
     if (isExpired) {
+      console.log("Image cache expired, returning null");
       return null;
     }
 
@@ -191,12 +205,14 @@ export const getCachedImage = (imageUrl: string): string | null => {
 // Clear expired caches
 export const clearExpiredCaches = (): void => {
   try {
+    console.log("Clearing expired caches from localStorage");
     Object.keys(localStorage).forEach(key => {
       if (key.startsWith('books_')) {
         try {
           const cache: BookCache = JSON.parse(localStorage.getItem(key) || '{}');
           if (Date.now() - cache.timestamp > CACHE_EXPIRY.BOOKS) {
             localStorage.removeItem(key);
+            console.log(`Removed expired book cache: ${key}`);
           }
         } catch (e) {
           localStorage.removeItem(key); // Remove invalid entries
@@ -206,6 +222,7 @@ export const clearExpiredCaches = (): void => {
           const cache: ImageCache = JSON.parse(localStorage.getItem(key) || '{}');
           if (Date.now() - cache.timestamp > CACHE_EXPIRY.IMAGES) {
             localStorage.removeItem(key);
+            console.log(`Removed expired image cache: ${key}`);
           }
         } catch (e) {
           localStorage.removeItem(key); // Remove invalid entries
@@ -215,6 +232,7 @@ export const clearExpiredCaches = (): void => {
           const cache: BookDetailsCache = JSON.parse(localStorage.getItem(key) || '{}');
           if (Date.now() - cache.timestamp > CACHE_EXPIRY.BOOK_DETAILS) {
             localStorage.removeItem(key);
+            console.log(`Removed expired book details cache: ${key}`);
           }
         } catch (e) {
           localStorage.removeItem(key); // Remove invalid entries
@@ -230,6 +248,7 @@ export const clearExpiredCaches = (): void => {
 export const storeInviteCode = (code: string): void => {
   try {
     localStorage.setItem('pending_invite_code', code);
+    console.log(`Stored invite code in localStorage: ${code}`);
   } catch (error) {
     console.error("Error storing invite code:", error);
   }
@@ -237,7 +256,9 @@ export const storeInviteCode = (code: string): void => {
 
 export const getPendingInviteCode = (): string | null => {
   try {
-    return localStorage.getItem('pending_invite_code');
+    const code = localStorage.getItem('pending_invite_code');
+    console.log(`Retrieved invite code from localStorage: ${code}`);
+    return code;
   } catch (error) {
     console.error("Error retrieving invite code:", error);
     return null;
@@ -247,7 +268,9 @@ export const getPendingInviteCode = (): string | null => {
 export const clearPendingInviteCode = (): void => {
   try {
     localStorage.removeItem('pending_invite_code');
+    console.log("Cleared invite code from localStorage");
   } catch (error) {
     console.error("Error clearing invite code:", error);
   }
 };
+

@@ -22,6 +22,7 @@ export const useBookManager = (stallId: string | null) => {
   const [isCached, setIsCached] = useState(false);
   const isMounted = useRef(true);
   const fetchInProgress = useRef(false);
+  const initialFetchDone = useRef(false);
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -76,6 +77,7 @@ export const useBookManager = (stallId: string | null) => {
             applyFilters(cachedBooks, searchTerm, selectedCategory);
             setIsLoading(false);
             fetchInProgress.current = false;
+            initialFetchDone.current = true;
             
             // After using cache, trigger background refresh if it's older than 5 minutes
             const cacheAge = now - lastFetchTime;
@@ -103,6 +105,7 @@ export const useBookManager = (stallId: string | null) => {
       fetchInProgress.current = false;
       if (isMounted.current) {
         setIsLoading(false);
+        initialFetchDone.current = true;
       }
     }
   }, [stallId, toast, t, books.length, searchTerm, selectedCategory, lastFetchTime]);
@@ -197,9 +200,9 @@ export const useBookManager = (stallId: string | null) => {
   useEffect(() => {
     console.log("useEffect for initial fetch triggered with stallId:", stallId);
     
-    // Only fetch if stallId exists
-    if (stallId) {
-      fetchBooks(true); // Force refresh on stallId change
+    // Only fetch if stallId exists and initial fetch hasn't been done
+    if (stallId && !initialFetchDone.current) {
+      fetchBooks();
     }
     
     // No cleanup needed for this effect

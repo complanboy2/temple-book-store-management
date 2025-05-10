@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Search, BarChart2, BookIcon } from "lucide-react";
@@ -84,16 +83,19 @@ const Index = () => {
     return () => clearInterval(intervalId);
   }, [currentStore]);
   
-  // Navigation handlers for clickable stat cards - with proper filters
+  // Navigation handlers for clickable stat cards
   const goToBooks = () => navigate("/books");
+  
   const goToTodaySales = () => {
     // Create today's date string in ISO format for filtering
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString();
+    const todayStr = today.toISOString().split('T')[0];
     navigate(`/sales?fromDate=${todayStr}`);
   };
+  
   const goToRevenue = () => navigate("/sales");
+  
   const goToLowStock = () => navigate("/books?lowStock=true");
   
   if (!isAuthenticated) {
