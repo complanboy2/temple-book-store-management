@@ -32,7 +32,7 @@ const SellMultipleBooksPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const { currentStore } = useStallContext();
-  const { user } = useAuth();
+  const { currentUser } = useAuth(); // Using currentUser instead of user
   const { t } = useTranslation();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -177,7 +177,7 @@ const SellMultipleBooksPage: React.FC = () => {
           paymentmethod: paymentMethod,
           buyername: buyerName || null,
           buyerphone: buyerPhone || null,
-          personnelid: user?.id,
+          personnelid: currentUser?.id, // Using currentUser?.id instead of user?.id
           stallid: currentStore,
           synced: false
         };

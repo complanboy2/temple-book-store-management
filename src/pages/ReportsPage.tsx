@@ -91,15 +91,14 @@ const ReportsPage: React.FC = () => {
           throw new Error(`Error fetching sales: ${salesError.message}`);
         }
         
-        // Fetch personnel data to map IDs to names
+        // Fetch personnel data to map IDs to names from users table instead of stall_personnel
         const { data: personnelData, error: personnelError } = await supabase
-          .from('stall_personnel')
-          .select('id, name')
-          .eq('stall_id', currentStore);
+          .from('users')
+          .select('id, name');
           
         if (personnelError) {
           console.error("Error fetching personnel data:", personnelError);
-        } else {
+        } else if (personnelData) {
           // Create a mapping of personnel IDs to names
           const nameMap: Record<string, string> = {};
           personnelData.forEach(person => {

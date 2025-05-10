@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Book, Home, Package2, Search, ShoppingCart, PieChart, LayoutGrid } from 'lucide-react';
+import { Book, Home, Search, ShoppingCart, PieChart } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const MobileNavBar: React.FC = () => {

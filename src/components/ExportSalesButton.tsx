@@ -58,17 +58,21 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
       if (!currentStore) return;
       
       try {
+        // Instead of querying stall_personnel which doesn't exist in the schema,
+        // query the users table which contains the personnel information
         const { data, error } = await supabase
-          .from('stall_personnel')
+          .from('users')
           .select('id, name')
-          .eq('stall_id', currentStore);
+          .eq('instituteid', currentStore);
           
         if (error) throw error;
         
         const nameMap: Record<string, string> = {};
-        data.forEach(person => {
-          nameMap[person.id] = person.name;
-        });
+        if (data) {
+          data.forEach(person => {
+            nameMap[person.id] = person.name;
+          });
+        }
         
         setPersonnelNames(nameMap);
       } catch (error) {
