@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, BarChart2, BookIcon, Package } from "lucide-react";
+import { Plus, Search, BarChart2, BookIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MobileHeader from "@/components/MobileHeader";
 import { useStallContext } from "@/contexts/StallContext";
@@ -84,6 +84,12 @@ const Index = () => {
     return () => clearInterval(intervalId);
   }, [currentStore]);
   
+  // Navigation handlers for clickable stat cards
+  const goToBooks = () => navigate("/books");
+  const goToTodaySales = () => navigate("/sales?today=1");
+  const goToRevenue = () => navigate("/sales");
+  const goToLowStock = () => navigate("/books?lowStock=1");
+  
   if (!isAuthenticated) {
     return null; // Will redirect to login in useEffect
   }
@@ -104,23 +110,32 @@ const Index = () => {
       
       {currentStore ? (
         <div className="mobile-container px-4 py-6">
-          {/* Stats Cards */}
+          {/* Stats Cards - Now Clickable */}
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <Card className="bg-white border-temple-gold/20 shadow-sm">
+            <Card 
+              onClick={goToBooks}
+              className="bg-white border-temple-gold/20 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
+            >
               <CardContent className="p-4">
                 <h3 className="text-sm text-gray-600 mb-1">{t("dashboard.totalBooks")}</h3>
                 <p className="text-2xl font-bold text-temple-maroon">{isLoading ? "..." : totalBooks}</p>
               </CardContent>
             </Card>
             
-            <Card className="bg-white border-temple-gold/20 shadow-sm">
+            <Card 
+              onClick={goToTodaySales}
+              className="bg-white border-temple-gold/20 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
+            >
               <CardContent className="p-4">
                 <h3 className="text-sm text-gray-600 mb-1">{t("dashboard.salesToday")}</h3>
                 <p className="text-2xl font-bold text-temple-saffron">{isLoading ? "..." : todaySales}</p>
               </CardContent>
             </Card>
             
-            <Card className="bg-white border-temple-gold/20 shadow-sm">
+            <Card 
+              onClick={goToRevenue}
+              className="bg-white border-temple-gold/20 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
+            >
               <CardContent className="p-4">
                 <h3 className="text-sm text-gray-600 mb-1">{t("dashboard.revenue")}</h3>
                 <p className="text-2xl font-bold text-green-600">
@@ -129,7 +144,10 @@ const Index = () => {
               </CardContent>
             </Card>
             
-            <Card className={`bg-white border-temple-gold/20 shadow-sm ${lowStockCount > 0 ? 'border-red-300' : ''}`}>
+            <Card 
+              onClick={goToLowStock}
+              className={`bg-white border-temple-gold/20 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors ${lowStockCount > 0 ? 'border-red-300' : ''}`}
+            >
               <CardContent className="p-4">
                 <h3 className="text-sm text-gray-600 mb-1">{t("dashboard.lowStock")}</h3>
                 <p className={`text-2xl font-bold ${lowStockCount > 0 ? 'text-red-500' : 'text-temple-maroon'}`}>
@@ -173,36 +191,6 @@ const Index = () => {
                       onClick={() => navigate("/search")}
                     >
                       <Search size={16} className="mr-1" /> {t("common.search")}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Order Management */}
-            <div className="mobile-card">
-              <h2 className="mobile-header">{t("common.orderManagement")}</h2>
-              
-              <div className="grid grid-cols-1 gap-4 mt-4">
-                <div className="flex flex-col bg-temple-background/50 rounded-lg p-4 border border-temple-gold/20">
-                  <h3 className="font-medium mb-1">{t("common.manageOrders")}</h3>
-                  <p className="text-sm text-gray-600 mb-3">{t("common.orderManagementDescription")}</p>
-                  
-                  <div className="flex flex-wrap gap-2 mt-auto">
-                    <Button 
-                      variant="outline"
-                      className="flex-1 justify-center border-temple-gold/30 text-temple-maroon flex items-center"
-                      onClick={() => navigate("/orders")}
-                    >
-                      <Package size={16} className="mr-1" /> {t("common.viewOrders")}
-                    </Button>
-                    
-                    <Button 
-                      variant="outline"
-                      className="flex-1 justify-center border-temple-gold/30 text-temple-maroon flex items-center"
-                      onClick={() => navigate("/orders/new")}
-                    >
-                      <Plus size={16} className="mr-1" /> {t("common.newOrder")}
                     </Button>
                   </div>
                 </div>

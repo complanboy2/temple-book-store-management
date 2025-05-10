@@ -1,3 +1,4 @@
+
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
@@ -42,7 +43,6 @@ const newEnTranslations = {
     saving: "Saving...",
     selectABook: "Please select a book",
     selectBook: "Select Book",
-    sellerName: "Seller", 
     templeBookStall: "Temple Book Stall",
     unknownError: "Unknown error occurred",
     welcomeToBookStore: "Welcome to Book Store",
@@ -111,6 +111,7 @@ const newEnTranslations = {
     description: "Description",
     language: "Language",
     printingInstitute: "Printing Institute",
+    selectInstitute: "Select Printing Institute",
     barcode: "Barcode",
     image: "Image",
     save: "Save",
@@ -119,15 +120,23 @@ const newEnTranslations = {
     remove: "Remove",
     selectCategory: "Select Category",
     selectLanguage: "Select Language",
-    selectInstitute: "Select Institute",
     originalPrice: "Original Price",
-    salePrice: "Sale Price"
+    salePrice: "Sale Price",
+    onlyRemaining: "Only",
+    left: "left",
+    lowStockAlert: "Low Stock Alert",
+    viewAll: "View All",
+    addStore: "Add Store",
+    sold: "sold",
+    sellerName: "Seller"
   },
   dashboard: {
     revenue: "Revenue",
     lowStock: "Low Stock",
     salesToday: "Sales Today",
-    totalBooks: "Total Books"
+    totalBooks: "Total Books",
+    topSellingBooks: "Top Selling Books",
+    recentSales: "Recent Sales"
   },
   sell: {
     buyerName: "Buyer's Name",

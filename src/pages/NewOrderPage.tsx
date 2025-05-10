@@ -14,14 +14,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Book } from "@/types";
 import { generateId } from "@/services/storageService";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, Trash } from "lucide-react";
+import BookImage from "@/components/BookImage";
+
+type OrderItem = {
+  bookId: string;
+  bookName: string;
+  quantity: number;
+  priceAtOrder: number;
+  imageUrl?: string;
+};
 
 const NewOrderPage: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [selectedBookId, setSelectedBookId] = useState<string>("");
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [quantity, setQuantity] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [printingInstitute, setPrintingInstitute] = useState<string>("");
+  const [institutes, setInstitutes] = useState<string[]>([]);
   
   const navigate = useNavigate();
   const { currentStore } = useStallContext();
@@ -75,6 +87,13 @@ const NewOrderPage: React.FC = () => {
           }));
 
           setBooks(formattedBooks);
+          
+          // Extract unique printing institutes
+          const uniqueInstitutes = Array.from(
+            new Set(formattedBooks.map(book => book.printingInstitute).filter(Boolean))
+          );
+          setInstitutes(uniqueInstitutes);
+          
           if (formattedBooks.length > 0) {
             setSelectedBookId(formattedBooks[0].id);
           }
@@ -106,10 +125,54 @@ const NewOrderPage: React.FC = () => {
     }
   };
 
+  const handleAddBook = () => {
+    const selectedBook = books.find(book => book.id === selectedBookId);
+    if (!selectedBook) {
+      toast({
+        title: t("common.error"),
+        description: t("common.selectABook"),
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Check if book already exists in order items
+    const existingItemIndex = orderItems.findIndex(item => item.bookId === selectedBookId);
+    
+    if (existingItemIndex >= 0) {
+      // Update existing item
+      const updatedItems = [...orderItems];
+      updatedItems[existingItemIndex].quantity += quantity;
+      setOrderItems(updatedItems);
+    } else {
+      // Add new item
+      setOrderItems([...orderItems, {
+        bookId: selectedBook.id,
+        bookName: selectedBook.name,
+        quantity: quantity,
+        priceAtOrder: selectedBook.salePrice,
+        imageUrl: selectedBook.imageUrl
+      }]);
+    }
+    
+    // Reset quantity
+    setQuantity(1);
+  };
+  
+  const handleRemoveItem = (index: number) => {
+    const updatedItems = [...orderItems];
+    updatedItems.splice(index, 1);
+    setOrderItems(updatedItems);
+  };
+
+  const calculateTotal = () => {
+    return orderItems.reduce((sum, item) => sum + (item.priceAtOrder * item.quantity), 0);
+  };
+
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedBookId || !currentStore) {
+    if (!orderItems.length || !currentStore) {
       toast({
         title: t("common.error"),
         description: t("common.selectABook"),
@@ -121,13 +184,9 @@ const NewOrderPage: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      const selectedBook = books.find(book => book.id === selectedBookId);
-      if (!selectedBook) {
-        throw new Error(t("common.bookNotFound"));
-      }
-      
       const orderId = generateId();
       const orderDate = new Date();
+      const totalAmount = calculateTotal();
       
       // Create the order entry
       const { error } = await supabase
@@ -137,10 +196,11 @@ const NewOrderPage: React.FC = () => {
           status: 'pending',
           stallid: currentStore,
           adminid: currentUser?.id || "",
-          totalamount: selectedBook.salePrice * quantity,
+          totalamount: totalAmount,
           orderdate: orderDate.toISOString(),
           paymentstatus: "pending",
           createdat: orderDate.toISOString(),
+          printinginstitute: printingInstitute,
           customername: "Store Order" // Required field but using fixed value
         });
       
@@ -149,20 +209,22 @@ const NewOrderPage: React.FC = () => {
         throw new Error(t("common.failedToCreateOrder"));
       }
 
-      // Create the order item
-      const { error: itemError } = await supabase
-        .from('order_items')
-        .insert({
-          orderid: orderId,
-          bookid: selectedBookId,
-          quantity: quantity,
-          priceatorder: selectedBook.salePrice,
-          fulfilled: 0
-        });
+      // Create the order items
+      for (const item of orderItems) {
+        const { error: itemError } = await supabase
+          .from('order_items')
+          .insert({
+            orderid: orderId,
+            bookid: item.bookId,
+            quantity: item.quantity,
+            priceatorder: item.priceAtOrder,
+            fulfilled: 0
+          });
 
-      if (itemError) {
-        console.error("Error creating order item:", itemError);
-        throw new Error(t("common.failedToCreateOrder"));
+        if (itemError) {
+          console.error("Error creating order item:", itemError);
+          throw new Error(t("common.failedToCreateOrder"));
+        }
       }
 
       toast({
@@ -204,49 +266,126 @@ const NewOrderPage: React.FC = () => {
               </div>
             ) : (
               <form onSubmit={handleCreateOrder} className="space-y-6">
+                {/* Printing Institute Field */}
                 <div className="grid gap-2">
-                  <Label htmlFor="book">{t("common.selectBook")}</Label>
+                  <Label htmlFor="printingInstitute">{t("common.printingInstitute")}</Label>
                   <Select 
-                    value={selectedBookId} 
-                    onValueChange={setSelectedBookId}
-                    disabled={books.length === 0}
+                    value={printingInstitute} 
+                    onValueChange={setPrintingInstitute}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder={t("common.selectBook")} />
+                      <SelectValue placeholder={t("common.selectInstitute")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {books.length > 0 ? (
-                        books.map((book) => (
-                          <SelectItem key={book.id} value={book.id}>
-                            {book.name} - {book.author} (₹{book.salePrice})
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="no-books" disabled>
-                          {t("common.noBooks")}
+                      <SelectItem value="">-- {t("common.selectInstitute")} --</SelectItem>
+                      {institutes.map((inst) => (
+                        <SelectItem key={inst} value={inst}>
+                          {inst}
                         </SelectItem>
-                      )}
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 
+                {/* Book Selection */}
                 <div className="grid gap-2">
-                  <Label htmlFor="quantity">{t("common.quantity")}</Label>
-                  <Input
-                    id="quantity"
-                    type="number"
-                    value={quantity}
-                    onChange={handleQuantityChange}
-                    min={1}
-                    className="max-w-xs"
-                  />
+                  <Label htmlFor="book">{t("common.selectBook")}</Label>
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Select 
+                        value={selectedBookId} 
+                        onValueChange={setSelectedBookId}
+                        disabled={books.length === 0}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder={t("common.selectBook")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {books.length > 0 ? (
+                            books.map((book) => (
+                              <SelectItem key={book.id} value={book.id}>
+                                {book.name} - ({t("common.availableQuantity")}: {book.quantity})
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="no-books" disabled>
+                              {t("common.noBooks")}
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="w-20">
+                      <Input
+                        id="quantity"
+                        type="number"
+                        value={quantity}
+                        onChange={handleQuantityChange}
+                        min={1}
+                      />
+                    </div>
+                    <Button 
+                      type="button" 
+                      onClick={handleAddBook}
+                      disabled={!selectedBookId || books.length === 0}
+                      className="bg-temple-saffron hover:bg-temple-saffron/90"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
+                
+                {/* Order Items List */}
+                {orderItems.length > 0 && (
+                  <div className="border rounded-md overflow-hidden">
+                    <div className="bg-gray-100 px-4 py-2 font-medium text-sm">
+                      {t("common.books")}
+                    </div>
+                    <div className="p-1">
+                      {orderItems.map((item, index) => {
+                        const book = books.find(b => b.id === item.bookId);
+                        return (
+                          <div 
+                            key={index} 
+                            className="flex items-center p-2 border-b last:border-b-0"
+                          >
+                            <div className="h-12 w-12 mr-3 flex-shrink-0">
+                              <BookImage 
+                                imageUrl={item.imageUrl} 
+                                className="h-full w-full" 
+                                alt={item.bookName}
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-medium text-sm">{item.bookName}</p>
+                              <p className="text-xs text-gray-600">
+                                {t("common.quantity")}: {item.quantity} × ₹{item.priceAtOrder} = ₹{item.quantity * item.priceAtOrder}
+                              </p>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              className="text-red-500 h-8 w-8"
+                              onClick={() => handleRemoveItem(index)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="bg-gray-50 px-4 py-2 flex justify-between items-center">
+                      <span className="font-medium">{t("common.total")}</span>
+                      <span className="text-xl font-bold text-temple-maroon">₹{calculateTotal()}</span>
+                    </div>
+                  </div>
+                )}
 
                 <div className="pt-4">
                   <Button 
                     type="submit" 
                     className="w-full" 
-                    disabled={isSubmitting || !selectedBookId || books.length === 0}
+                    disabled={isSubmitting || orderItems.length === 0}
                   >
                     {isSubmitting ? (
                       <>

@@ -4,6 +4,7 @@ import { Book } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { cacheBooks, getCachedBooks, clearExpiredCaches } from "@/services/localStorageService";
 
 export const useBookManager = (stallId: string | null) => {
   const [books, setBooks] = useState<Book[]>([]);
@@ -16,6 +17,11 @@ export const useBookManager = (stallId: string | null) => {
   const fetchInProgress = useRef(false);
   const { toast } = useToast();
   const { t } = useTranslation();
+
+  // Clear expired caches on mount
+  useEffect(() => {
+    clearExpiredCaches();
+  }, []);
 
   // Stable fetch function that doesn't recreate on each render
   const fetchBooks = useCallback(async (forceRefresh = false) => {
@@ -43,7 +49,7 @@ export const useBookManager = (stallId: string | null) => {
     
     // Skip refetching if we fetched recently, unless forced
     if (!forceRefresh && now - lastFetchTime < CACHE_TIME && books.length > 0) {
-      console.log(`Using cached books data, last fetch was ${(now - lastFetchTime) / 1000} seconds ago`);
+      console.log(`Using in-memory books data, last fetch was ${(now - lastFetchTime) / 1000} seconds ago`);
       return;
     }
 
@@ -51,7 +57,24 @@ export const useBookManager = (stallId: string | null) => {
       fetchInProgress.current = true;
       setIsLoading(true);
       
-      console.log("Fetching books for store ID:", stallId);
+      // First try to get books from local storage cache
+      if (!forceRefresh) {
+        const cachedBooks = getCachedBooks(stallId);
+        if (cachedBooks && cachedBooks.length > 0) {
+          console.log(`Using ${cachedBooks.length} cached books from localStorage`);
+          if (isMounted.current) {
+            setBooks(cachedBooks);
+            setLastFetchTime(now);
+            applyFilters(cachedBooks, searchTerm, selectedCategory);
+            setIsLoading(false);
+            fetchInProgress.current = false;
+            return;
+          }
+        }
+      }
+      
+      // If no cache or forced refresh, fetch from API
+      console.log("Fetching books from API for store ID:", stallId);
       
       const { data, error } = await supabase
         .from("books")
@@ -89,25 +112,13 @@ export const useBookManager = (stallId: string | null) => {
           updatedAt: row.updatedat ? new Date(row.updatedat) : new Date()
         }));
 
+        // Cache the books in localStorage
+        cacheBooks(result, stallId);
+
         if (isMounted.current) {
           setLastFetchTime(now);
           setBooks(result);
-          
-          // Apply current filters to new data
-          let filtered = [...result];
-          if (searchTerm) {
-            filtered = filtered.filter(book => 
-              book.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              (book.category && book.category.toLowerCase().includes(searchTerm.toLowerCase()))
-            );
-          }
-          
-          if (selectedCategory) {
-            filtered = filtered.filter(book => book.category === selectedCategory);
-          }
-          
-          setFilteredBooks(filtered);
+          applyFilters(result, searchTerm, selectedCategory);
         }
       } else {
         // Handle case when data is null or not an array
@@ -130,7 +141,26 @@ export const useBookManager = (stallId: string | null) => {
         setIsLoading(false);
       }
     }
-  }, [stallId, toast, t, books.length]);
+  }, [stallId, toast, t, books.length, searchTerm, selectedCategory]);
+
+  // Helper function to apply filters
+  const applyFilters = (booksToFilter: Book[], search: string, category: string) => {
+    let results = [...booksToFilter];
+    
+    if (search) {
+      results = results.filter(book => 
+        book.name.toLowerCase().includes(search.toLowerCase()) ||
+        book.author.toLowerCase().includes(search.toLowerCase()) ||
+        (book.category && book.category.toLowerCase().includes(search.toLowerCase()))
+      );
+    }
+    
+    if (category) {
+      results = results.filter(book => book.category === category);
+    }
+    
+    setFilteredBooks(results);
+  };
 
   // Initial fetch on mount or stallId change
   useEffect(() => {
@@ -156,26 +186,7 @@ export const useBookManager = (stallId: string | null) => {
 
   // Filter books when search term or category changes
   useEffect(() => {
-    if (!books || books.length === 0) {
-      setFilteredBooks([]);
-      return;
-    }
-    
-    let results = [...books];
-    
-    if (searchTerm) {
-      results = results.filter(book => 
-        book.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (book.category && book.category.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-    }
-    
-    if (selectedCategory) {
-      results = results.filter(book => book.category === selectedCategory);
-    }
-    
-    setFilteredBooks(results);
+    applyFilters(books, searchTerm, selectedCategory);
   }, [searchTerm, selectedCategory, books]);
 
   // Delete book functionality
@@ -205,6 +216,9 @@ export const useBookManager = (stallId: string | null) => {
       setFilteredBooks(prevFiltered => 
         prevFiltered.filter(book => book.id !== bookId)
       );
+      
+      // Update cache
+      cacheBooks(updatedBooks, stallId);
       
       toast({
         title: t("common.success"),
