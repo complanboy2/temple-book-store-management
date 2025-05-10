@@ -1,14 +1,15 @@
-
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { storeInviteCode, getPendingInviteCode } from "@/services/localStorageService";
 
 const CompleteSignupPage = () => {
   const { inviteCode } = useParams<{ inviteCode: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { completeRegistration, isAuthenticated } = useAuth();
@@ -16,6 +17,29 @@ const CompleteSignupPage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [invalidInvite, setInvalidInvite] = useState(false);
+
+  // Handle invite code from URL and restore from localStorage if app was installed after receiving link
+  useEffect(() => {
+    // Extract invite code from URL path or query parameter
+    const pathSegments = location.pathname.split('/');
+    const inviteCode = pathSegments[pathSegments.length - 1] !== 'complete-signup' 
+      ? pathSegments[pathSegments.length - 1]
+      : new URLSearchParams(location.search).get('code');
+      
+    if (inviteCode) {
+      console.log("Found invite code in URL:", inviteCode);
+      // Store the code in localStorage for retrieval after app installation
+      storeInviteCode(inviteCode);
+    } else {
+      // Check if we have a pending invite code from before installing the app
+      const pendingCode = getPendingInviteCode();
+      if (pendingCode) {
+        console.log("Retrieved pending invite code from localStorage:", pendingCode);
+        // Use this code for registration
+        // The existing form logic would continue here...
+      }
+    }
+  }, [location.pathname, location.search]);
 
   useEffect(() => {
     // If already authenticated, redirect to dashboard

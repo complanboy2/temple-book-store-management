@@ -5,7 +5,8 @@ import CryptoJS from "crypto-js";
 // Cache expiry settings
 const CACHE_EXPIRY = {
   BOOKS: 30 * 60 * 1000, // 30 minutes
-  IMAGES: 24 * 60 * 60 * 1000 // 24 hours
+  IMAGES: 24 * 60 * 60 * 1000, // 24 hours
+  BOOK_DETAILS: 7 * 24 * 60 * 60 * 1000 // 7 days for static book details
 };
 
 // Book caching
@@ -22,6 +23,11 @@ export const cacheBooks = (books: Book[], stallId: string): void => {
     };
     localStorage.setItem(`books_${stallId}`, JSON.stringify(cache));
     console.log(`Cached ${books.length} books for stall ${stallId}`);
+    
+    // Also cache each book's static details individually for longer term storage
+    books.forEach(book => {
+      cacheBookDetails(book);
+    });
   } catch (error) {
     console.error("Error caching books:", error);
   }
@@ -44,6 +50,61 @@ export const getCachedBooks = (stallId: string): Book[] | null => {
     return cache.books;
   } catch (error) {
     console.error("Error retrieving cached books:", error);
+    return null;
+  }
+};
+
+// Individual book static details caching (longer expiry)
+interface BookDetailsCache {
+  timestamp: number;
+  details: {
+    name: string;
+    author: string;
+    category?: string;
+    printingInstitute?: string;
+    imageUrl?: string;
+    barcode?: string;
+  }
+}
+
+export const cacheBookDetails = (book: Book): void => {
+  try {
+    if (!book.id) return;
+    
+    // Extract only static details that rarely change
+    const staticDetails = {
+      name: book.name,
+      author: book.author,
+      category: book.category,
+      printingInstitute: book.printingInstitute,
+      imageUrl: book.imageUrl,
+      barcode: book.barcode
+    };
+    
+    const cache: BookDetailsCache = {
+      timestamp: Date.now(),
+      details: staticDetails
+    };
+    
+    localStorage.setItem(`book_details_${book.id}`, JSON.stringify(cache));
+  } catch (error) {
+    console.error("Error caching book details:", error);
+  }
+};
+
+export const getCachedBookDetails = (bookId: string): BookDetailsCache['details'] | null => {
+  try {
+    const cacheJson = localStorage.getItem(`book_details_${bookId}`);
+    if (!cacheJson) return null;
+    
+    const cache: BookDetailsCache = JSON.parse(cacheJson);
+    const isExpired = Date.now() - cache.timestamp > CACHE_EXPIRY.BOOK_DETAILS;
+    
+    if (isExpired) return null;
+    
+    return cache.details;
+  } catch (error) {
+    console.error("Error retrieving cached book details:", error);
     return null;
   }
 };
@@ -149,9 +210,44 @@ export const clearExpiredCaches = (): void => {
         } catch (e) {
           localStorage.removeItem(key); // Remove invalid entries
         }
+      } else if (key.startsWith('book_details_')) {
+        try {
+          const cache: BookDetailsCache = JSON.parse(localStorage.getItem(key) || '{}');
+          if (Date.now() - cache.timestamp > CACHE_EXPIRY.BOOK_DETAILS) {
+            localStorage.removeItem(key);
+          }
+        } catch (e) {
+          localStorage.removeItem(key); // Remove invalid entries
+        }
       }
     });
   } catch (error) {
     console.error("Error clearing expired caches:", error);
+  }
+};
+
+// Fix for invite link handling
+export const storeInviteCode = (code: string): void => {
+  try {
+    localStorage.setItem('pending_invite_code', code);
+  } catch (error) {
+    console.error("Error storing invite code:", error);
+  }
+};
+
+export const getPendingInviteCode = (): string | null => {
+  try {
+    return localStorage.getItem('pending_invite_code');
+  } catch (error) {
+    console.error("Error retrieving invite code:", error);
+    return null;
+  }
+};
+
+export const clearPendingInviteCode = (): void => {
+  try {
+    localStorage.removeItem('pending_invite_code');
+  } catch (error) {
+    console.error("Error clearing invite code:", error);
   }
 };

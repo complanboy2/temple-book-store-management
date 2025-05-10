@@ -49,11 +49,12 @@ function App() {
     <AuthProvider>
       <StallProvider>
         <Router>
-          <div className={isMobile ? "pb-20" : ""}>
+          <div className="app-container">
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/complete-signup" element={<CompleteSignupPage />} />
+              <Route path="/complete-signup/:inviteCode" element={<CompleteSignupPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/books" element={<BooksPage />} />
               <Route path="/books/add" element={<AddBookPage />} />

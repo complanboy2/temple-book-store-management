@@ -14,32 +14,44 @@ const BookImage: React.FC<BookImageProps> = ({
   className,
   alt = "Book cover"
 }) => {
-  const [cachedImageUrl, setCachedImageUrl] = useState<string | undefined>(imageUrl);
+  const [cachedImageUrl, setCachedImageUrl] = useState<string | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     if (!imageUrl) {
       setCachedImageUrl(undefined);
+      setIsLoading(false);
       return;
     }
     
     // First check if the image is already in cache
     const cached = getCachedImage(imageUrl);
     if (cached) {
+      console.log("Using cached image from localStorage");
       setCachedImageUrl(cached);
+      setIsLoading(false);
       return;
     }
     
     // If not in cache, fetch and cache it
     const fetchAndCacheImage = async () => {
       try {
+        setIsLoading(true);
         const dataUrl = await cacheImage(imageUrl);
         if (dataUrl) {
+          console.log("Cached new image in localStorage");
           setCachedImageUrl(dataUrl);
+        } else {
+          // Fallback to original URL if caching fails
+          console.warn("Caching failed, using original URL");
+          setCachedImageUrl(imageUrl);
         }
       } catch (error) {
         console.error("Error caching image:", error);
         // Fallback to original URL
         setCachedImageUrl(imageUrl);
+      } finally {
+        setIsLoading(false);
       }
     };
     
@@ -48,7 +60,11 @@ const BookImage: React.FC<BookImageProps> = ({
 
   return (
     <div className={cn("w-full h-40 overflow-hidden rounded-md bg-gray-100 flex items-center justify-center", className)}>
-      {cachedImageUrl ? (
+      {isLoading ? (
+        <div className="w-full h-full flex items-center justify-center bg-gray-100">
+          <span className="animate-pulse bg-gray-200 w-12 h-12 rounded-full"></span>
+        </div>
+      ) : cachedImageUrl ? (
         <img 
           src={cachedImageUrl} 
           alt={alt}

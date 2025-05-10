@@ -84,11 +84,17 @@ const Index = () => {
     return () => clearInterval(intervalId);
   }, [currentStore]);
   
-  // Navigation handlers for clickable stat cards
+  // Navigation handlers for clickable stat cards - with proper filters
   const goToBooks = () => navigate("/books");
-  const goToTodaySales = () => navigate("/sales?today=1");
+  const goToTodaySales = () => {
+    // Create today's date string in ISO format for filtering
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString();
+    navigate(`/sales?fromDate=${todayStr}`);
+  };
   const goToRevenue = () => navigate("/sales");
-  const goToLowStock = () => navigate("/books?lowStock=1");
+  const goToLowStock = () => navigate("/books?lowStock=true");
   
   if (!isAuthenticated) {
     return null; // Will redirect to login in useEffect
@@ -180,7 +186,7 @@ const Index = () => {
                     <Button 
                       variant="outline"
                       className="flex-1 justify-center border-temple-gold/30 text-temple-maroon flex items-center"
-                      onClick={() => navigate("/books")}
+                      onClick={() => navigate("/sell/new")}
                     >
                       <Plus size={16} className="mr-1" /> {t("common.sell")}
                     </Button>

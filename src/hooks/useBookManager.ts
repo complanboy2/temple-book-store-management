@@ -4,7 +4,13 @@ import { Book } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
-import { cacheBooks, getCachedBooks, clearExpiredCaches } from "@/services/localStorageService";
+import { 
+  cacheBooks, 
+  getCachedBooks, 
+  clearExpiredCaches, 
+  cacheBookDetails, 
+  getCachedBookDetails 
+} from "@/services/localStorageService";
 
 export const useBookManager = (stallId: string | null) => {
   const [books, setBooks] = useState<Book[]>([]);
@@ -13,6 +19,7 @@ export const useBookManager = (stallId: string | null) => {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [lastFetchTime, setLastFetchTime] = useState(0);
+  const [isCached, setIsCached] = useState(false);
   const isMounted = useRef(true);
   const fetchInProgress = useRef(false);
   const { toast } = useToast();
@@ -64,70 +71,27 @@ export const useBookManager = (stallId: string | null) => {
           console.log(`Using ${cachedBooks.length} cached books from localStorage`);
           if (isMounted.current) {
             setBooks(cachedBooks);
+            setIsCached(true);
             setLastFetchTime(now);
             applyFilters(cachedBooks, searchTerm, selectedCategory);
             setIsLoading(false);
             fetchInProgress.current = false;
+            
+            // After using cache, trigger background refresh if it's older than 5 minutes
+            const cacheAge = now - lastFetchTime;
+            if (cacheAge > 5 * 60 * 1000) { // 5 minutes
+              console.log("Cache is older than 5 minutes, refreshing in background");
+              setTimeout(() => fetchBooksFromAPI(stallId), 100);
+            }
+            
             return;
           }
         }
       }
       
       // If no cache or forced refresh, fetch from API
-      console.log("Fetching books from API for store ID:", stallId);
+      await fetchBooksFromAPI(stallId);
       
-      const { data, error } = await supabase
-        .from("books")
-        .select("*")
-        .eq("stallid", stallId)
-        .order('createdat', { ascending: false });
-        
-      if (error) {
-        console.error("Error fetching books from Supabase:", error);
-        toast({
-          title: t("common.error"),
-          description: t("common.failedToLoadBooks"),
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (data && Array.isArray(data)) {
-        console.log(`Fetched ${data.length} books for store ${stallId}`);
-        
-        // Transform API result to local Book type
-        const result: Book[] = data.map((row: any) => ({
-          id: row.id,
-          barcode: row.barcode ?? "",
-          name: row.name,
-          author: row.author,
-          category: row.category ?? "",
-          printingInstitute: row.printinginstitute ?? "",
-          originalPrice: row.originalprice,
-          salePrice: row.saleprice,
-          quantity: row.quantity,
-          stallId: row.stallid,
-          imageUrl: row.imageurl,
-          createdAt: row.createdat ? new Date(row.createdat) : new Date(),
-          updatedAt: row.updatedat ? new Date(row.updatedat) : new Date()
-        }));
-
-        // Cache the books in localStorage
-        cacheBooks(result, stallId);
-
-        if (isMounted.current) {
-          setLastFetchTime(now);
-          setBooks(result);
-          applyFilters(result, searchTerm, selectedCategory);
-        }
-      } else {
-        // Handle case when data is null or not an array
-        console.warn("Unexpected data format returned from Supabase:", data);
-        if (isMounted.current) {
-          setBooks([]);
-          setFilteredBooks([]);
-        }
-      }
     } catch (err) {
       console.error("Unexpected error fetching books:", err);
       toast({
@@ -141,11 +105,78 @@ export const useBookManager = (stallId: string | null) => {
         setIsLoading(false);
       }
     }
-  }, [stallId, toast, t, books.length, searchTerm, selectedCategory]);
+  }, [stallId, toast, t, books.length, searchTerm, selectedCategory, lastFetchTime]);
+
+  const fetchBooksFromAPI = async (stallId: string) => {
+    console.log("Fetching books from API for store ID:", stallId);
+    
+    const { data, error } = await supabase
+      .from("books")
+      .select("*")
+      .eq("stallid", stallId)
+      .order('createdat', { ascending: false });
+      
+    if (error) {
+      console.error("Error fetching books from Supabase:", error);
+      toast({
+        title: t("common.error"),
+        description: t("common.failedToLoadBooks"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (data && Array.isArray(data)) {
+      console.log(`Fetched ${data.length} books for store ${stallId}`);
+      
+      // Transform API result to local Book type
+      const result: Book[] = data.map((row: any) => ({
+        id: row.id,
+        barcode: row.barcode ?? "",
+        name: row.name,
+        author: row.author,
+        category: row.category ?? "",
+        printingInstitute: row.printinginstitute ?? "",
+        originalPrice: row.originalprice,
+        salePrice: row.saleprice,
+        quantity: row.quantity,
+        stallId: row.stallid,
+        imageUrl: row.imageUrl || row.imageurl,
+        createdAt: row.createdat ? new Date(row.createdat) : new Date(),
+        updatedAt: row.updatedat ? new Date(row.updatedat) : new Date()
+      }));
+
+      // Cache the books in localStorage
+      cacheBooks(result, stallId);
+      setIsCached(false);
+
+      if (isMounted.current) {
+        setLastFetchTime(Date.now());
+        setBooks(result);
+        applyFilters(result, searchTerm, selectedCategory);
+      }
+    } else {
+      // Handle case when data is null or not an array
+      console.warn("Unexpected data format returned from Supabase:", data);
+      if (isMounted.current) {
+        setBooks([]);
+        setFilteredBooks([]);
+      }
+    }
+  };
 
   // Helper function to apply filters
   const applyFilters = (booksToFilter: Book[], search: string, category: string) => {
     let results = [...booksToFilter];
+    
+    // Filter by low stock if URL contains lowStock=true
+    const urlParams = new URLSearchParams(window.location.search);
+    const lowStockFilter = urlParams.get('lowStock');
+    
+    if (lowStockFilter === "true") {
+      console.log("Filtering for low stock books");
+      results = results.filter(book => (book.quantity ?? 0) < 5);
+    }
     
     if (search) {
       results = results.filter(book => 
@@ -188,6 +219,23 @@ export const useBookManager = (stallId: string | null) => {
   useEffect(() => {
     applyFilters(books, searchTerm, selectedCategory);
   }, [searchTerm, selectedCategory, books]);
+
+  // Listen for URL parameter changes
+  useEffect(() => {
+    const handleURLChange = () => {
+      applyFilters(books, searchTerm, selectedCategory);
+    };
+    
+    // Set up listener for popstate event (back/forward navigation)
+    window.addEventListener('popstate', handleURLChange);
+    
+    // Also apply filters on initial mount
+    handleURLChange();
+    
+    return () => {
+      window.removeEventListener('popstate', handleURLChange);
+    };
+  }, [books, searchTerm, selectedCategory]);
 
   // Delete book functionality
   const deleteBook = async (bookId: string) => {
@@ -257,6 +305,7 @@ export const useBookManager = (stallId: string | null) => {
     selectedCategory,
     setSelectedCategory,
     isLoading,
+    isCached,
     categories,
     deleteBook,
     refreshBooks,
