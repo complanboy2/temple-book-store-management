@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Book, Sale } from "@/types";
@@ -165,14 +164,16 @@ const ReportsPage: React.FC = () => {
     if (start) {
       const startOfDayDate = startOfDay(start);
       filtered = filtered.filter(sale => 
-        isAfter(new Date(sale.createdAt), startOfDayDate)
+        isAfter(new Date(sale.createdAt), startOfDayDate) || 
+        new Date(sale.createdAt).getTime() === startOfDayDate.getTime()
       );
     }
     
     if (end) {
       const endOfDayDate = endOfDay(end);
       filtered = filtered.filter(sale => 
-        isBefore(new Date(sale.createdAt), endOfDayDate)
+        isBefore(new Date(sale.createdAt), endOfDayDate) || 
+        new Date(sale.createdAt).getTime() === endOfDayDate.getTime()
       );
     }
     
@@ -182,10 +183,10 @@ const ReportsPage: React.FC = () => {
   
   // Effect to update filtered data when date range or sales data changes
   useEffect(() => {
-    if (sales.length > 0) {
+    if (sales.length > 0 && books.length > 0) {
       applyDateFilter(sales, books, startDate, endDate);
     }
-  }, [startDate, endDate, sales.length]);
+  }, [startDate, endDate, sales.length, books.length]);
   
   const prepareReportData = (salesData: Sale[], booksData: Book[]) => {
     // Daily sales data
