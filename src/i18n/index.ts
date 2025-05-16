@@ -128,7 +128,8 @@ const newEnTranslations = {
     viewAll: "View All",
     addStore: "Add Store",
     sold: "sold",
-    sellerName: "Seller"
+    sellerName: "Seller",
+    bookManagement: "Book Management"
   },
   dashboard: {
     revenue: "Revenue",
