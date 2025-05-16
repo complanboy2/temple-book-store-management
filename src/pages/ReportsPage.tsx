@@ -367,50 +367,54 @@ const ReportsPage: React.FC = () => {
     <div className="min-h-screen bg-temple-background pb-20">
       <Header />
       
-      <main className="container mx-auto px-4 py-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-          <h1 className="text-2xl font-bold text-temple-maroon mb-4 md:mb-0">
+      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-temple-maroon mb-4 md:mb-0">
             {t("common.reports")} & {t("common.analytics")}
           </h1>
           
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap w-full md:w-auto gap-2">
             <Button
               variant={reportType === 'daily' ? "default" : "outline"}
               className={reportType === 'daily' ? "bg-temple-saffron" : "border-temple-saffron text-temple-maroon"}
               onClick={() => setReportType('daily')}
+              size="sm"
             >
               <CalendarDays className="mr-2 h-4 w-4" />
-              {t("common.today")}
+              <span className="whitespace-nowrap">{t("common.today")}</span>
             </Button>
             <Button
               variant={reportType === 'category' ? "default" : "outline"}
               className={reportType === 'category' ? "bg-temple-saffron" : "border-temple-saffron text-temple-maroon"}
               onClick={() => setReportType('category')}
+              size="sm"
             >
               <ChartBar className="mr-2 h-4 w-4" />
-              {t("common.byCategory")}
+              <span className="whitespace-nowrap">{t("common.byCategory")}</span>
             </Button>
             <Button
               variant={reportType === 'author' ? "default" : "outline"}
               className={reportType === 'author' ? "bg-temple-saffron" : "border-temple-saffron text-temple-maroon"}
               onClick={() => setReportType('author')}
+              size="sm"
             >
               <FileText className="mr-2 h-4 w-4" />
-              {t("common.byAuthor")}
+              <span className="whitespace-nowrap">{t("common.byAuthor")}</span>
             </Button>
             <Button
               variant={reportType === 'institute' ? "default" : "outline"}
               className={reportType === 'institute' ? "bg-temple-saffron" : "border-temple-saffron text-temple-maroon"}
               onClick={() => setReportType('institute')}
+              size="sm"
             >
               <FileText className="mr-2 h-4 w-4" />
-              {t("common.byInstitute")}
+              <span className="whitespace-nowrap">{t("common.byInstitute")}</span>
             </Button>
           </div>
         </div>
 
         {/* Date Range Filter */}
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           <Card className="temple-card">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg text-temple-maroon">{t("common.dateRangeFilter")}</CardTitle>
@@ -460,13 +464,13 @@ const ReportsPage: React.FC = () => {
         ) : (
           <>
             {/* Detailed Sales Table - Now shown first */}
-            <Card className="temple-card overflow-hidden bg-white border border-gray-200 shadow-md mb-6">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 bg-gradient-to-r from-[#0EA5E9]/20 to-white border-b">
-                <CardTitle className="text-lg text-temple-maroon">{t("common.detailedReport")}</CardTitle>
+            <Card className="temple-card overflow-hidden bg-white border border-gray-200 shadow-md mb-4 sm:mb-6">
+              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 bg-gradient-to-r from-[#0EA5E9]/20 to-white border-b">
+                <CardTitle className="text-lg text-temple-maroon mb-2 sm:mb-0">{t("common.detailedReport")}</CardTitle>
                 <Button 
                   onClick={exportReport}
                   variant="outline"
-                  className="border-temple-maroon text-temple-maroon hover:bg-temple-maroon/10 flex items-center gap-2"
+                  className="border-temple-maroon text-temple-maroon hover:bg-temple-maroon/10 flex items-center gap-2 w-full sm:w-auto"
                   disabled={
                     (reportType === 'daily' && filteredSales.length === 0) ||
                     (reportType === 'category' && categoryData.length === 0) ||
@@ -478,59 +482,61 @@ const ReportsPage: React.FC = () => {
                   {t("common.exportCSV")}
                 </Button>
               </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      {reportType === 'daily' || reportType === 'weekly' || reportType === 'monthly' ? (
-                        <>
-                          <TableHead>{t("common.date")}</TableHead>
-                          <TableHead>{t("common.book")}</TableHead>
-                          <TableHead>{t("common.seller")}</TableHead>
-                          <TableHead>{t("common.quantity")}</TableHead>
-                          <TableHead className="text-right">{t("common.amount")}</TableHead>
-                        </>
-                      ) : (
-                        <>
-                          <TableHead>{reportType === 'category' ? t("common.category") : 
-                                      reportType === 'author' ? t("common.author") : t("common.publisher")}</TableHead>
-                          <TableHead className="text-right">{t("common.quantitySold")}</TableHead>
-                        </>
-                      )}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {reportType === 'daily' || reportType === 'weekly' || reportType === 'monthly' ? (
-                      getCurrentData().map((sale: Sale) => {
-                        const book = books.find(b => b.id === sale.bookId);
-                        return (
-                          <TableRow key={sale.id}>
-                            <TableCell>{new Date(sale.createdAt).toLocaleDateString()}</TableCell>
-                            <TableCell>{book?.name || t("common.unknownBook")}</TableCell>
-                            <TableCell>{personnelNames[sale.personnelId] || t("common.unknownSeller")}</TableCell>
-                            <TableCell>{sale.quantity}</TableCell>
-                            <TableCell className="text-right font-semibold">₹{sale.totalAmount}</TableCell>
-                          </TableRow>
-                        );
-                      })
-                    ) : (
-                      getCurrentData().map((item: any, index: number) => (
-                        <TableRow key={index}>
-                          <TableCell>{item.name}</TableCell>
-                          <TableCell className="text-right font-semibold">{item.value}</TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                    
-                    {getCurrentData().length === 0 && (
+              <CardContent className="overflow-auto">
+                <div className="w-full overflow-x-auto">
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={reportType === 'daily' || reportType === 'weekly' || reportType === 'monthly' ? 5 : 2} className="text-center py-6">
-                          {t("common.noDataAvailable")}
-                        </TableCell>
+                        {reportType === 'daily' || reportType === 'weekly' || reportType === 'monthly' ? (
+                          <>
+                            <TableHead>{t("common.date")}</TableHead>
+                            <TableHead>{t("common.book")}</TableHead>
+                            <TableHead>{t("common.seller")}</TableHead>
+                            <TableHead>{t("common.quantity")}</TableHead>
+                            <TableHead className="text-right">{t("common.amount")}</TableHead>
+                          </>
+                        ) : (
+                          <>
+                            <TableHead>{reportType === 'category' ? t("common.category") : 
+                                       reportType === 'author' ? t("common.author") : t("common.publisher")}</TableHead>
+                            <TableHead className="text-right">{t("common.quantitySold")}</TableHead>
+                          </>
+                        )}
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {reportType === 'daily' || reportType === 'weekly' || reportType === 'monthly' ? (
+                        getCurrentData().map((sale: Sale) => {
+                          const book = books.find(b => b.id === sale.bookId);
+                          return (
+                            <TableRow key={sale.id}>
+                              <TableCell className="whitespace-nowrap">{new Date(sale.createdAt).toLocaleDateString()}</TableCell>
+                              <TableCell>{book?.name || t("common.unknownBook")}</TableCell>
+                              <TableCell>{personnelNames[sale.personnelId] || t("common.unknownSeller")}</TableCell>
+                              <TableCell>{sale.quantity}</TableCell>
+                              <TableCell className="text-right font-semibold">₹{sale.totalAmount}</TableCell>
+                            </TableRow>
+                          );
+                        })
+                      ) : (
+                        getCurrentData().map((item: any, index: number) => (
+                          <TableRow key={index}>
+                            <TableCell>{item.name}</TableCell>
+                            <TableCell className="text-right font-semibold">{item.value}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                      
+                      {getCurrentData().length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={reportType === 'daily' || reportType === 'weekly' || reportType === 'monthly' ? 5 : 2} className="text-center py-6">
+                            {t("common.noDataAvailable")}
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
                 
                 {totalPages > 1 && (
                   <div className="mt-4 flex justify-center">
@@ -545,7 +551,7 @@ const ReportsPage: React.FC = () => {
                         {[...Array(Math.min(totalPages, 5))].map((_, i) => {
                           const pageNum = i + 1;
                           return (
-                            <PaginationItem key={pageNum}>
+                            <PaginationItem key={pageNum} className="hidden sm:flex">
                               <PaginationLink 
                                 isActive={currentPage === pageNum}
                                 onClick={() => setCurrentPage(pageNum)}
@@ -555,6 +561,10 @@ const ReportsPage: React.FC = () => {
                             </PaginationItem>
                           );
                         })}
+                        
+                        <PaginationItem className="sm:hidden">
+                          <span className="px-2">{currentPage} / {totalPages}</span>
+                        </PaginationItem>
                         
                         {currentPage < totalPages && (
                           <PaginationItem>
@@ -569,22 +579,22 @@ const ReportsPage: React.FC = () => {
             </Card>
             
             {/* Charts Section - Now shown after the detailed report */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
               {/* Sales Trend Chart */}
               <Card className="temple-card overflow-hidden bg-white border border-gray-200 shadow-md">
                 <CardHeader className="bg-gradient-to-r from-[#9b87f5]/20 to-white border-b">
                   <CardTitle className="text-lg text-temple-maroon">{t("common.salesTrend")}</CardTitle>
                 </CardHeader>
-                <CardContent className="p-4">
-                  <div className="h-80">
+                <CardContent className="p-2 sm:p-4">
+                  <div className="h-60 sm:h-80">
                     {salesData.length > 0 ? (
                       <ChartContainer config={{}} className="h-full">
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={salesData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                            <XAxis dataKey="date" />
-                            <YAxis />
+                          <BarChart data={salesData} margin={{ top: 20, right: 10, left: 0, bottom: 5 }}>
+                            <XAxis dataKey="date" tick={{fontSize: 12}} />
+                            <YAxis width={40} tick={{fontSize: 12}} />
                             <Tooltip />
-                            <Legend />
+                            <Legend wrapperStyle={{fontSize: '12px'}} />
                             <Bar dataKey="sales" fill="#9b87f5" name={t("common.revenue")} />
                           </BarChart>
                         </ResponsiveContainer>
@@ -607,8 +617,8 @@ const ReportsPage: React.FC = () => {
                      reportType === 'institute' ? t("common.printingInstitutes") : t("common.salesDistribution")}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-4">
-                  <div className="h-80">
+                <CardContent className="p-2 sm:p-4">
+                  <div className="h-60 sm:h-80">
                     {(reportType === 'category' ? categoryData.length > 0 : 
                      reportType === 'author' ? authorData.length > 0 : 
                      reportType === 'institute' ? instituteData.length > 0 : false) ? (
@@ -622,11 +632,11 @@ const ReportsPage: React.FC = () => {
                               cx="50%"
                               cy="50%"
                               labelLine={false}
-                              outerRadius={100}
+                              outerRadius={90}
                               fill="#8884d8"
                               dataKey="value"
                               nameKey="name"
-                              label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                              label={({name, percent}) => `${name.substring(0, 10)}${name.length > 10 ? '...' : ''}: ${(percent * 100).toFixed(0)}%`}
                             >
                               {(reportType === 'category' ? categoryData : 
                                 reportType === 'author' ? authorData : 
@@ -635,7 +645,15 @@ const ReportsPage: React.FC = () => {
                               ))}
                             </Pie>
                             <Tooltip />
-                            <Legend />
+                            <Legend 
+                              layout="horizontal" 
+                              verticalAlign="bottom" 
+                              align="center"
+                              wrapperStyle={{fontSize: '10px', paddingTop: '10px'}}
+                              formatter={(value) => {
+                                return value.length > 15 ? `${value.substring(0, 15)}...` : value;
+                              }}
+                            />
                           </PieChart>
                         </ResponsiveContainer>
                       </ChartContainer>

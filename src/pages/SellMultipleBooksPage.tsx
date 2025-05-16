@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { MinusCircle, PlusCircle, Search, ShoppingCart, Trash2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 
 interface CartItem {
   book: Book;
@@ -263,6 +264,7 @@ const SellMultipleBooksPage: React.FC = () => {
                       <Table>
                         <TableHeader>
                           <TableRow>
+                            <TableHead>{t("common.image")}</TableHead>
                             <TableHead>{t("common.name")}</TableHead>
                             <TableHead>{t("common.price")}</TableHead>
                             <TableHead>{t("common.stock")}</TableHead>
@@ -272,6 +274,23 @@ const SellMultipleBooksPage: React.FC = () => {
                         <TableBody>
                           {searchResults.map(book => (
                             <TableRow key={book.id}>
+                              <TableCell className="w-16">
+                                {book.imageUrl ? (
+                                  <div className="w-12 h-12 overflow-hidden rounded-md">
+                                    <AspectRatio ratio={1/1}>
+                                      <img 
+                                        src={book.imageUrl} 
+                                        alt={book.name} 
+                                        className="object-cover w-full h-full"
+                                      />
+                                    </AspectRatio>
+                                  </div>
+                                ) : (
+                                  <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center">
+                                    <span className="text-xs text-gray-400">No image</span>
+                                  </div>
+                                )}
+                              </TableCell>
                               <TableCell>
                                 <div>
                                   <p className="font-medium">{book.name}</p>
@@ -328,6 +347,7 @@ const SellMultipleBooksPage: React.FC = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>{t("common.image")}</TableHead>
                         <TableHead>{t("common.book")}</TableHead>
                         <TableHead>{t("common.price")}</TableHead>
                         <TableHead>{t("common.quantity")}</TableHead>
@@ -338,6 +358,23 @@ const SellMultipleBooksPage: React.FC = () => {
                     <TableBody>
                       {cart.map(item => (
                         <TableRow key={item.book.id}>
+                          <TableCell className="w-16">
+                            {item.book.imageUrl ? (
+                              <div className="w-10 h-10 overflow-hidden rounded-md">
+                                <AspectRatio ratio={1/1}>
+                                  <img 
+                                    src={item.book.imageUrl} 
+                                    alt={item.book.name} 
+                                    className="object-cover w-full h-full"
+                                  />
+                                </AspectRatio>
+                              </div>
+                            ) : (
+                              <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center">
+                                <span className="text-xs text-gray-400">No img</span>
+                              </div>
+                            )}
+                          </TableCell>
                           <TableCell>
                             <p className="font-medium">{item.book.name}</p>
                           </TableCell>
