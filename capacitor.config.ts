@@ -2,7 +2,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.f63702ad4b5d400ba1a3b15b83e5793c',
+  appId: 'com.templebooksutra.app',
   appName: 'Temple Book Sutra',
   webDir: 'dist',
   server: {

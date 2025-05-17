@@ -19,12 +19,12 @@ const MobileNavBar: React.FC = () => {
     <div className="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 z-10">
       <div className="grid grid-cols-5 h-full text-xs text-temple-dark">
         <button
-          onClick={() => navigateIfNotCurrent('/dashboard')}
+          onClick={() => navigateIfNotCurrent('/')}
           className={`flex flex-col items-center justify-center ${
-            location.pathname === '/dashboard' ? 'text-temple-maroon' : ''
+            location.pathname === '/' ? 'text-temple-maroon' : ''
           }`}
         >
-          <Home className={`h-5 w-5 ${location.pathname === '/dashboard' ? 'text-temple-maroon' : ''}`} />
+          <Home className={`h-5 w-5 ${location.pathname === '/' ? 'text-temple-maroon' : ''}`} />
           <span className="mt-1">{t('common.home')}</span>
         </button>
         
