@@ -14,6 +14,8 @@ interface MobileHeaderProps {
   onSearch?: () => void;
   showStallSelector?: boolean;
   mediumBand?: boolean;
+  leftIcon?: React.ReactNode;
+  onLeftIconClick?: () => void;
 }
 
 const MobileHeader: React.FC<MobileHeaderProps> = ({
@@ -24,6 +26,8 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   onSearch,
   showStallSelector = false,
   mediumBand = false,
+  leftIcon,
+  onLeftIconClick,
 }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -42,6 +46,18 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
               <ChevronLeft size={24} />
             </Button>
           )}
+          
+          {leftIcon && !showBackButton && (
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="mr-2 text-white"
+              onClick={onLeftIconClick}
+            >
+              {leftIcon}
+            </Button>
+          )}
+          
           <h1 className="text-lg font-medium text-white">{title}</h1>
         </div>
         

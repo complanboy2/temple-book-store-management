@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -16,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import BookImage from "@/components/BookImage";
 
 const SellBookPage: React.FC = () => {
   const [book, setBook] = useState<Book | null>(null);
@@ -257,13 +257,11 @@ const SellBookPage: React.FC = () => {
             <div className="grid gap-4">
               {book?.imageUrl && (
                 <div className="max-w-sm mx-auto mb-4">
-                  <AspectRatio ratio={4/3}>
-                    <img 
-                      src={book.imageUrl} 
-                      alt={book.name}
-                      className="rounded-lg object-cover w-full h-full"
-                    />
-                  </AspectRatio>
+                  <BookImage
+                    imageUrl={book.imageUrl}
+                    alt={book.name}
+                    className="rounded-lg w-full h-48 object-cover"
+                  />
                 </div>
               )}
               

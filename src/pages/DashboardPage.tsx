@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import MobileHeader from "@/components/MobileHeader";
-import { BookOpen, BarChart2, PlusCircle, Search, TrendingUp, AlertTriangle } from "lucide-react";
+import { BookOpen, BarChart2, PlusCircle, Search, TrendingUp, AlertTriangle, Menu } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { useStallContext } from "@/contexts/StallContext";
@@ -207,11 +207,17 @@ const DashboardPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-temple-background pb-20">
       <MobileHeader 
-        title="Temple Book Sutra"
+        title="Book Stall Manager"
         showBackButton={false}
         showSearchButton={true}
         showStallSelector={false}
         onSearch={() => navigate("/search")}
+        leftIcon={<Menu size={24} />}
+        onLeftIconClick={() => {
+          // Vertical options collapse could be implemented here
+          // For now, let's just navigate to settings as an example
+          navigate("/settings");
+        }}
       />
 
       <div className="mobile-container flex flex-col md:flex-row md:items-center gap-2 mt-3">
@@ -389,10 +395,6 @@ const DashboardPage: React.FC = () => {
                   icon={<BookOpen className="text-temple-maroon" size={18} />}
                 />
               </div>
-            </div>
-
-            <div className="mb-4">
-              <ScannerButton onCodeScanned={handleCodeScanned} />
             </div>
 
             {topSellingBooks.length > 0 && (

@@ -1,4 +1,3 @@
-
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
@@ -21,7 +20,7 @@ const newEnTranslations = {
     backToBooks: "Back to Books",
     bookDeleted: "Book deleted successfully",
     bookNotFound: "Book not found",
-    bookStoreManager: "Book Store Management",
+    bookStoreManager: "Book Stall Management",
     booksInventory: "Books Inventory",
     clearFilters: "Clear Filters",
     createNewOrder: "Create New Order",
@@ -43,9 +42,9 @@ const newEnTranslations = {
     saving: "Saving...",
     selectABook: "Please select a book",
     selectBook: "Select Book",
-    templeBookStall: "Temple Book Stall",
+    templeBookStall: "Book Stall Manager",
     unknownError: "Unknown error occurred",
-    welcomeToBookStore: "Welcome to Book Store",
+    welcomeToBookStore: "Welcome to Book Stall Manager",
     pleaseSelectStore: "Please select a store",
     manageMetadata: "Manage Metadata",
     storeManagement: "Store Management",
@@ -180,8 +179,27 @@ const newEnTranslations = {
     saleError: "Error processing sale",
     cash: "Cash",
     upi: "UPI",
-    card: "Card"
+    card: "Card",
+    salesReports: "Sales Reports",
+    selectSeller: "Select Seller",
+    all: "All",
+    by: "by",
+    uncategorized: "Uncategorized",
+    notSpecified: "Not specified",
+    timeFilter: "Time Filter",
+    allTime: "All Time",
+    thisWeek: "This Week",
+    thisMonth: "This Month",
+    thisYear: "This Year",
+    noSales: "No sales recorded yet",
+    scanCode: "Scan Code",
+    enterBookCode: "Enter Book Code",
+    enterBarcodeManually: "Enter the book code or barcode manually",
+    enterCodeHere: "Enter code here",
+    submit: "Submit",
+    scanBookCode: "Scan Book Code",
   },
+  
   dashboard: {
     revenue: "Revenue",
     lowStock: "Low Stock",

@@ -7,6 +7,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Trash2, Edit, ShoppingCart } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
+import BookImage, { BookImageProps } from "@/components/BookImage";
 
 interface BookCardProps {
   book: Book;
@@ -14,9 +15,17 @@ interface BookCardProps {
   onDelete?: (book: Book) => void;
   onEdit?: (book: Book) => void;
   onSell?: (book: Book) => void;
+  ImageComponent?: React.FC<BookImageProps>;
 }
 
-const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete, onEdit, onSell }) => {
+const BookCard: React.FC<BookCardProps> = ({ 
+  book, 
+  onSelect, 
+  onDelete, 
+  onEdit, 
+  onSell,
+  ImageComponent = BookImage
+}) => {
   const { currentUser } = useAuth();
   const isAdmin = currentUser?.role === "admin";
   const { t } = useTranslation();
@@ -42,15 +51,13 @@ const BookCard: React.FC<BookCardProps> = ({ book, onSelect, onDelete, onEdit, o
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <CardHeader className="p-0">
-        {book.imageUrl && (
-          <AspectRatio ratio={4/3}>
-            <img 
-              src={book.imageUrl} 
-              alt={book.name}
-              className="w-full h-full object-cover"
-            />
-          </AspectRatio>
-        )}
+        <AspectRatio ratio={4/3}>
+          <ImageComponent 
+            imageUrl={book.imageUrl} 
+            alt={book.name}
+            className="w-full h-full object-cover"
+          />
+        </AspectRatio>
       </CardHeader>
       <CardContent className="p-4">
         <CardTitle className="text-lg mb-2">{book.name}</CardTitle>

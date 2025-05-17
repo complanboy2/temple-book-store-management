@@ -9,6 +9,7 @@ import { Book } from "@/types";
 import { useStallContext } from "@/contexts/StallContext";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import BookImage from "@/components/BookImage";
 
 const SearchPage = () => {
   const navigate = useNavigate();
@@ -212,17 +213,26 @@ const SearchPage = () => {
                   className="mobile-card cursor-pointer"
                   onClick={() => handleViewBook(book.id)}
                 >
-                  <h3 className="font-medium text-temple-maroon">{book.name}</h3>
-                  <p className="text-sm text-gray-600">{t("common.by")} {book.author}</p>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-sm bg-temple-saffron/10 text-temple-saffron px-2 py-1 rounded">
-                      {book.category || t("common.uncategorized")}
-                    </span>
-                    <span className="font-bold text-temple-maroon">₹{book.salePrice}</span>
-                  </div>
-                  <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
-                    <span>{t("common.publisher")}: {book.printingInstitute || t("common.notSpecified")}</span>
-                    <span>{t("common.availableQuantity")}: {book.quantity}</span>
+                  <div className="flex items-start space-x-3">
+                    <BookImage
+                      imageUrl={book.imageUrl}
+                      alt={book.name}
+                      className="w-16 h-16 rounded flex-shrink-0"
+                    />
+                    <div className="flex-grow">
+                      <h3 className="font-medium text-temple-maroon">{book.name}</h3>
+                      <p className="text-sm text-gray-600">{t("common.by")} {book.author}</p>
+                      <div className="flex justify-between items-center mt-2">
+                        <span className="text-sm bg-temple-saffron/10 text-temple-saffron px-2 py-1 rounded">
+                          {book.category || t("common.uncategorized")}
+                        </span>
+                        <span className="font-bold text-temple-maroon">₹{book.salePrice}</span>
+                      </div>
+                      <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
+                        <span>{t("common.publisher")}: {book.printingInstitute || t("common.notSpecified")}</span>
+                        <span>{t("common.availableQuantity")}: {book.quantity}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))

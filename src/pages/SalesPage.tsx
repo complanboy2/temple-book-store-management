@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,6 +29,7 @@ import { useTranslation } from "react-i18next";
 import ExportSalesButton from "@/components/ExportSalesButton";
 import MobileHeader from "@/components/MobileHeader";
 import { Plus } from "lucide-react";
+import BookImage from "@/components/BookImage";
 
 const SalesPage = () => {
   const [sales, setSales] = useState<Sale[]>([]);
@@ -320,7 +320,22 @@ const SalesPage = () => {
                     return (
                       <TableRow key={sale.id}>
                         <TableCell>{sale.createdAt.toLocaleDateString()}</TableCell>
-                        <TableCell>{bookDetails?.name || "Unknown"}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            {bookDetails?.imageUrl ? (
+                              <BookImage 
+                                imageUrl={bookDetails.imageUrl}
+                                alt={bookDetails?.name || "Book"}
+                                className="w-10 h-10 rounded"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center text-xs text-gray-500">
+                                No img
+                              </div>
+                            )}
+                            <span>{bookDetails?.name || "Unknown"}</span>
+                          </div>
+                        </TableCell>
                         <TableCell>{sale.buyerName || "N/A"}</TableCell>
                         <TableCell>{sale.quantity}</TableCell>
                         <TableCell className="text-right">₹{sale.totalAmount.toFixed(2)}</TableCell>
