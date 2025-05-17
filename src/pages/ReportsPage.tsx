@@ -23,6 +23,8 @@ import { useStallContext } from "@/contexts/StallContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
 import MobileHeader from "@/components/MobileHeader";
+import ExportReportButton from "@/components/ExportReportButton";
+import { format } from "date-fns";
 
 const ReportsPage = () => {
   const [sales, setSales] = useState([]);
@@ -43,6 +45,9 @@ const ReportsPage = () => {
   const [authors, setAuthors] = useState<string[]>([]);
   const [selectedInstitute, setSelectedInstitute] = useState<string>("");
   const [institutes, setInstitutes] = useState<string[]>([]);
+  
+  // Add state for filtered sales data
+  const [filteredSales, setFilteredSales] = useState([]);
 
   const { currentStore } = useStallContext();
   const { t } = useTranslation();
@@ -66,7 +71,7 @@ const ReportsPage = () => {
 
         const { data: booksData, error: booksError } = await supabase
           .from('books')
-          .select('id, category, author, printinginstitute')
+          .select('id, category, author, printinginstitute, name, saleprice, imageurl')
           .eq('stallid', currentStore);
 
         if (booksError) {
@@ -92,7 +97,10 @@ const ReportsPage = () => {
           bookMap[book.id] = { 
             category: book.category,
             author: book.author,
-            institute: book.printinginstitute
+            institute: book.printinginstitute,
+            name: book.name,
+            price: book.saleprice,
+            imageurl: book.imageurl
           };
         });
 
@@ -136,11 +144,31 @@ const ReportsPage = () => {
     fetchSellers();
   }, [currentStore]);
   
-  // Modify filterSales function to include all filters
+  // Generate sales report data for ExportReportButton
+  const generateSalesReportData = () => {
+    return filteredSales.map(sale => {
+      const book = bookDetailsMap[sale.bookid];
+      const sellerInfo = sellers.find(s => s.id === sale.personnelId);
+      return {
+        id: sale.id,
+        bookName: book?.name || 'Unknown',
+        author: book?.author || 'Unknown',
+        price: book?.price || 0,
+        quantity: sale.quantity,
+        totalAmount: sale.totalAmount,
+        date: new Date(sale.createdat),
+        sellerName: sellerInfo?.name || 'Unknown',
+        paymentMethod: sale.paymentMethod,
+        imageurl: book?.imageurl
+      };
+    });
+  };
+  
+  // Update filterSales to update state with filtered results
   const filterSales = () => {
     if (!sales.length) return [];
     
-    return sales.filter(sale => {
+    const filtered = sales.filter(sale => {
       // Apply date range filter
       if (dateRange.from && dateRange.to) {
         const saleDate = new Date(sale.createdat);
@@ -154,40 +182,48 @@ const ReportsPage = () => {
       }
       
       // Apply category filter
-      if (selectedCategory && bookDetailsMap[sale.bookId]) {
-        if (bookDetailsMap[sale.bookId].category !== selectedCategory) return false;
+      if (selectedCategory && bookDetailsMap[sale.bookid]) {
+        if (bookDetailsMap[sale.bookid].category !== selectedCategory) return false;
       }
       
       // Apply seller filter
-      if (selectedSeller && sale.personnelId !== selectedSeller) {
+      if (selectedSeller && sale.personnelid !== selectedSeller) {
         return false;
       }
       
       // Apply author filter
-      if (selectedAuthor && bookDetailsMap[sale.bookId]) {
-        if (bookDetailsMap[sale.bookId].author !== selectedAuthor) return false;
+      if (selectedAuthor && bookDetailsMap[sale.bookid]) {
+        if (bookDetailsMap[sale.bookid].author !== selectedAuthor) return false;
       }
       
       // Apply institute filter
-      if (selectedInstitute && bookDetailsMap[sale.bookId]) {
-        if (bookDetailsMap[sale.bookId].institute !== selectedInstitute) return false;
+      if (selectedInstitute && bookDetailsMap[sale.bookid]) {
+        if (bookDetailsMap[sale.bookid].institute !== selectedInstitute) return false;
       }
       
       return true;
     });
+    
+    // Update filtered sales state
+    setFilteredSales(filtered);
+    return filtered;
   };
 
+  // Effect to update filtered sales whenever filters change
+  useEffect(() => {
+    filterSales();
+  }, [sales, dateRange, selectedCategory, selectedSeller, selectedAuthor, selectedInstitute, bookDetailsMap]);
+
   const salesByCategory = () => {
-    const filtered = filterSales();
     const categorySales = {};
 
-    filtered.forEach(sale => {
-      const book = bookDetailsMap[sale.bookId];
+    filteredSales.forEach(sale => {
+      const book = bookDetailsMap[sale.bookid];
       const category = book?.category || 'Uncategorized';
       if (!categorySales[category]) {
         categorySales[category] = 0;
       }
-      categorySales[category] += sale.totalAmount;
+      categorySales[category] += sale.totalamount;
     });
 
     return Object.keys(categorySales).map(category => ({
@@ -197,16 +233,15 @@ const ReportsPage = () => {
   };
 
   const salesByAuthor = () => {
-    const filtered = filterSales();
     const authorSales = {};
 
-    filtered.forEach(sale => {
-      const book = bookDetailsMap[sale.bookId];
+    filteredSales.forEach(sale => {
+      const book = bookDetailsMap[sale.bookid];
       const author = book?.author || 'Unknown';
       if (!authorSales[author]) {
         authorSales[author] = 0;
       }
-      authorSales[author] += sale.totalAmount;
+      authorSales[author] += sale.totalamount;
     });
 
     return Object.keys(authorSales).map(author => ({
@@ -216,16 +251,15 @@ const ReportsPage = () => {
   };
 
   const salesByInstitute = () => {
-    const filtered = filterSales();
     const instituteSales = {};
 
-    filtered.forEach(sale => {
-      const book = bookDetailsMap[sale.bookId];
+    filteredSales.forEach(sale => {
+      const book = bookDetailsMap[sale.bookid];
       const institute = book?.institute || 'Unknown';
       if (!instituteSales[institute]) {
         instituteSales[institute] = 0;
       }
-      instituteSales[institute] += sale.totalAmount;
+      instituteSales[institute] += sale.totalamount;
     });
 
     return Object.keys(instituteSales).map(institute => ({
@@ -235,15 +269,14 @@ const ReportsPage = () => {
   };
 
   const salesTrendData = () => {
-    const filtered = filterSales();
     const dailySales = {};
 
-    filtered.forEach(sale => {
+    filteredSales.forEach(sale => {
       const date = new Date(sale.createdat).toLocaleDateString();
       if (!dailySales[date]) {
         dailySales[date] = 0;
       }
-      dailySales[date] += sale.totalAmount;
+      dailySales[date] += sale.totalamount;
     });
 
     return Object.keys(dailySales).map(date => ({
@@ -303,7 +336,7 @@ const ReportsPage = () => {
             </Select>
           </div>
           
-          {/* Add new author and institute filters */}
+          {/* Author and institute filters */}
           <div className="flex flex-col md:flex-row gap-2">
             <Select 
               value={selectedAuthor} 
@@ -338,6 +371,15 @@ const ReportsPage = () => {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          
+          {/* Export Report Button */}
+          <div className="flex justify-end">
+            <ExportReportButton 
+              salesData={generateSalesReportData()}
+              reportType="sales"
+              dateRange={dateRange}
+            />
           </div>
         </div>
         
@@ -377,7 +419,7 @@ const ReportsPage = () => {
           </CardContent>
         </Card>
         
-        {/* Add new sales by author chart */}
+        {/* Sales by author chart */}
         <Card className="mb-4">
           <CardHeader>
             <CardTitle>{t("common.salesByAuthor")}</CardTitle>
@@ -396,7 +438,7 @@ const ReportsPage = () => {
           </CardContent>
         </Card>
         
-        {/* Add new sales by institute chart */}
+        {/* Sales by institute chart */}
         <Card className="mb-4">
           <CardHeader>
             <CardTitle>{t("common.salesByInstitute")}</CardTitle>
