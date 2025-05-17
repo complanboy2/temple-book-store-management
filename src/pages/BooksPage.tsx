@@ -113,11 +113,11 @@ const BooksPage = () => {
           <h1 className="text-2xl font-bold text-temple-maroon mb-4 md:mb-0">{t("common.booksInventory")}</h1>
           
           <div className="flex flex-col sm:flex-row gap-2">
-            {isAdmin && (
+            /* {isAdmin && (
               <ScannerButton
                 onScanComplete={handleScanComplete}
               />
-            )}
+            )} */
             
             {isAdmin && (
               <button 
