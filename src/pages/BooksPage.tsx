@@ -13,6 +13,7 @@ import BookImage from "@/components/BookImage";
 import { useToast } from "@/hooks/use-toast";
 import DeleteBookDialog from "@/components/DeleteBookDialog";
 import { useBookManager } from "@/hooks/useBookManager";
+import ExportReportButton from "@/components/ExportReportButton";
 
 const BooksPage = () => {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
@@ -34,6 +35,22 @@ const BooksPage = () => {
     deleteBook,
     refreshBooks
   } = useBookManager(currentStore);
+  
+  // Transform books for export
+  const getExportBooks = () => {
+    return books.map(book => ({
+      id: book.id,
+      name: book.name,
+      author: book.author,
+      price: book.salePrice,
+      quantity: book.quantity,
+      category: book.category,
+      printingInstitute: book.printingInstitute,
+      imageurl: book.imageUrl,
+      // We'd need to fetch sales data to get quantitySold, using 0 as placeholder
+      quantitySold: 0
+    }));
+  };
   
   // Handle scan completion
   const handleScanComplete = (barcode: string) => {
@@ -113,7 +130,13 @@ const BooksPage = () => {
           <h1 className="text-2xl font-bold text-temple-maroon mb-4 md:mb-0">{t("common.booksInventory")}</h1>
           
           <div className="flex flex-col sm:flex-row gap-2">
-            
+            {/* Add Export Button for admins */}
+            {isAdmin && (
+              <ExportReportButton
+                reportType="inventory"
+                bookData={getExportBooks()}
+              />
+            )}
             
             {isAdmin && (
               <button 

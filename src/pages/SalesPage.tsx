@@ -31,12 +31,18 @@ import ExportSalesButton from "@/components/ExportSalesButton";
 import MobileHeader from "@/components/MobileHeader";
 import { Plus } from "lucide-react";
 import BookImage from "@/components/BookImage";
+import ExportReportButton from "@/components/ExportReportButton";
 
 interface BookDetail {
   name: string;
   author: string;
   price: number;
-  imageUrl?: string;
+  imageurl?: string;
+}
+
+interface UserDetail {
+  id: string;
+  name: string;
 }
 
 const SalesPage = () => {
@@ -50,6 +56,7 @@ const SalesPage = () => {
   const [itemsPerPage] = useState(10);
   const [isLoading, setIsLoading] = useState(true);
   const [bookDetailsMap, setBookDetailsMap] = useState<Record<string, BookDetail>>({});
+  const [userDetailsMap, setUserDetailsMap] = useState<Record<string, UserDetail>>({});
   const { currentStore } = useStallContext();
   const { isAdmin, currentUser } = useAuth();
   const navigate = useNavigate();
@@ -185,12 +192,14 @@ const SalesPage = () => {
         // Only process if data exists and is an array
         if (data && Array.isArray(data)) {
           data.forEach(book => {
-            details[book.id] = {
-              name: book.name || "Unknown",
-              author: book.author || "",
-              price: book.saleprice || 0,
-              imageUrl: book.imageurl // Use imageurl (lowercase) from the database
-            };
+            if (book) {
+              details[book.id] = {
+                name: book.name || "Unknown",
+                author: book.author || "",
+                price: book.saleprice || 0,
+                imageurl: book.imageurl // Use imageurl (lowercase) from the database
+              };
+            }
           });
         }
         
@@ -201,6 +210,49 @@ const SalesPage = () => {
     };
     
     fetchBookDetails();
+  }, [currentStore, sales]);
+
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      if (!currentStore || sales.length === 0) {
+        return;
+      }
+
+      try {
+        // Get unique user IDs from sales
+        const userIds = [...new Set(sales.map(sale => sale.personnelId))];
+        if (userIds.length === 0) return;
+        
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, name')
+          .in('id', userIds);
+          
+        if (error) {
+          console.error("Error fetching user details:", error);
+          return;
+        }
+        
+        const details: Record<string, UserDetail> = {};
+        
+        if (data && Array.isArray(data)) {
+          data.forEach(user => {
+            if (user) {
+              details[user.id] = {
+                id: user.id,
+                name: user.name || "Unknown User"
+              };
+            }
+          });
+        }
+        
+        setUserDetailsMap(details);
+      } catch (error) {
+        console.error("Unexpected error fetching user details:", error);
+      }
+    };
+    
+    fetchUserDetails();
   }, [currentStore, sales]);
 
   const filteredSales = searchQuery
@@ -221,6 +273,28 @@ const SalesPage = () => {
 
   const handleDateRangeChange = (range: { from: Date | null; to: Date | null }) => {
     setDateRange(range);
+  };
+
+  // Prepare data for export
+  const getExportSalesData = () => {
+    return filteredSales.map(sale => {
+      const bookDetails = bookDetailsMap[sale.bookId] || { name: "Unknown", author: "Unknown", price: 0 };
+      const userDetails = userDetailsMap[sale.personnelId] || { id: "", name: "Unknown User" };
+      
+      return {
+        id: sale.id,
+        bookName: bookDetails.name,
+        author: bookDetails.author,
+        price: bookDetails.price,
+        quantity: sale.quantity,
+        totalAmount: sale.totalAmount,
+        date: sale.createdAt,
+        buyerName: sale.buyerName,
+        sellerName: userDetails.name,
+        paymentMethod: sale.paymentMethod,
+        imageurl: bookDetails.imageurl
+      };
+    });
   };
 
   const navigateToNewSale = () => {
@@ -252,6 +326,15 @@ const SalesPage = () => {
               {t("sell.newSale")}
             </Button>
             
+            {/* Add Export Report Button for admins */}
+            {isAdmin && (
+              <ExportReportButton 
+                reportType="sales"
+                salesData={getExportSalesData()}
+                dateRange={dateRange}
+              />
+            )}
+            
             <ExportSalesButton 
               sales={sales} 
               bookDetailsMap={bookDetailsMap} 
@@ -270,7 +353,7 @@ const SalesPage = () => {
           />
           
           <Select value={timeFilter} onValueChange={setTimeFilter}>
-            <SelectTrigger className="temple-select">
+            <SelectTrigger>
               <SelectValue placeholder={t("common.timeFilter")} />
             </SelectTrigger>
             <SelectContent>
@@ -283,7 +366,7 @@ const SalesPage = () => {
           </Select>
           
           <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
-            <SelectTrigger className="temple-select">
+            <SelectTrigger>
               <SelectValue placeholder={t("common.paymentMethod")} />
             </SelectTrigger>
             <SelectContent>
@@ -313,6 +396,7 @@ const SalesPage = () => {
                     <TableHead>{t("common.date")}</TableHead>
                     <TableHead>{t("common.book")}</TableHead>
                     <TableHead>{t("common.buyer")}</TableHead>
+                    <TableHead>{t("common.seller")}</TableHead>
                     <TableHead>{t("common.quantity")}</TableHead>
                     <TableHead className="text-right">{t("common.amount")}</TableHead>
                   </TableRow>
@@ -320,6 +404,7 @@ const SalesPage = () => {
                 <TableBody>
                   {filteredSales.map(sale => {
                     const bookDetails = bookDetailsMap[sale.bookId];
+                    const userDetails = userDetailsMap[sale.personnelId];
                     return (
                       <TableRow key={sale.id}>
                         <TableCell>{sale.createdAt.toLocaleDateString()}</TableCell>
@@ -327,7 +412,7 @@ const SalesPage = () => {
                           <div className="flex items-center space-x-2">
                             {bookDetails && (
                               <BookImage 
-                                imageUrl={bookDetails.imageUrl}
+                                imageUrl={bookDetails.imageurl}
                                 alt={bookDetails.name || "Book"}
                                 className="w-10 h-10 rounded"
                               />
@@ -336,6 +421,7 @@ const SalesPage = () => {
                           </div>
                         </TableCell>
                         <TableCell>{sale.buyerName || "N/A"}</TableCell>
+                        <TableCell>{userDetails?.name || "N/A"}</TableCell>
                         <TableCell>{sale.quantity}</TableCell>
                         <TableCell className="text-right">₹{sale.totalAmount.toFixed(2)}</TableCell>
                       </TableRow>

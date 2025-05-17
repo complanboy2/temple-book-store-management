@@ -26,14 +26,23 @@ import MobileHeader from "@/components/MobileHeader";
 
 const ReportsPage = () => {
   const [sales, setSales] = useState([]);
-  const [dateRange, setDateRange] = useState({ from: null, to: null });
+  // Set today as default date range
+  const today = new Date();
+  const [dateRange, setDateRange] = useState({ 
+    from: today, 
+    to: today
+  });
   const [selectedCategory, setSelectedCategory] = useState("");
   const [categories, setCategories] = useState([]);
   const [bookDetailsMap, setBookDetailsMap] = useState({});
 
-  // Add a new state for seller filter
+  // Add new state for author and institute filters
   const [selectedSeller, setSelectedSeller] = useState<string>("");
   const [sellers, setSellers] = useState<{id: string, name: string}[]>([]);
+  const [selectedAuthor, setSelectedAuthor] = useState<string>("");
+  const [authors, setAuthors] = useState<string[]>([]);
+  const [selectedInstitute, setSelectedInstitute] = useState<string>("");
+  const [institutes, setInstitutes] = useState<string[]>([]);
 
   const { currentStore } = useStallContext();
   const { t } = useTranslation();
@@ -57,7 +66,7 @@ const ReportsPage = () => {
 
         const { data: booksData, error: booksError } = await supabase
           .from('books')
-          .select('id, category')
+          .select('id, category, author, printinginstitute')
           .eq('stallid', currentStore);
 
         if (booksError) {
@@ -66,16 +75,30 @@ const ReportsPage = () => {
         }
 
         const uniqueCategories = new Set<string>();
+        const uniqueAuthors = new Set<string>();
+        const uniqueInstitutes = new Set<string>();
         const bookMap = {};
 
         booksData?.forEach(book => {
           if (book.category) {
             uniqueCategories.add(book.category);
           }
-          bookMap[book.id] = { category: book.category };
+          if (book.author) {
+            uniqueAuthors.add(book.author);
+          }
+          if (book.printinginstitute) {
+            uniqueInstitutes.add(book.printinginstitute);
+          }
+          bookMap[book.id] = { 
+            category: book.category,
+            author: book.author,
+            institute: book.printinginstitute
+          };
         });
 
         setCategories(Array.from(uniqueCategories));
+        setAuthors(Array.from(uniqueAuthors));
+        setInstitutes(Array.from(uniqueInstitutes));
         setBookDetailsMap(bookMap);
       } catch (error) {
         console.error("Unexpected error:", error);
@@ -91,7 +114,7 @@ const ReportsPage = () => {
       if (!currentStore) return;
       
       try {
-        // Query the users table instead of personnel
+        // Query the users table
         const { data, error } = await supabase
           .from('users')
           .select('id, name')
@@ -102,7 +125,7 @@ const ReportsPage = () => {
           return;
         }
         
-        if (data && data.length > 0) {
+        if (data && Array.isArray(data)) {
           setSellers(data);
         }
       } catch (error) {
@@ -113,15 +136,17 @@ const ReportsPage = () => {
     fetchSellers();
   }, [currentStore]);
   
-  // Modify filterSales function to include seller filtering
+  // Modify filterSales function to include all filters
   const filterSales = () => {
     if (!sales.length) return [];
     
     return sales.filter(sale => {
       // Apply date range filter
       if (dateRange.from && dateRange.to) {
-        const saleDate = new Date(sale.createdAt);
+        const saleDate = new Date(sale.createdat);
         const from = new Date(dateRange.from);
+        from.setHours(0, 0, 0, 0); // Start of day
+        
         const to = new Date(dateRange.to);
         to.setHours(23, 59, 59, 999); // End of day
         
@@ -130,13 +155,22 @@ const ReportsPage = () => {
       
       // Apply category filter
       if (selectedCategory && bookDetailsMap[sale.bookId]) {
-        const book = bookDetailsMap[sale.bookId];
-        if (book.category !== selectedCategory) return false;
+        if (bookDetailsMap[sale.bookId].category !== selectedCategory) return false;
       }
       
       // Apply seller filter
       if (selectedSeller && sale.personnelId !== selectedSeller) {
         return false;
+      }
+      
+      // Apply author filter
+      if (selectedAuthor && bookDetailsMap[sale.bookId]) {
+        if (bookDetailsMap[sale.bookId].author !== selectedAuthor) return false;
+      }
+      
+      // Apply institute filter
+      if (selectedInstitute && bookDetailsMap[sale.bookId]) {
+        if (bookDetailsMap[sale.bookId].institute !== selectedInstitute) return false;
       }
       
       return true;
@@ -162,12 +196,50 @@ const ReportsPage = () => {
     }));
   };
 
+  const salesByAuthor = () => {
+    const filtered = filterSales();
+    const authorSales = {};
+
+    filtered.forEach(sale => {
+      const book = bookDetailsMap[sale.bookId];
+      const author = book?.author || 'Unknown';
+      if (!authorSales[author]) {
+        authorSales[author] = 0;
+      }
+      authorSales[author] += sale.totalAmount;
+    });
+
+    return Object.keys(authorSales).map(author => ({
+      name: author,
+      amount: authorSales[author],
+    }));
+  };
+
+  const salesByInstitute = () => {
+    const filtered = filterSales();
+    const instituteSales = {};
+
+    filtered.forEach(sale => {
+      const book = bookDetailsMap[sale.bookId];
+      const institute = book?.institute || 'Unknown';
+      if (!instituteSales[institute]) {
+        instituteSales[institute] = 0;
+      }
+      instituteSales[institute] += sale.totalAmount;
+    });
+
+    return Object.keys(instituteSales).map(institute => ({
+      name: institute,
+      amount: instituteSales[institute],
+    }));
+  };
+
   const salesTrendData = () => {
     const filtered = filterSales();
     const dailySales = {};
 
     filtered.forEach(sale => {
-      const date = new Date(sale.createdAt).toLocaleDateString();
+      const date = new Date(sale.createdat).toLocaleDateString();
       if (!dailySales[date]) {
         dailySales[date] = 0;
       }
@@ -200,7 +272,7 @@ const ReportsPage = () => {
               value={selectedCategory} 
               onValueChange={setSelectedCategory}
             >
-              <SelectTrigger className="temple-select">
+              <SelectTrigger>
                 <SelectValue placeholder={t("common.selectCategory")} />
               </SelectTrigger>
               <SelectContent>
@@ -217,7 +289,7 @@ const ReportsPage = () => {
               value={selectedSeller} 
               onValueChange={setSelectedSeller}
             >
-              <SelectTrigger className="temple-select">
+              <SelectTrigger>
                 <SelectValue placeholder={t("common.selectSeller")} />
               </SelectTrigger>
               <SelectContent>
@@ -225,6 +297,43 @@ const ReportsPage = () => {
                 {sellers.map(seller => (
                   <SelectItem key={seller.id} value={seller.id}>
                     {seller.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Add new author and institute filters */}
+          <div className="flex flex-col md:flex-row gap-2">
+            <Select 
+              value={selectedAuthor} 
+              onValueChange={setSelectedAuthor}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t("common.selectAuthor")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">{t("common.all")}</SelectItem>
+                {authors.map(author => (
+                  <SelectItem key={author} value={author}>
+                    {author}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Select 
+              value={selectedInstitute} 
+              onValueChange={setSelectedInstitute}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t("common.selectInstitute")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">{t("common.all")}</SelectItem>
+                {institutes.map(institute => (
+                  <SelectItem key={institute} value={institute}>
+                    {institute}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -250,7 +359,7 @@ const ReportsPage = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="mb-4">
           <CardHeader>
             <CardTitle>{t("common.salesByCategory")}</CardTitle>
           </CardHeader>
@@ -263,6 +372,44 @@ const ReportsPage = () => {
                 <Tooltip />
                 <Legend />
                 <Bar dataKey="amount" fill="#82ca9d" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+        
+        {/* Add new sales by author chart */}
+        <Card className="mb-4">
+          <CardHeader>
+            <CardTitle>{t("common.salesByAuthor")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={salesByAuthor()}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="amount" fill="#ffc658" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+        
+        {/* Add new sales by institute chart */}
+        <Card className="mb-4">
+          <CardHeader>
+            <CardTitle>{t("common.salesByInstitute")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={salesByInstitute()}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="amount" fill="#ff8042" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
