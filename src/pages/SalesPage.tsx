@@ -189,7 +189,7 @@ const SalesPage = () => {
               name: book.name || "Unknown",
               author: book.author || "",
               price: book.saleprice || 0,
-              imageUrl: book.imageurl || book.imageUrl // Try both capitalizations
+              imageUrl: book.imageurl // Use imageurl (lowercase) from the database
             };
           });
         }
