@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,6 +32,13 @@ import MobileHeader from "@/components/MobileHeader";
 import { Plus } from "lucide-react";
 import BookImage from "@/components/BookImage";
 
+interface BookDetail {
+  name: string;
+  author: string;
+  price: number;
+  imageUrl?: string;
+}
+
 const SalesPage = () => {
   const [sales, setSales] = useState<Sale[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -42,7 +50,7 @@ const SalesPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage] = useState(10);
   const [isLoading, setIsLoading] = useState(true);
-  const [bookDetailsMap, setBookDetailsMap] = useState<Record<string, { name: string; author: string; price: number }>>({});
+  const [bookDetailsMap, setBookDetailsMap] = useState<Record<string, BookDetail>>({});
   const { currentStore } = useStallContext();
   const { isAdmin, currentUser } = useAuth();
   const navigate = useNavigate();
@@ -160,7 +168,7 @@ const SalesPage = () => {
       try {
         const { data, error } = await supabase
           .from('books')
-          .select('id, name, author, saleprice')
+          .select('id, name, author, saleprice, imageUrl')
           .eq('stallid', currentStore);
           
         if (error) {
@@ -168,12 +176,13 @@ const SalesPage = () => {
           return;
         }
         
-        const details: Record<string, { name: string; author: string; price: number }> = {};
+        const details: Record<string, BookDetail> = {};
         data.forEach(book => {
           details[book.id] = {
             name: book.name,
             author: book.author,
-            price: book.saleprice
+            price: book.saleprice,
+            imageUrl: book.imageUrl
           };
         });
         

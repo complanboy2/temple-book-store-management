@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -90,18 +91,19 @@ const ReportsPage = () => {
       if (!currentStore) return;
       
       try {
-        const { data: personnel, error } = await supabase
-          .from('personnel')
+        // Query the users table instead of personnel
+        const { data, error } = await supabase
+          .from('users')
           .select('id, name')
-          .eq('stallid', currentStore);
+          .eq('instituteid', currentStore);
           
         if (error) {
           console.error('Error fetching sellers:', error);
           return;
         }
         
-        if (personnel && personnel.length > 0) {
-          setSellers(personnel);
+        if (data && data.length > 0) {
+          setSellers(data);
         }
       } catch (error) {
         console.error('Unexpected error fetching sellers:', error);
@@ -165,7 +167,7 @@ const ReportsPage = () => {
     const dailySales = {};
 
     filtered.forEach(sale => {
-      const date = sale.createdAt.toLocaleDateString();
+      const date = new Date(sale.createdAt).toLocaleDateString();
       if (!dailySales[date]) {
         dailySales[date] = 0;
       }
@@ -197,7 +199,6 @@ const ReportsPage = () => {
             <Select 
               value={selectedCategory} 
               onValueChange={setSelectedCategory}
-              className="flex-grow"
             >
               <SelectTrigger className="temple-select">
                 <SelectValue placeholder={t("common.selectCategory")} />
@@ -215,7 +216,6 @@ const ReportsPage = () => {
             <Select 
               value={selectedSeller} 
               onValueChange={setSelectedSeller}
-              className="flex-grow"
             >
               <SelectTrigger className="temple-select">
                 <SelectValue placeholder={t("common.selectSeller")} />
