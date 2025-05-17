@@ -20,7 +20,7 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from "@/components/ui/pagination";
-import { DatePicker } from "@/components/ui/date-picker";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { useStallContext } from "@/contexts/StallContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sale } from "@/types";
@@ -44,8 +44,7 @@ const SalesPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [timeFilter, setTimeFilter] = useState("all");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [dateRange, setDateRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage] = useState(10);
@@ -101,9 +100,9 @@ const SalesPage = () => {
           query = query.eq('paymentmethod', selectedPaymentMethod);
         }
         
-        if (startDate && endDate) {
-          const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-          const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate() + 1);
+        if (dateRange.from && dateRange.to) {
+          const start = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate());
+          const end = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate() + 1);
           query = query.gte('createdat', start.toISOString()).lte('createdat', end.toISOString());
         }
         
@@ -157,19 +156,24 @@ const SalesPage = () => {
     };
     
     fetchSales();
-  }, [currentStore, timeFilter, selectedPaymentMethod, startDate, endDate, searchQuery, currentPage, toast, t, navigate, isAdmin]);
+  }, [currentStore, timeFilter, selectedPaymentMethod, dateRange, searchQuery, currentPage, toast, t, navigate, isAdmin]);
 
   useEffect(() => {
     const fetchBookDetails = async () => {
-      if (!currentStore) {
+      if (!currentStore || sales.length === 0) {
         return;
       }
     
       try {
+        // Get unique book IDs from sales
+        const bookIds = [...new Set(sales.map(sale => sale.bookId))];
+        if (bookIds.length === 0) return;
+        
         const { data, error } = await supabase
           .from('books')
-          .select('id, name, author, saleprice, imageUrl')
-          .eq('stallid', currentStore);
+          .select('id, name, author, saleprice, imageurl')
+          .eq('stallid', currentStore)
+          .in('id', bookIds);
           
         if (error) {
           console.error("Error fetching book details:", error);
@@ -177,14 +181,18 @@ const SalesPage = () => {
         }
         
         const details: Record<string, BookDetail> = {};
-        data.forEach(book => {
-          details[book.id] = {
-            name: book.name,
-            author: book.author,
-            price: book.saleprice,
-            imageUrl: book.imageUrl
-          };
-        });
+        
+        // Only process if data exists and is an array
+        if (data && Array.isArray(data)) {
+          data.forEach(book => {
+            details[book.id] = {
+              name: book.name || "Unknown",
+              author: book.author || "",
+              price: book.saleprice || 0,
+              imageUrl: book.imageurl || book.imageUrl // Try both capitalizations
+            };
+          });
+        }
         
         setBookDetailsMap(details);
       } catch (error) {
@@ -193,7 +201,7 @@ const SalesPage = () => {
     };
     
     fetchBookDetails();
-  }, [currentStore]);
+  }, [currentStore, sales]);
 
   const filteredSales = searchQuery
     ? sales.filter(sale => {
@@ -211,12 +219,8 @@ const SalesPage = () => {
     new Set(sales.filter(sale => sale.paymentMethod).map(sale => sale.paymentMethod))
   );
 
-  const handleStartDateSelect = (date: Date | undefined) => {
-    setStartDate(date);
-  };
-  
-  const handleEndDateSelect = (date: Date | undefined) => {
-    setEndDate(date);
+  const handleDateRangeChange = (range: { from: Date | null; to: Date | null }) => {
+    setDateRange(range);
   };
 
   const navigateToNewSale = () => {
@@ -291,20 +295,10 @@ const SalesPage = () => {
           </Select>
         </div>
         
-        <div className="flex items-center space-x-2 mb-4">
-          <DatePicker
-            id="start-date"
-            mode="single"
-            placeholder={t("common.startDate")}
-            selected={startDate}
-            onSelect={handleStartDateSelect}
-          />
-          <DatePicker
-            id="end-date"
-            mode="single"
-            placeholder={t("common.endDate")}
-            selected={endDate}
-            onSelect={handleEndDateSelect}
+        <div className="mb-4">
+          <DateRangePicker
+            dateRange={dateRange}
+            onDateRangeChange={handleDateRangeChange}
           />
         </div>
         
@@ -331,16 +325,12 @@ const SalesPage = () => {
                         <TableCell>{sale.createdAt.toLocaleDateString()}</TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
-                            {bookDetails?.imageUrl ? (
+                            {bookDetails && (
                               <BookImage 
                                 imageUrl={bookDetails.imageUrl}
-                                alt={bookDetails?.name || "Book"}
+                                alt={bookDetails.name || "Book"}
                                 className="w-10 h-10 rounded"
                               />
-                            ) : (
-                              <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center text-xs text-gray-500">
-                                No img
-                              </div>
                             )}
                             <span>{bookDetails?.name || "Unknown"}</span>
                           </div>
