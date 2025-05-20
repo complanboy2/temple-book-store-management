@@ -1,22 +1,8 @@
-# Welcome to your Lovable project
-
-## Project info
-
-**URL**: https://lovable.dev/projects/f63702ad-4b5d-400b-a1a3-b15b83e5793c
-
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/f63702ad-4b5d-400b-a1a3-b15b83e5793c) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
+# Welcome to project
 
 **Use your preferred IDE**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+If you want to work locally using your own IDE, you can clone this repo and push changes.
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
@@ -67,6 +53,12 @@ Simply open [Lovable](https://lovable.dev/projects/f63702ad-4b5d-400b-a1a3-b15b8
 ## Can I connect a custom domain to my Lovable project?
 
 Yes, you can!
+
+npm install
+npm run build
+npx cap add android
+npx cap copy android 
+npx cap open android 
 
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
