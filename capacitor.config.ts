@@ -17,13 +17,28 @@ const config: CapacitorConfig = {
       androidSpinnerStyle: "large",
       iosSpinnerStyle: "small",
       spinnerColor: "#F97316",
+    },
+    WebView: {
+      allowFileAccess: true,
+      allowFileAccessFromFileURLs: true,
+      allowUniversalAccessFromFileURLs: true,
+      clearCache: true, // Clear WebView cache on app start
+      scrollEnabled: true,
+      serverAssets: ["www"],
+      androidScheme: "https"
     }
   },
   android: {
     buildOptions: {
       keystorePath: 'temple-book-sutra.keystore',
       keystoreAlias: 'templebooksutra',
-    }
+    },
+    webContentsDebuggingEnabled: false, // Disable WebView debugging in production
+    minSdkVersion: 22,
+    initialNavigation: 'homepage',
+    allowMixedContent: true, // Allow loading mixed content
+    captureInput: true, // Better input handling
+    useLegacyBridge: false // Use the modern bridge
   },
   ios: {
     contentInset: "always"
