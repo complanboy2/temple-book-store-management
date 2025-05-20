@@ -1,7 +1,7 @@
 
-# Temple Book Sutra - Android Publication Guide
+# Book Store Management - Android Publication Guide
 
-This document provides instructions for preparing and publishing the Temple Book Sutra app to the Google Play Store.
+This document provides instructions for preparing and publishing the Book Store Management app to the Google Play Store.
 
 ## Prerequisites
 
@@ -59,8 +59,8 @@ The privacy policy is already available at the `/privacy-policy` route in the ap
 4. In Android Studio, select Build > Generate Signed Bundle/APK
 5. Choose Android App Bundle (AAB)
 6. Use the existing keystore from the project:
-   - Path: `temple-book-sutra.keystore`
-   - Alias: `templebooksutra`
+   - Path: `book-store-management.keystore`
+   - Alias: `bookstoremanagement`
    - Enter the passwords when prompted
 7. Choose a destination folder and complete the build
 
@@ -69,8 +69,8 @@ The privacy policy is already available at the `/privacy-policy` route in the ap
 1. Log into the [Google Play Console](https://play.google.com/console)
 2. Create a new app
 3. Fill out the store listing:
-   - Title: Temple Book Sutra
-   - Short description: Efficient book stall management app for temples
+   - Title: Book Store Management
+   - Short description: Efficient book stall management app
    - Full description: [Add detailed app description]
    - Upload all prepared assets
 4. Set up content rating (complete the rating questionnaire)
@@ -83,4 +83,3 @@ The privacy policy is already available at the `/privacy-policy` route in the ap
 - The initial review may take several days
 - Testing with a closed track (internal testing) is recommended before full publication
 - Make sure the app complies with Google's [Developer Program Policies](https://play.google.com/about/developer-content-policy/)
-

@@ -1,7 +1,7 @@
 
 # Android Resources Placeholder
 
-You need to replace the default Capacitor icons with your own branded icons before publishing to the Play Store.
+You need to replace the default Capacitor icons with your own branded Book Store Management icons before publishing to the Play Store.
 
 ## Required Icon Replacements
 

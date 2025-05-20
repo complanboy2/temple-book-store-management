@@ -25,6 +25,8 @@ import { useTranslation } from "react-i18next";
 import MobileHeader from "@/components/MobileHeader";
 import ExportReportButton from "@/components/ExportReportButton";
 import { format } from "date-fns";
+import StatsCard from "@/components/StatsCard";
+import { TrendingUp, ShoppingBag, UserIcon, Banknote } from "lucide-react";
 
 const ReportsPage = () => {
   const [sales, setSales] = useState([]);
@@ -48,6 +50,14 @@ const ReportsPage = () => {
   
   // Add state for filtered sales data
   const [filteredSales, setFilteredSales] = useState([]);
+  
+  // Add dashboard summary stats
+  const [dashboardStats, setDashboardStats] = useState({
+    totalSales: 0,
+    totalAmount: 0,
+    uniqueBooks: 0,
+    uniqueSellers: 0
+  });
 
   const { currentStore } = useStallContext();
   const { t } = useTranslation();
@@ -164,7 +174,7 @@ const ReportsPage = () => {
     });
   };
   
-  // Update filterSales to update state with filtered results
+  // Update filterSales to update state with filtered results and dashboard stats
   const filterSales = () => {
     if (!sales.length) return [];
     
@@ -206,6 +216,20 @@ const ReportsPage = () => {
     
     // Update filtered sales state
     setFilteredSales(filtered);
+
+    // Calculate dashboard stats
+    const uniqueBookIds = new Set(filtered.map(sale => sale.bookid));
+    const uniqueSellerIds = new Set(filtered.map(sale => sale.personnelid));
+    const totalItems = filtered.reduce((sum, sale) => sum + sale.quantity, 0);
+    const totalRevenue = filtered.reduce((sum, sale) => sum + sale.totalamount, 0);
+
+    setDashboardStats({
+      totalSales: totalItems,
+      totalAmount: totalRevenue,
+      uniqueBooks: uniqueBookIds.size,
+      uniqueSellers: uniqueSellerIds.size
+    });
+    
     return filtered;
   };
 
@@ -227,7 +251,7 @@ const ReportsPage = () => {
     });
 
     return Object.keys(categorySales).map(category => ({
-      category,
+      name: category,
       amount: categorySales[category],
     }));
   };
@@ -280,7 +304,7 @@ const ReportsPage = () => {
     });
 
     return Object.keys(dailySales).map(date => ({
-      date,
+      name: date,
       amount: dailySales[date],
     }));
   };
@@ -383,6 +407,30 @@ const ReportsPage = () => {
           </div>
         </div>
         
+        {/* Dashboard Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <StatsCard
+            title={t("common.totalItems")}
+            value={dashboardStats.totalSales}
+            icon={<ShoppingBag className="h-6 w-6" />}
+          />
+          <StatsCard
+            title={t("common.totalRevenue")}
+            value={`₹${dashboardStats.totalAmount.toLocaleString()}`}
+            icon={<Banknote className="h-6 w-6" />}
+          />
+          <StatsCard
+            title={t("common.uniqueBooks")}
+            value={dashboardStats.uniqueBooks}
+            icon={<TrendingUp className="h-6 w-6" />}
+          />
+          <StatsCard
+            title={t("common.uniqueSellers")}
+            value={dashboardStats.uniqueSellers}
+            icon={<UserIcon className="h-6 w-6" />}
+          />
+        </div>
+        
         <Card className="mb-4">
           <CardHeader>
             <CardTitle>{t("common.salesTrend")}</CardTitle>
@@ -391,7 +439,7 @@ const ReportsPage = () => {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={salesTrendData()}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
+                <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
                 <Legend />
@@ -409,7 +457,7 @@ const ReportsPage = () => {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={salesByCategory()}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="category" />
+                <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
                 <Legend />
