@@ -20,6 +20,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     <div className="min-h-screen bg-temple-background">
       {children}
       {shouldShowNavbar && <MobileNavBar />}
+      {/* Add padding at bottom to account for the navbar */}
+      {shouldShowNavbar && <div className="h-16"></div>}
     </div>
   );
 };

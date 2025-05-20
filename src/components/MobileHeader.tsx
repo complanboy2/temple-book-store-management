@@ -34,13 +34,13 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   
   return (
     <div>
-      <div className="bg-gradient-to-r from-temple-saffron to-temple-gold py-4 px-4 flex items-center justify-between">
-        <div className="flex items-center">
+      <div className="bg-gradient-to-r from-temple-saffron to-temple-gold py-3 px-4 flex items-center justify-between">
+        <div className="flex items-center flex-1 min-w-0">
           {showBackButton && (
             <Button 
               variant="ghost" 
               size="icon"
-              className="mr-2 text-white"
+              className="mr-2 text-white flex-shrink-0"
               onClick={() => navigate(backTo)}
             >
               <ChevronLeft size={24} />
@@ -51,22 +51,22 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
             <Button 
               variant="ghost" 
               size="icon"
-              className="mr-2 text-white"
+              className="mr-2 text-white flex-shrink-0"
               onClick={onLeftIconClick}
             >
               {leftIcon}
             </Button>
           )}
           
-          <h1 className="text-lg font-medium text-white">{title}</h1>
+          <h1 className="text-lg font-medium text-white truncate">{title}</h1>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center">
           {showSearchButton && (
             <Button 
               variant="ghost" 
               size="icon" 
-              className="text-white"
+              className="text-white flex-shrink-0"
               onClick={onSearch}
             >
               <Search size={20} />

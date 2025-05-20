@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import { supabase } from '@/integrations/supabase/client';
-import { Book, Sale } from '@/types';
+import { Book } from '@/types';
 import { useStallContext } from '@/contexts/StallContext';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '@/hooks/use-toast';
@@ -261,62 +261,65 @@ const SellMultipleBooksPage: React.FC = () => {
                 ) : (
                   <div className="max-h-72 overflow-y-auto">
                     {searchResults.length > 0 ? (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>{t("common.image")}</TableHead>
-                            <TableHead>{t("common.name")}</TableHead>
-                            <TableHead>{t("common.price")}</TableHead>
-                            <TableHead>{t("common.stock")}</TableHead>
-                            <TableHead className="text-right">{t("common.action")}</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {searchResults.map(book => (
-                            <TableRow key={book.id}>
-                              <TableCell className="w-16">
-                                {book.imageUrl ? (
-                                  <div className="w-12 h-12 overflow-hidden rounded-md">
-                                    <AspectRatio ratio={1/1}>
-                                      <img 
-                                        src={book.imageUrl} 
-                                        alt={book.name} 
-                                        className="object-cover w-full h-full"
-                                      />
-                                    </AspectRatio>
-                                  </div>
-                                ) : (
-                                  <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center">
-                                    <span className="text-xs text-gray-400">No image</span>
-                                  </div>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <div>
-                                  <p className="font-medium">{book.name}</p>
-                                  <p className="text-sm text-gray-500">{book.author}</p>
-                                </div>
-                              </TableCell>
-                              <TableCell>₹{book.salePrice}</TableCell>
-                              <TableCell>
-                                <span className={book.quantity <= 0 ? "text-red-500" : ""}>
-                                  {book.quantity}
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => addToCart(book)}
-                                  disabled={book.quantity <= 0}
-                                >
-                                  {book.quantity <= 0 ? t("common.outOfStock") : t("common.add")}
-                                </Button>
-                              </TableCell>
+                      <div className="w-full overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-16">{t("common.image")}</TableHead>
+                              <TableHead>{t("common.name")}</TableHead>
+                              <TableHead className="w-20">{t("common.price")}</TableHead>
+                              <TableHead className="w-20">{t("common.stock")}</TableHead>
+                              <TableHead className="w-20 text-right">{t("common.action")}</TableHead>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                          </TableHeader>
+                          <TableBody>
+                            {searchResults.map(book => (
+                              <TableRow key={book.id}>
+                                <TableCell className="align-top">
+                                  {book.imageUrl ? (
+                                    <div className="w-12 h-12 overflow-hidden rounded-md">
+                                      <AspectRatio ratio={1/1}>
+                                        <img 
+                                          src={book.imageUrl} 
+                                          alt={book.name} 
+                                          className="object-cover w-full h-full"
+                                        />
+                                      </AspectRatio>
+                                    </div>
+                                  ) : (
+                                    <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center">
+                                      <span className="text-xs text-gray-400">No image</span>
+                                    </div>
+                                  )}
+                                </TableCell>
+                                <TableCell className="align-top">
+                                  <div>
+                                    <p className="font-medium line-clamp-2">{book.name}</p>
+                                    <p className="text-sm text-gray-500 line-clamp-1">{book.author}</p>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="align-top">₹{book.salePrice}</TableCell>
+                                <TableCell className="align-top">
+                                  <span className={book.quantity <= 0 ? "text-red-500" : ""}>
+                                    {book.quantity}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="text-right align-top">
+                                  <Button 
+                                    size="sm" 
+                                    variant={book.quantity <= 0 ? "outline" : "default"}
+                                    onClick={() => addToCart(book)}
+                                    disabled={book.quantity <= 0}
+                                    className="px-2 py-1 h-auto"
+                                  >
+                                    {book.quantity <= 0 ? t("common.outOfStock") : t("common.add")}
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
                     ) : (
                       searchQuery.length >= 2 && (
                         <p className="text-center py-4 text-gray-500">

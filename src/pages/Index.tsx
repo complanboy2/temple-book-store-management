@@ -119,15 +119,17 @@ const Index = () => {
       
       {currentStore ? (
         <div className="mobile-container px-4 py-6">
-          {/* Stats Cards - Now Clickable */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          {/* Stats Cards - Improved mobile layout with fixed alignment */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
             <Card 
               onClick={goToBooks}
               className="bg-white border-temple-gold/20 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
             >
-              <CardContent className="p-4">
-                <h3 className="text-sm text-gray-600 mb-1">{t("dashboard.totalBooks")}</h3>
-                <p className="text-2xl font-bold text-temple-maroon">{isLoading ? "..." : totalBooks}</p>
+              <CardContent className="p-3">
+                <div className="flex flex-col">
+                  <h3 className="text-xs sm:text-sm text-gray-600 mb-1">{t("dashboard.totalBooks")}</h3>
+                  <p className="text-xl sm:text-2xl font-bold text-temple-maroon truncate">{isLoading ? "..." : totalBooks}</p>
+                </div>
               </CardContent>
             </Card>
             
@@ -135,9 +137,11 @@ const Index = () => {
               onClick={goToTodaySales}
               className="bg-white border-temple-gold/20 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
             >
-              <CardContent className="p-4">
-                <h3 className="text-sm text-gray-600 mb-1">{t("dashboard.salesToday")}</h3>
-                <p className="text-2xl font-bold text-temple-saffron">{isLoading ? "..." : todaySales}</p>
+              <CardContent className="p-3">
+                <div className="flex flex-col">
+                  <h3 className="text-xs sm:text-sm text-gray-600 mb-1">{t("dashboard.salesToday")}</h3>
+                  <p className="text-xl sm:text-2xl font-bold text-temple-saffron truncate">{isLoading ? "..." : todaySales}</p>
+                </div>
               </CardContent>
             </Card>
             
@@ -145,11 +149,13 @@ const Index = () => {
               onClick={goToRevenue}
               className="bg-white border-temple-gold/20 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
             >
-              <CardContent className="p-4">
-                <h3 className="text-sm text-gray-600 mb-1">{t("dashboard.revenue")}</h3>
-                <p className="text-2xl font-bold text-green-600">
-                  {isLoading ? "..." : `₹${totalRevenue.toFixed(2)}`}
-                </p>
+              <CardContent className="p-3">
+                <div className="flex flex-col">
+                  <h3 className="text-xs sm:text-sm text-gray-600 mb-1">{t("dashboard.revenue")}</h3>
+                  <p className="text-xl sm:text-2xl font-bold text-green-600 truncate">
+                    {isLoading ? "..." : `₹${totalRevenue.toFixed(2)}`}
+                  </p>
+                </div>
               </CardContent>
             </Card>
             
@@ -157,11 +163,13 @@ const Index = () => {
               onClick={goToLowStock}
               className={`bg-white border-temple-gold/20 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors ${lowStockCount > 0 ? 'border-red-300' : ''}`}
             >
-              <CardContent className="p-4">
-                <h3 className="text-sm text-gray-600 mb-1">{t("dashboard.lowStock")}</h3>
-                <p className={`text-2xl font-bold ${lowStockCount > 0 ? 'text-red-500' : 'text-temple-maroon'}`}>
-                  {isLoading ? "..." : lowStockCount}
-                </p>
+              <CardContent className="p-3">
+                <div className="flex flex-col">
+                  <h3 className="text-xs sm:text-sm text-gray-600 mb-1">{t("dashboard.lowStock")}</h3>
+                  <p className={`text-xl sm:text-2xl font-bold truncate ${lowStockCount > 0 ? 'text-red-500' : 'text-temple-maroon'}`}>
+                    {isLoading ? "..." : lowStockCount}
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </div>

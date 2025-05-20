@@ -16,16 +16,17 @@ const MobileNavBar: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 z-10">
+    <div className="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 z-10 pb-safe">
       <div className="grid grid-cols-5 h-full text-xs text-temple-dark">
         <button
           onClick={() => navigateIfNotCurrent('/')}
           className={`flex flex-col items-center justify-center ${
             location.pathname === '/' ? 'text-temple-maroon' : ''
           }`}
+          aria-label={t('common.home')}
         >
           <Home className={`h-5 w-5 ${location.pathname === '/' ? 'text-temple-maroon' : ''}`} />
-          <span className="mt-1">{t('common.home')}</span>
+          <span className="mt-1 text-[10px] sm:text-xs">{t('common.home')}</span>
         </button>
         
         <button
@@ -33,9 +34,10 @@ const MobileNavBar: React.FC = () => {
           className={`flex flex-col items-center justify-center ${
             location.pathname === '/books' || location.pathname.startsWith('/books/') ? 'text-temple-maroon' : ''
           }`}
+          aria-label={t('common.books')}
         >
           <Book className={`h-5 w-5 ${location.pathname === '/books' || location.pathname.startsWith('/books/') ? 'text-temple-maroon' : ''}`} />
-          <span className="mt-1">{t('common.books')}</span>
+          <span className="mt-1 text-[10px] sm:text-xs">{t('common.books')}</span>
         </button>
         
         <button
@@ -43,9 +45,10 @@ const MobileNavBar: React.FC = () => {
           className={`flex flex-col items-center justify-center ${
             location.pathname === '/sell-multiple' ? 'text-temple-maroon' : ''
           }`}
+          aria-label={t('common.sell')}
         >
           <ShoppingCart className={`h-5 w-5 ${location.pathname === '/sell-multiple' ? 'text-temple-maroon' : ''}`} />
-          <span className="mt-1">{t('common.sell')}</span>
+          <span className="mt-1 text-[10px] sm:text-xs">{t('common.sell')}</span>
         </button>
         
         <button
@@ -53,9 +56,10 @@ const MobileNavBar: React.FC = () => {
           className={`flex flex-col items-center justify-center ${
             location.pathname === '/search' ? 'text-temple-maroon' : ''
           }`}
+          aria-label={t('common.search')}
         >
           <Search className={`h-5 w-5 ${location.pathname === '/search' ? 'text-temple-maroon' : ''}`} />
-          <span className="mt-1">{t('common.search')}</span>
+          <span className="mt-1 text-[10px] sm:text-xs">{t('common.search')}</span>
         </button>
         
         <button
@@ -63,9 +67,10 @@ const MobileNavBar: React.FC = () => {
           className={`flex flex-col items-center justify-center ${
             location.pathname === '/reports' ? 'text-temple-maroon' : ''
           }`}
+          aria-label={t('common.reports')}
         >
           <PieChart className={`h-5 w-5 ${location.pathname === '/reports' ? 'text-temple-maroon' : ''}`} />
-          <span className="mt-1">{t('common.reports')}</span>
+          <span className="mt-1 text-[10px] sm:text-xs">{t('common.reports')}</span>
         </button>
       </div>
     </div>

@@ -270,7 +270,7 @@ const ReportsPage = () => {
 
     return Object.keys(authorSales).map(author => ({
       name: author,
-      amount: authorSales[author],
+      revenue: authorSales[author],
     }));
   };
 
@@ -288,7 +288,7 @@ const ReportsPage = () => {
 
     return Object.keys(instituteSales).map(institute => ({
       name: institute,
-      amount: instituteSales[institute],
+      revenue: instituteSales[institute],
     }));
   };
 
@@ -304,8 +304,8 @@ const ReportsPage = () => {
     });
 
     return Object.keys(dailySales).map(date => ({
-      name: date,
-      amount: dailySales[date],
+      date: date,
+      revenue: dailySales[date],
     }));
   };
 
@@ -318,13 +318,14 @@ const ReportsPage = () => {
       />
       
       <div className="mobile-container py-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        {/* Filter Controls - Improved mobile layout */}
+        <div className="space-y-3 mb-6">
           <DateRangePicker
             dateRange={dateRange}
             onDateRangeChange={setDateRange}
           />
           
-          <div className="flex flex-col md:flex-row gap-2">
+          <div className="grid grid-cols-1 gap-2">
             <Select 
               value={selectedCategory} 
               onValueChange={setSelectedCategory}
@@ -358,10 +359,7 @@ const ReportsPage = () => {
                 ))}
               </SelectContent>
             </Select>
-          </div>
           
-          {/* Author and institute filters */}
-          <div className="flex flex-col md:flex-row gap-2">
             <Select 
               value={selectedAuthor} 
               onValueChange={setSelectedAuthor}
@@ -407,101 +405,111 @@ const ReportsPage = () => {
           </div>
         </div>
         
-        {/* Dashboard Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        {/* Dashboard Stats - Improved mobile display */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
           <StatsCard
             title={t("common.totalItems")}
             value={dashboardStats.totalSales}
-            icon={<ShoppingBag className="h-6 w-6" />}
+            icon={<ShoppingBag className="h-5 w-5" />}
           />
           <StatsCard
             title={t("common.totalRevenue")}
             value={`₹${dashboardStats.totalAmount.toLocaleString()}`}
-            icon={<Banknote className="h-6 w-6" />}
+            icon={<Banknote className="h-5 w-5" />}
           />
           <StatsCard
             title={t("common.uniqueBooks")}
             value={dashboardStats.uniqueBooks}
-            icon={<TrendingUp className="h-6 w-6" />}
+            icon={<TrendingUp className="h-5 w-5" />}
           />
           <StatsCard
             title={t("common.uniqueSellers")}
             value={dashboardStats.uniqueSellers}
-            icon={<UserIcon className="h-6 w-6" />}
+            icon={<UserIcon className="h-5 w-5" />}
           />
         </div>
         
+        {/* Sales Trend Chart - Fixed x-axis */}
         <Card className="mb-4">
           <CardHeader>
             <CardTitle>{t("common.salesTrend")}</CardTitle>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={salesTrendData()}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="amount" fill="#8884d8" />
-              </BarChart>
-            </ResponsiveContainer>
+          <CardContent className="px-1 sm:px-4">
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={salesTrendData()} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="revenue" name={t("common.revenue")} fill="#8884d8" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
+        {/* Sales by Category Chart - Fixed x-axis */}
         <Card className="mb-4">
           <CardHeader>
             <CardTitle>{t("common.salesByCategory")}</CardTitle>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={salesByCategory()}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="amount" fill="#82ca9d" />
-              </BarChart>
-            </ResponsiveContainer>
+          <CardContent className="px-1 sm:px-4">
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={salesByCategory()} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="amount" name={t("common.revenue")} fill="#82ca9d" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
         
-        {/* Sales by author chart */}
+        {/* Sales by author chart - Fixed x-axis */}
         <Card className="mb-4">
           <CardHeader>
             <CardTitle>{t("common.salesByAuthor")}</CardTitle>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={salesByAuthor()}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="amount" fill="#ffc658" />
-              </BarChart>
-            </ResponsiveContainer>
+          <CardContent className="px-1 sm:px-4">
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={salesByAuthor()} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="revenue" name={t("common.revenue")} fill="#ffc658" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
         
-        {/* Sales by institute chart */}
+        {/* Sales by institute chart - Fixed x-axis */}
         <Card className="mb-4">
           <CardHeader>
             <CardTitle>{t("common.salesByInstitute")}</CardTitle>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={salesByInstitute()}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="amount" fill="#ff8042" />
-              </BarChart>
-            </ResponsiveContainer>
+          <CardContent className="px-1 sm:px-4">
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={salesByInstitute()} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="revenue" name={t("common.revenue")} fill="#ff8042" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
       </div>

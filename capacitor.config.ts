@@ -34,7 +34,9 @@ const config: CapacitorConfig = {
     initialNavigation: 'homepage',
     allowMixedContent: true, // Allow loading mixed content
     captureInput: true, // Better input handling
-    useLegacyBridge: false // Use the modern bridge
+    useLegacyBridge: false, // Use the modern bridge
+    overrideUserAgent: null, // Don't override user agent
+    backgroundColor: "#FFF8EE"
   },
   ios: {
     contentInset: "always"

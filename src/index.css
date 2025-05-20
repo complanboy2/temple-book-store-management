@@ -79,32 +79,39 @@
   .pt-safe {
     padding-top: env(safe-area-inset-top, 16px);
   }
+  
+  /* Improve table display on small screens */
+  @media (max-width: 640px) {
+    .table-container {
+      @apply overflow-x-auto -mx-4 px-4;
+    }
+  }
 }
 
 @layer components {
   .temple-card {
-    @apply bg-temple-card rounded-lg border border-temple-gold/30 shadow-md p-4;
+    @apply bg-temple-card rounded-lg border border-temple-gold/30 shadow-md p-3 sm:p-4;
   }
   
   .temple-button {
-    @apply bg-temple-saffron hover:bg-temple-saffron/90 text-white rounded-lg px-6 py-3 font-medium text-lg shadow-md transition-all duration-200 ease-in-out hover:shadow-lg active:scale-95;
+    @apply bg-temple-saffron hover:bg-temple-saffron/90 text-white rounded-lg px-4 sm:px-6 py-2 sm:py-3 font-medium text-base sm:text-lg shadow-md transition-all duration-200 ease-in-out hover:shadow-lg active:scale-95;
   }
   
   .temple-input {
-    @apply bg-white border border-temple-gold/30 rounded-lg p-3 text-lg focus:outline-none focus:ring-2 focus:ring-temple-saffron/50;
+    @apply bg-white border border-temple-gold/30 rounded-lg p-2 sm:p-3 text-base sm:text-lg focus:outline-none focus:ring-2 focus:ring-temple-saffron/50;
   }
   
   .temple-header {
-    @apply text-2xl font-bold text-temple-maroon;
+    @apply text-xl sm:text-2xl font-bold text-temple-maroon;
   }
   
   /* Mobile specific components */
   .mobile-container {
-    @apply px-4 py-4 max-w-full overflow-x-hidden;
+    @apply px-3 sm:px-4 py-3 sm:py-4 max-w-full overflow-x-hidden;
   }
   
   .mobile-card {
-    @apply temple-card mb-4 shadow-sm p-3;
+    @apply temple-card mb-4 shadow-sm p-2 sm:p-3;
   }
   
   .mobile-button {
@@ -116,7 +123,7 @@
   }
   
   .mobile-header {
-    @apply text-xl font-bold text-temple-maroon mb-2;
+    @apply text-lg sm:text-xl font-bold text-temple-maroon mb-2;
   }
 
   .tab-active {
