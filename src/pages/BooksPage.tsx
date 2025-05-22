@@ -1,19 +1,17 @@
 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import BookList from "@/components/BookList";
-import BookFilter from "@/components/BookFilter";
 import { useStallContext } from "@/contexts/StallContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 import { Book } from "@/types";
 import MobileHeader from "@/components/MobileHeader";
 import ScannerButton from "@/components/ScannerButton";
-import BookImage from "@/components/BookImage";
 import { useToast } from "@/hooks/use-toast";
-import DeleteBookDialog from "@/components/DeleteBookDialog";
 import { useBookManager } from "@/hooks/useBookManager";
-import ExportReportButton from "@/components/ExportReportButton";
+import BookPageHeader from "@/components/books/BookPageHeader";
+import BookListContainer from "@/components/books/BookListContainer";
+import DeleteBookDialogContainer from "@/components/books/DeleteBookDialogContainer";
 
 const BooksPage = () => {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
@@ -93,7 +91,13 @@ const BooksPage = () => {
   };
   
   // Handle book deletion
-  const handleDeleteBook = async () => {
+  const handleBookDelete = (book: Book) => {
+    setSelectedBook(book);
+    setIsDeleteDialogOpen(true);
+  };
+
+  // Delete the selected book
+  const handleDeleteConfirm = async () => {
     if (!selectedBook) return;
     
     try {
@@ -127,65 +131,34 @@ const BooksPage = () => {
       />
       
       <main className="container mx-auto px-4 py-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-temple-maroon mb-4 md:mb-0">{t("common.booksInventory")}</h1>
-          
-          <div className="flex flex-col sm:flex-row gap-2">
-            {/* Add Export Button for admins */}
-            {isAdmin && (
-              <ExportReportButton
-                reportType="inventory"
-                bookData={getExportBooks()}
-              />
-            )}
-            
-            {isAdmin && (
-              <button 
-                onClick={() => navigate("/books/add")}
-                className="bg-temple-saffron hover:bg-temple-saffron/90 text-white px-4 py-2 rounded flex items-center justify-center"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-                </svg>
-                {t("common.addBook")}
-              </button>
-            )}
-          </div>
-        </div>
+        <BookPageHeader 
+          exportBooks={getExportBooks()} 
+          isAdmin={isAdmin}
+        />
         
-        <div className="mb-6">
-          <BookFilter
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
-            categories={categories}
-          />
-        </div>
-        
-        <BookList 
+        <BookListContainer
           books={books}
           isLoading={isLoading}
           searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
           selectedCategory={selectedCategory}
-          onClearFilters={clearFilters}
-          onBookSelect={handleSellBook}
-          onEdit={handleEditBook}
-          onDelete={(book) => {
-            setSelectedBook(book);
-            setIsDeleteDialogOpen(true);
-          }}
-          onSell={handleSellBook}
-          ImageComponent={BookImage}
+          setSelectedCategory={setSelectedCategory}
+          categories={categories}
+          clearFilters={clearFilters}
+          handleEditBook={handleEditBook}
+          handleDeleteBook={handleBookDelete}
+          handleSellBook={handleSellBook}
         />
       </main>
       
-      <DeleteBookDialog
+      <DeleteBookDialogContainer
         isOpen={isDeleteDialogOpen}
-        bookTitle={selectedBook?.name || ""}
+        selectedBook={selectedBook}
         onClose={() => setIsDeleteDialogOpen(false)}
-        onDelete={handleDeleteBook}
+        onDelete={handleDeleteConfirm}
       />
+
+      <ScannerButton onScanComplete={handleScanComplete} />
     </div>
   );
 };

@@ -45,6 +45,7 @@ const BookCard: React.FC<BookCardProps> = ({
     e.stopPropagation();
     if (onEdit) {
       onEdit(book);
+      console.log("Edit click handler called for book:", book.id, book.name);
     }
   };
 

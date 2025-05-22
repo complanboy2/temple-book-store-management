@@ -22,28 +22,14 @@ import OrdersPage from "./pages/OrdersPage";
 import ProfilePage from "./pages/ProfilePage";
 import NewOrderPage from "./pages/NewOrderPage";
 import SellMultipleBooksPage from "./pages/SellMultipleBooksPage";
-import { useIsMobile } from "./hooks/use-mobile";
-import MobileNavBar from "./components/MobileNavBar";
+import Layout from "./components/Layout";
 
 function App() {
-  const isMobile = useIsMobile();
-  const [initialized, setInitialized] = useState(false);
-
-  useEffect(() => {
-    // We need to wait for the mobile check to be completed
-    // before we can render the app
-    if (typeof isMobile === "boolean") {
-      setInitialized(true);
-    }
-  }, [isMobile]);
-
-  if (!initialized) {
-    return <div className="loading" />;
-  }
+  const [initialized, setInitialized] = useState(true);
 
   return (
     <Router>
-      <div className="app-container">
+      <Layout>
         <Routes>
           {/* Set dashboard as home page */}
           <Route path="/" element={<DashboardPage />} />
@@ -53,7 +39,7 @@ function App() {
           <Route path="/dashboard" element={<Navigate to="/" replace />} />
           <Route path="/books" element={<BooksPage />} />
           <Route path="/books/add" element={<AddBookPage />} />
-          <Route path="/books/edit/:id" element={<EditBookPage />} />
+          <Route path="/books/edit/:bookId" element={<EditBookPage />} />
           <Route path="/sales" element={<SalesPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
@@ -69,8 +55,7 @@ function App() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-        {isMobile && <MobileNavBar />}
-      </div>
+      </Layout>
       <Toaster position="top-center" />
     </Router>
   );
