@@ -18,7 +18,7 @@ const config: CapacitorConfig = {
       allowFileAccess: true,
       allowFileAccessFromFileURLs: true,
       allowUniversalAccessFromFileURLs: true,
-      clearCache: true, // Clear WebView cache on app start
+      clearCache: false,
       scrollEnabled: true,
       serverAssets: ["www"],
       androidScheme: "https"
@@ -29,13 +29,13 @@ const config: CapacitorConfig = {
       keystorePath: 'book-store-management.keystore',
       keystoreAlias: 'bookstoremanagement',
     },
-    webContentsDebuggingEnabled: false, // Disable WebView debugging in production
+    webContentsDebuggingEnabled: true, // Enable for development debugging
     minSdkVersion: 22,
     initialNavigation: 'homepage',
-    allowMixedContent: true, // Allow loading mixed content
-    captureInput: true, // Better input handling
-    useLegacyBridge: false, // Use the modern bridge
-    overrideUserAgent: null, // Don't override user agent
+    allowMixedContent: true,
+    captureInput: true,
+    useLegacyBridge: false,
+    overrideUserAgent: null,
     backgroundColor: "#FFF8EE"
   },
   ios: {

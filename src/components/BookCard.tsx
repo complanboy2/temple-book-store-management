@@ -48,6 +48,14 @@ const BookCard: React.FC<BookCardProps> = ({
     }
   };
 
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onDelete) {
+      onDelete(book);
+    }
+  };
+
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <CardHeader className="p-0">
@@ -92,11 +100,7 @@ const BookCard: React.FC<BookCardProps> = ({
               
               {onDelete && (
                 <Button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (onDelete) onDelete(book);
-                  }}
+                  onClick={handleDeleteClick}
                   variant="ghost"
                   className="text-destructive hover:text-destructive"
                   title={t("common.delete")}

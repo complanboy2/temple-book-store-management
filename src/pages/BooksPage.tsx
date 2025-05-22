@@ -71,6 +71,7 @@ const BooksPage = () => {
   // Handle book editing - navigate to edit page with book ID
   const handleEditBook = (book: Book) => {
     if (book && book.id) {
+      console.log("Editing book:", book.id, book.name);
       navigate(`/books/edit/${book.id}`);
     }
   };
