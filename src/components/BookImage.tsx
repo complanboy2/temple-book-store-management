@@ -46,14 +46,14 @@ const BookImage: React.FC<BookImageProps> = ({
           setDisplayUrl(cached);
           setHasError(false);
         } else {
-          console.error(`Failed to load cached image for: ${imageUrl}`);
-          setHasError(true);
+          setDisplayUrl(imageUrl); // Fallback to direct URL
+          setHasError(false);
         }
       } catch (error) {
         console.error(`Error loading image: ${error}`);
         if (active) {
-          setDisplayUrl(undefined);
-          setHasError(true);
+          setDisplayUrl(imageUrl); // Fallback to direct URL
+          setHasError(false);
         }
       } finally {
         if (active) setIsLoading(false);

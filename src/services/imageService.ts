@@ -7,7 +7,13 @@ import { imageCacheService } from './imageCacheService';
  * @returns A promise that resolves to the public URL of the uploaded image, or null if upload fails
  */
 export const getImageUrl = async (file: File): Promise<string | null> => {
-  return await imageCacheService.uploadAndCacheImage(file);
+  try {
+    console.log("Uploading image from imageService:", file.name);
+    return await imageCacheService.uploadAndCacheImage(file);
+  } catch (error) {
+    console.error("Error in getImageUrl:", error);
+    return null;
+  }
 };
 
 /**
@@ -16,5 +22,11 @@ export const getImageUrl = async (file: File): Promise<string | null> => {
  * @returns A promise that resolves to the cached image URL or null if failed
  */
 export const getCachedImageUrl = async (url: string): Promise<string | null> => {
-  return await imageCacheService.getCachedImageUrl(url);
+  try {
+    if (!url) return null;
+    return await imageCacheService.getCachedImageUrl(url);
+  } catch (error) {
+    console.error("Error in getCachedImageUrl:", error);
+    return null;
+  }
 };

@@ -6,6 +6,7 @@ import { getImageUrl, getCachedImageUrl } from "@/services/imageService";
 import { useTranslation } from "react-i18next";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface ImageUploadProps {
   initialImageUrl?: string;
@@ -32,6 +33,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const objectUrlRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
+  const { toast } = useToast();
 
   // Revoke object URL when component unmounts
   useEffect(() => {
@@ -61,15 +63,15 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
             setHasError(false);
           } else {
             console.error(`Failed to load initial image: ${initialImageUrl}`);
-            setImageUrl(undefined);
-            setHasError(true);
+            setImageUrl(initialImageUrl); // Fallback to direct URL
+            setHasError(false);
           }
         }
       } catch (error) {
         console.error(`Error loading initial image: ${error}`);
         if (active) {
-          setImageUrl(undefined);
-          setHasError(true);
+          setImageUrl(initialImageUrl); // Fallback to direct URL
+          setHasError(false);
         }
       }
     };
@@ -88,6 +90,28 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     try {
       setIsUploading(true);
       setHasError(false);
+
+      // Validate file is an image
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: t("common.error"),
+          description: t("common.invalidImageFormat"),
+          variant: "destructive",
+        });
+        setIsUploading(false);
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: t("common.error"),
+          description: t("common.imageTooLarge"),
+          variant: "destructive",
+        });
+        setIsUploading(false);
+        return;
+      }
 
       onImageChange?.(file);
 
@@ -110,14 +134,24 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       
       console.log(`Image uploaded successfully: ${uploadedUrl}`);
       
-      // Get cached version of the uploaded URL
-      const cachedUrl = await getCachedImageUrl(uploadedUrl);
-      setImageUrl(cachedUrl || uploadedUrl);
+      // Set the uploaded URL directly
+      setImageUrl(uploadedUrl);
       onImageUploaded(uploadedUrl);
+      
+      toast({
+        title: t("common.success"),
+        description: t("common.imageUploadedSuccessfully"),
+        variant: "default",
+      });
+
     } catch (error) {
       console.error("Upload error:", error);
-      setImageUrl(undefined);
       setHasError(true);
+      toast({
+        title: t("common.error"),
+        description: t("common.imageUploadFailed"),
+        variant: "destructive",
+      });
       onImageUploaded("");
     } finally {
       setIsUploading(false);
@@ -125,7 +159,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   };
 
   const handleImageError = () => {
-    setImageUrl(undefined);
+    console.log("Image failed to load");
     setHasError(true);
   };
 
@@ -192,7 +226,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
       {hasError && (
         <div className="mt-2 text-center text-sm text-red-500">
-          Failed to load or upload image
+          {t("common.failedToLoadOrUploadImage")}
         </div>
       )}
     </div>

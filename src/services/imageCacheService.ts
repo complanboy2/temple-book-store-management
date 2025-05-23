@@ -49,7 +49,7 @@ class ImageCacheService {
 
     try {
       console.log(`Fetching image from URL: ${originalUrl}`);
-      const response = await fetch(originalUrl);
+      const response = await fetch(originalUrl, { cache: 'no-store' });
       if (!response.ok) {
         console.error(`Failed to fetch image: ${response.status} ${response.statusText}`);
         return null;
@@ -112,14 +112,18 @@ class ImageCacheService {
       // File doesn't exist, upload it
       const { error: uploadError } = await supabase.storage
         .from('book-images')
-        .upload(fileName, file, { cacheControl: '3600', upsert: true });
+        .upload(fileName, file, { 
+          cacheControl: '3600', 
+          upsert: true,
+          contentType: file.type // Ensure content type is set correctly
+        });
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
         return null;
       }
 
-      // Get the public URL - Fix here: the getPublicUrl method only returns data, not error
+      // Get the public URL
       const { data: urlData } = supabase.storage
         .from('book-images')
         .getPublicUrl(fileName);
@@ -129,31 +133,19 @@ class ImageCacheService {
         return null;
       }
 
-      // Verify the uploaded file is accessible
-      try {
-        const response = await fetch(urlData.publicUrl);
-        if (!response.ok) {
-          console.error('Verification failed:', response.statusText);
-          return null;
-        }
+      // Store in cache without verification to avoid extra requests
+      const urlHash = this.generateUrlHash(urlData.publicUrl);
+      this.cache.set(urlHash, {
+        url: urlData.publicUrl,
+        hash: fileHash,
+        timestamp: Date.now(),
+        blob: file,
+      });
 
-        const blob = await response.blob();
-        const urlHash = this.generateUrlHash(urlData.publicUrl);
-
-        this.cache.set(urlHash, {
-          url: urlData.publicUrl,
-          hash: fileHash,
-          timestamp: Date.now(),
-          blob,
-        });
-
-        return urlData.publicUrl;
-      } catch (verifyError) {
-        console.error('Verification error:', verifyError);
-        return null;
-      }
+      console.log('Upload successful, public URL:', urlData.publicUrl);
+      return urlData.publicUrl;
     } catch (error) {
-      console.error('Unexpected error:', error);
+      console.error('Unexpected error during upload:', error);
       return null;
     }
   }
