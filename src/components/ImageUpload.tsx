@@ -1,3 +1,4 @@
+
 // src/components/ImageUpload.tsx
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -50,20 +51,31 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     }
 
     let active = true;
-    getCachedImageUrl(initialImageUrl)
-      .then((cachedUrl) => {
+    
+    const loadImage = async () => {
+      try {
+        const cachedUrl = await getCachedImageUrl(initialImageUrl);
         if (active) {
-          setImageUrl(cachedUrl || undefined);
-          setHasError(!cachedUrl);
+          if (cachedUrl) {
+            setImageUrl(cachedUrl);
+            setHasError(false);
+          } else {
+            console.error(`Failed to load initial image: ${initialImageUrl}`);
+            setImageUrl(undefined);
+            setHasError(true);
+          }
         }
-      })
-      .catch(() => {
+      } catch (error) {
+        console.error(`Error loading initial image: ${error}`);
         if (active) {
           setImageUrl(undefined);
           setHasError(true);
         }
-      });
-
+      }
+    };
+    
+    loadImage();
+    
     return () => {
       active = false;
     };
@@ -79,6 +91,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
       onImageChange?.(file);
 
+      // Create a local preview
       if (objectUrlRef.current) {
         URL.revokeObjectURL(objectUrlRef.current);
       }
@@ -86,9 +99,18 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       objectUrlRef.current = objectUrl;
       setImageUrl(objectUrl);
 
+      // Upload to Supabase
+      console.log(`Uploading image: ${file.name} (${file.size} bytes)`);
       const uploadedUrl = await getImageUrl(file);
-      if (!uploadedUrl) throw new Error("Upload failed");
-
+      
+      if (!uploadedUrl) {
+        console.error("Upload failed");
+        throw new Error("Upload failed");
+      }
+      
+      console.log(`Image uploaded successfully: ${uploadedUrl}`);
+      
+      // Get cached version of the uploaded URL
       const cachedUrl = await getCachedImageUrl(uploadedUrl);
       setImageUrl(cachedUrl || uploadedUrl);
       onImageUploaded(uploadedUrl);
@@ -112,7 +134,9 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       URL.revokeObjectURL(objectUrlRef.current);
       objectUrlRef.current = null;
     }
-    fileInputRef.current!.value = "";
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
     setImageUrl(undefined);
     setHasError(false);
     onImageChange?.(null);

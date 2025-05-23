@@ -1,3 +1,4 @@
+
 // src/components/BookImage.tsx
 import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -20,24 +21,36 @@ const BookImage: React.FC<BookImageProps> = ({
 
   useEffect(() => {
     let active = true;
+    let objectUrl: string | undefined;
 
     const load = async () => {
       setIsLoading(true);
       setHasError(false);
 
       if (!imageUrl) {
-        setDisplayUrl(undefined);
-        setIsLoading(false);
+        if (active) {
+          setDisplayUrl(undefined);
+          setIsLoading(false);
+        }
         return;
       }
 
       try {
+        console.log(`Loading image for URL: ${imageUrl}`);
         const cached = await getCachedImageUrl(imageUrl);
-        if (active) {
-          setDisplayUrl(cached || undefined);
-          setHasError(!cached);
+        
+        if (!active) return;
+        
+        if (cached) {
+          objectUrl = cached;
+          setDisplayUrl(cached);
+          setHasError(false);
+        } else {
+          console.error(`Failed to load cached image for: ${imageUrl}`);
+          setHasError(true);
         }
-      } catch {
+      } catch (error) {
+        console.error(`Error loading image: ${error}`);
         if (active) {
           setDisplayUrl(undefined);
           setHasError(true);
@@ -48,7 +61,13 @@ const BookImage: React.FC<BookImageProps> = ({
     };
 
     load();
-    return () => { active = false; };
+
+    return () => { 
+      active = false;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
   }, [imageUrl]);
 
   return (
@@ -63,6 +82,7 @@ const BookImage: React.FC<BookImageProps> = ({
           alt={alt}
           className="w-full h-full object-cover"
           loading="lazy"
+          onError={() => setHasError(true)}
         />
       )}
     </div>
