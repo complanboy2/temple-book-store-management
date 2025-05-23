@@ -2,12 +2,11 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 import ExportReportButton from "@/components/ExportReportButton";
-import { Book } from "@/types";
+import { BookReportData } from "@/types/reportTypes";
 
 interface BookPageHeaderProps {
-  exportBooks: Book[];
+  exportBooks: BookReportData[];
   isAdmin: boolean;
 }
 

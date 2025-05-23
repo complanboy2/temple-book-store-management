@@ -12,6 +12,7 @@ import { useBookManager } from "@/hooks/useBookManager";
 import BookPageHeader from "@/components/books/BookPageHeader";
 import BookListContainer from "@/components/books/BookListContainer";
 import DeleteBookDialogContainer from "@/components/books/DeleteBookDialogContainer";
+import { BookReportData } from "@/types/reportTypes";
 
 const BooksPage = () => {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
@@ -35,15 +36,15 @@ const BooksPage = () => {
   } = useBookManager(currentStore);
   
   // Transform books for export
-  const getExportBooks = () => {
+  const getExportBooks = (): BookReportData[] => {
     return books.map(book => ({
       id: book.id,
       name: book.name,
       author: book.author,
       price: book.salePrice,
       quantity: book.quantity,
-      category: book.category,
-      printingInstitute: book.printingInstitute,
+      category: book.category || "",
+      printingInstitute: book.printingInstitute || "",
       imageurl: book.imageUrl,
       // We'd need to fetch sales data to get quantitySold, using 0 as placeholder
       quantitySold: 0
