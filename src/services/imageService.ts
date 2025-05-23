@@ -2,7 +2,9 @@
 import { supabase } from '@/integrations/supabase/client';
 
 /**
- * Simplified function to upload an image to Supabase Storage
+ * Uploads an image to Supabase Storage and returns a public URL
+ * @param file The file to upload
+ * @returns A promise that resolves to the public URL of the uploaded image, or null if upload fails
  */
 export const getImageUrl = async (file: File): Promise<string | null> => {
   try {

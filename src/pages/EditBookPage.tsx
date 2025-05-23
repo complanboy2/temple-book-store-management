@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useStallContext } from "@/contexts/StallContext";
@@ -205,13 +204,7 @@ const EditBookPage = () => {
       // Upload new image if selected
       if (selectedImage) {
         console.log("Uploading new image...");
-        const metadata = {
-          author: formData.author,
-          name: formData.name,
-          printingInstitute: formData.printingInstitute
-        };
-        
-        const uploadUrl = await getImageUrl(selectedImage, metadata);
+        const uploadUrl = await getImageUrl(selectedImage);
         if (uploadUrl) {
           console.log("Image uploaded successfully:", uploadUrl);
           imageUrl = uploadUrl;

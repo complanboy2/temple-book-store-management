@@ -55,7 +55,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       setImageUrl(objectUrl);
 
       // Handle actual upload if needed immediately
-      const uploadUrl = await getImageUrl(file, bookMetadata);
+      // Fix: Remove the second argument (bookMetadata) as getImageUrl only accepts one parameter
+      const uploadUrl = await getImageUrl(file);
       
       if (uploadUrl) {
         setImageUrl(uploadUrl);
