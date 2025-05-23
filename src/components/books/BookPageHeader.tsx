@@ -3,16 +3,32 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import ExportReportButton from "@/components/ExportReportButton";
+import { Book } from "@/types";
 import { BookReportData } from "@/types/reportTypes";
 
 interface BookPageHeaderProps {
-  exportBooks: BookReportData[];
+  exportBooks: Book[];
   isAdmin: boolean;
 }
 
 const BookPageHeader: React.FC<BookPageHeaderProps> = ({ exportBooks, isAdmin }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  // Convert Book[] to BookReportData[]
+  const getBookReportData = (): BookReportData[] => {
+    return exportBooks.map(book => ({
+      id: book.id,
+      name: book.name,
+      author: book.author,
+      price: book.salePrice,
+      quantity: book.quantity,
+      category: book.category,
+      printingInstitute: book.printingInstitute,
+      imageurl: book.imageUrl,
+      quantitySold: 0 // Default value, can be updated if you have this data
+    }));
+  };
 
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
@@ -25,7 +41,7 @@ const BookPageHeader: React.FC<BookPageHeaderProps> = ({ exportBooks, isAdmin })
         {isAdmin && (
           <ExportReportButton
             reportType="inventory"
-            bookData={exportBooks}
+            bookData={getBookReportData()}
           />
         )}
         

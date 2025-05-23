@@ -1,33 +1,71 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { useTranslation } from "react-i18next";
-import { BookReportData } from "@/types/reportTypes";
+import { BookReportData, SalesReportData } from "@/types/reportTypes";
 
 interface ExportReportButtonProps {
   reportType: string;
-  bookData: BookReportData[];
+  bookData?: BookReportData[];
+  salesData?: SalesReportData[];
+  dateRange?: { from: Date | null; to: Date | null };
 }
 
-const ExportReportButton: React.FC<ExportReportButtonProps> = ({ reportType, bookData }) => {
+const ExportReportButton: React.FC<ExportReportButtonProps> = ({ 
+  reportType, 
+  bookData = [], 
+  salesData = [],
+  dateRange
+}) => {
   const { t } = useTranslation();
 
   const handleExport = () => {
-    // Step 1: Prepare the data
-    const data = bookData.map(book => {
-      return {
-        [t("common.bookId")]: book.id,
-        [t("common.bookName")]: book.name,
-        [t("common.author")]: book.author,
-        [t("common.price")]: book.price,
-        [t("common.quantity")]: book.quantity,
-        [t("common.category")]: book.category,
-        [t("common.printingInstitute")]: book.printingInstitute,
-        [t("common.imageUrl")]: book.imageurl,
-        [t("common.quantitySold")]: book.quantitySold,
-      };
-    });
+    let data: Record<string, any>[] = [];
+    
+    // Handle book data export
+    if (bookData.length > 0) {
+      data = bookData.map(book => {
+        return {
+          [t("common.bookId")]: book.id,
+          [t("common.bookName")]: book.name,
+          [t("common.author")]: book.author,
+          [t("common.price")]: book.price,
+          [t("common.quantity")]: book.quantity,
+          [t("common.category")]: book.category,
+          [t("common.printingInstitute")]: book.printingInstitute,
+          [t("common.imageUrl")]: book.imageurl,
+          [t("common.quantitySold")]: book.quantitySold,
+        };
+      });
+    }
+    // Handle sales data export
+    else if (salesData.length > 0) {
+      data = salesData.map(sale => {
+        return {
+          [t("common.id")]: sale.id,
+          [t("common.bookName")]: sale.bookName,
+          [t("common.author")]: sale.author,
+          [t("common.price")]: sale.price,
+          [t("common.quantity")]: sale.quantity,
+          [t("common.amount")]: sale.totalAmount,
+          [t("common.date")]: sale.date instanceof Date ? sale.date.toLocaleDateString() : sale.date,
+          [t("common.buyer")]: sale.buyerName || "",
+          [t("common.seller")]: sale.sellerName || "",
+          [t("common.paymentMethod")]: sale.paymentMethod,
+        };
+      });
+    }
+
+    // Create filename with date range if provided
+    let filename = `${reportType}_report`;
+    if (dateRange && dateRange.from && dateRange.to) {
+      const fromStr = dateRange.from.toISOString().split('T')[0];
+      const toStr = dateRange.to.toISOString().split('T')[0];
+      filename += `_${fromStr}_to_${toStr}`;
+    }
+    filename += ".xlsx";
 
     // Step 2: Create a new workbook
     const wb = XLSX.utils.book_new();
@@ -40,10 +78,12 @@ const ExportReportButton: React.FC<ExportReportButtonProps> = ({ reportType, boo
 
     // Step 5: Generate the Excel file
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    const fileData = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
+    const fileData = new Blob([excelBuffer], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' 
+    });
 
     // Step 6: Save the file
-    saveAs(fileData, `${reportType}_report.xlsx`);
+    saveAs(fileData, filename);
   };
 
   return (

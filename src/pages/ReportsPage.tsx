@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -398,8 +397,8 @@ const ReportsPage = () => {
           {/* Export Report Button */}
           <div className="flex justify-end">
             <ExportReportButton 
-              salesData={generateSalesReportData()}
               reportType="sales"
+              salesData={generateSalesReportData()}
               dateRange={dateRange}
             />
           </div>
