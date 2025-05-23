@@ -441,16 +441,6 @@ const EditBookPage = () => {
                 />
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="barcode">{t("common.barcode")}</Label>
-                <Input 
-                  id="barcode" 
-                  name="barcode" 
-                  value={formData.barcode} 
-                  onChange={handleInputChange} 
-                />
-              </div>
-              
               <div className="pt-4 border-t">
                 <p className="text-sm text-muted-foreground mb-4">
                   {t("common.lastUpdatedBy")}: {currentUser?.name || "Unknown"}
