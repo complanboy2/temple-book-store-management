@@ -29,8 +29,7 @@ const BookImage: React.FC<BookImageProps> = ({
     setIsLoading(true);
     setHasError(false);
     
-    // Simply use the image URL directly without caching for now
-    // This avoids the CORS and fetch issues we're seeing
+    // Use the image URL directly - remove all caching for now to fix loading issues
     setDisplayUrl(imageUrl);
     setIsLoading(false);
   }, [imageUrl]);
@@ -41,8 +40,9 @@ const BookImage: React.FC<BookImageProps> = ({
     setHasError(false);
   };
 
-  const handleImageError = () => {
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     console.log("Image failed to load:", imageUrl);
+    console.log("Error details:", e);
     setHasError(true);
     setIsLoading(false);
   };
@@ -61,7 +61,7 @@ const BookImage: React.FC<BookImageProps> = ({
           loading="lazy"
           onLoad={handleImageLoad}
           onError={handleImageError}
-          crossOrigin="anonymous"
+          referrerPolicy="no-referrer"
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">

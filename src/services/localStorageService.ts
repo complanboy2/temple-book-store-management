@@ -5,7 +5,6 @@ import CryptoJS from "crypto-js";
 // Cache expiry settings
 const CACHE_EXPIRY = {
   BOOKS: 30 * 60 * 1000, // 30 minutes
-  IMAGES: 24 * 60 * 60 * 1000, // 24 hours
   BOOK_DETAILS: 7 * 24 * 60 * 60 * 1000 // 7 days for static book details
 };
 
@@ -24,7 +23,7 @@ export const cacheBooks = (books: Book[], stallId: string): void => {
     localStorage.setItem(`books_${stallId}`, JSON.stringify(cache));
     console.log(`Cached ${books.length} books for stall ${stallId}`);
     
-    // Also cache each book's static details individually for longer term storage
+    // Cache each book's static details individually for longer term storage
     books.forEach(book => {
       cacheBookDetails(book);
     });
@@ -87,13 +86,6 @@ export const cacheBookDetails = (book: Book): void => {
     };
     
     localStorage.setItem(`book_details_${book.id}`, JSON.stringify(cache));
-    
-    // Also cache the image if available
-    if (book.imageUrl) {
-      cacheImage(book.imageUrl).catch(error => 
-        console.warn(`Failed to cache image for book ${book.id}: ${error}`)
-      );
-    }
   } catch (error) {
     console.error("Error caching book details:", error);
   }
@@ -116,92 +108,6 @@ export const getCachedBookDetails = (bookId: string): BookDetailsCache['details'
   }
 };
 
-// Image caching
-interface ImageCache {
-  timestamp: number;
-  dataUrl: string;
-}
-
-export const cacheImage = async (imageUrl: string): Promise<string | null> => {
-  try {
-    if (!imageUrl) return null;
-    
-    // Create a hash of the URL to use as a key
-    const urlHash = CryptoJS.MD5(imageUrl).toString();
-    const cacheKey = `img_${urlHash}`;
-
-    // Check if already cached
-    const existingCache = localStorage.getItem(cacheKey);
-    if (existingCache) {
-      const cache: ImageCache = JSON.parse(existingCache);
-      const isExpired = Date.now() - cache.timestamp > CACHE_EXPIRY.IMAGES;
-
-      if (!isExpired) {
-        console.log("Using cached image from localStorage");
-        return cache.dataUrl;
-      }
-    }
-
-    // Fetch the image and convert to data URL
-    console.log("Fetching image to cache:", imageUrl);
-    const response = await fetch(imageUrl);
-    if (!response.ok) throw new Error("Failed to fetch image");
-    
-    const blob = await response.blob();
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const dataUrl = reader.result as string;
-        
-        // Cache the data URL
-        const cache: ImageCache = {
-          timestamp: Date.now(),
-          dataUrl
-        };
-        
-        try {
-          localStorage.setItem(cacheKey, JSON.stringify(cache));
-          console.log(`Image cached: ${imageUrl}`);
-          resolve(dataUrl);
-        } catch (e) {
-          // Handle localStorage quota exceeded
-          console.warn("Failed to cache image, likely storage quota exceeded:", e);
-          resolve(imageUrl); // Fall back to original URL
-        }
-      };
-      reader.readAsDataURL(blob);
-    });
-  } catch (error) {
-    console.error("Error caching image:", error);
-    return imageUrl; // Fall back to original URL
-  }
-};
-
-export const getCachedImage = (imageUrl: string): string | null => {
-  if (!imageUrl) return null;
-  
-  try {
-    const urlHash = CryptoJS.MD5(imageUrl).toString();
-    const cacheKey = `img_${urlHash}`;
-    
-    const cacheJson = localStorage.getItem(cacheKey);
-    if (!cacheJson) return null;
-
-    const cache: ImageCache = JSON.parse(cacheJson);
-    const isExpired = Date.now() - cache.timestamp > CACHE_EXPIRY.IMAGES;
-
-    if (isExpired) {
-      console.log("Image cache expired, returning null");
-      return null;
-    }
-
-    return cache.dataUrl;
-  } catch (error) {
-    console.error("Error retrieving cached image:", error);
-    return null;
-  }
-};
-
 // Clear expired caches
 export const clearExpiredCaches = (): void => {
   try {
@@ -213,16 +119,6 @@ export const clearExpiredCaches = (): void => {
           if (Date.now() - cache.timestamp > CACHE_EXPIRY.BOOKS) {
             localStorage.removeItem(key);
             console.log(`Removed expired book cache: ${key}`);
-          }
-        } catch (e) {
-          localStorage.removeItem(key); // Remove invalid entries
-        }
-      } else if (key.startsWith('img_')) {
-        try {
-          const cache: ImageCache = JSON.parse(localStorage.getItem(key) || '{}');
-          if (Date.now() - cache.timestamp > CACHE_EXPIRY.IMAGES) {
-            localStorage.removeItem(key);
-            console.log(`Removed expired image cache: ${key}`);
           }
         } catch (e) {
           localStorage.removeItem(key); // Remove invalid entries
@@ -273,4 +169,3 @@ export const clearPendingInviteCode = (): void => {
     console.error("Error clearing invite code:", error);
   }
 };
-
