@@ -41,13 +41,15 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
             setImageUrl(cachedUrl);
             setHasError(false);
           } else {
-            setImageUrl(initialImageUrl);
-            setHasError(false);
+            console.log("Failed to load cached image, clearing image URL");
+            setImageUrl(undefined);
+            setHasError(true);
           }
         })
         .catch(() => {
-          setImageUrl(initialImageUrl);
-          setHasError(false);
+          console.log("Error loading cached image, clearing image URL");
+          setImageUrl(undefined);
+          setHasError(true);
         });
     } else {
       setImageUrl(undefined);
@@ -76,17 +78,24 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       const uploadUrl = await getImageUrl(file);
       
       if (uploadUrl) {
+        console.log("Image uploaded successfully, getting cached version");
         // Get the cached version of the uploaded image
         const cachedUrl = await getCachedImageUrl(uploadUrl);
         setImageUrl(cachedUrl || uploadUrl);
-        onImageUploaded(uploadUrl); // Still pass the original URL to parent
+        onImageUploaded(uploadUrl); // Pass the original URL to parent
+        setHasError(false);
       } else {
-        throw new Error("Upload failed");
+        console.error("Image upload failed");
+        setImageUrl(undefined);
+        setHasError(true);
+        onImageUploaded(''); // Clear the image URL in parent
       }
       
     } catch (error) {
       console.error("Error uploading image:", error);
+      setImageUrl(undefined);
       setHasError(true);
+      onImageUploaded(''); // Clear the image URL in parent
     } finally {
       setIsUploading(false);
     }
@@ -95,6 +104,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const handleImageError = () => {
     console.log("Failed to load image:", imageUrl);
     setHasError(true);
+    setImageUrl(undefined);
   };
 
   const removeImage = () => {
@@ -164,7 +174,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
       {hasError && (
         <div className="mt-2 text-center">
-          <p className="text-sm text-red-500">Failed to load image</p>
+          <p className="text-sm text-red-500">Failed to load or upload image</p>
         </div>
       )}
     </div>

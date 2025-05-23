@@ -36,13 +36,16 @@ const BookImage: React.FC<BookImageProps> = ({
         if (cachedUrl) {
           setDisplayUrl(cachedUrl);
           setHasError(false);
+          console.log("Image loaded successfully from cache");
         } else {
-          console.error("Failed to load cached image for:", imageUrl);
+          console.log("Failed to load cached image, showing fallback");
+          setDisplayUrl(undefined);
           setHasError(true);
         }
       })
       .catch((error) => {
         console.error("Error loading cached image:", error);
+        setDisplayUrl(undefined);
         setHasError(true);
       })
       .finally(() => {
@@ -51,16 +54,16 @@ const BookImage: React.FC<BookImageProps> = ({
   }, [imageUrl]);
 
   const handleImageLoad = () => {
-    console.log("Cached image loaded successfully:", imageUrl);
+    console.log("Cached image loaded successfully in img element");
     setIsLoading(false);
     setHasError(false);
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    console.log("Cached image failed to load:", imageUrl);
-    console.log("Error details:", e);
+    console.log("Cached image failed to load in img element:", imageUrl);
     setHasError(true);
     setIsLoading(false);
+    setDisplayUrl(undefined);
   };
 
   return (

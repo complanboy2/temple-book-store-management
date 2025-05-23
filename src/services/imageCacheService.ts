@@ -48,7 +48,7 @@ class ImageCacheService {
       return URL.createObjectURL(cached.blob);
     }
 
-    // Fetch and cache the image
+    // Try to fetch the image and check if it exists
     try {
       console.log("Fetching and caching image:", originalUrl);
       const response = await fetch(originalUrl);
@@ -58,6 +58,13 @@ class ImageCacheService {
       }
 
       const blob = await response.blob();
+      
+      // Verify it's actually an image
+      if (!blob.type.startsWith('image/')) {
+        console.error("Fetched content is not an image:", blob.type);
+        return null;
+      }
+
       const objectUrl = URL.createObjectURL(blob);
 
       // Cache the image
@@ -83,20 +90,26 @@ class ImageCacheService {
       const fileHash = await this.generateHash(file);
       const fileName = `${fileHash}-${file.name.replace(/\s+/g, '-')}`;
       
+      // First, try to upload the file
       const { data, error } = await supabase
         .storage
         .from('book-images')
         .upload(fileName, file, {
           cacheControl: '3600',
-          upsert: true // Allow overwriting if same hash
+          upsert: true
         });
         
       if (error) {
         console.error("Failed to upload to Supabase Storage:", error);
-        return null;
+        // If it's a policy error, the file might already exist, try to get the URL anyway
+        if (error.message?.includes('policy') || error.message?.includes('already exists')) {
+          console.log("File might already exist, trying to get public URL...");
+        } else {
+          return null;
+        }
       }
       
-      // Get public URL
+      // Get public URL regardless of upload result (file might already exist)
       const { data: urlData } = supabase
         .storage
         .from('book-images')
@@ -107,7 +120,19 @@ class ImageCacheService {
         return null;
       }
 
-      console.log("Image uploaded successfully:", urlData.publicUrl);
+      console.log("Image URL obtained:", urlData.publicUrl);
+
+      // Verify the file actually exists by trying to fetch it
+      try {
+        const testResponse = await fetch(urlData.publicUrl);
+        if (!testResponse.ok) {
+          console.error("Uploaded file verification failed:", testResponse.status);
+          return null;
+        }
+      } catch (verifyError) {
+        console.error("Could not verify uploaded file:", verifyError);
+        return null;
+      }
 
       // Cache the uploaded image locally
       const blob = new Blob([file], { type: file.type });
