@@ -119,13 +119,13 @@ class ImageCacheService {
         return null;
       }
 
-      // Get the public URL
-      const { data: urlData, error: publicUrlError } = supabase.storage
+      // Get the public URL - Fix here: the getPublicUrl method only returns data, not error
+      const { data: urlData } = supabase.storage
         .from('book-images')
         .getPublicUrl(fileName);
 
-      if (publicUrlError || !urlData?.publicUrl) {
-        console.error('Public URL error:', publicUrlError);
+      if (!urlData?.publicUrl) {
+        console.error('Failed to get public URL');
         return null;
       }
 
