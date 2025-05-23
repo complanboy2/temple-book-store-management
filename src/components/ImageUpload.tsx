@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { getImageUrl } from "@/services/imageService";
+import { getImageUrl, getCachedImageUrl } from "@/services/imageService";
 import { useTranslation } from "react-i18next";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { cn } from "@/lib/utils";
@@ -31,10 +31,28 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
 
-  // Update imageUrl when initialImageUrl changes
+  // Update imageUrl when initialImageUrl changes and use caching
   useEffect(() => {
-    setImageUrl(initialImageUrl);
-    setHasError(false);
+    if (initialImageUrl) {
+      console.log("Loading initial image with caching:", initialImageUrl);
+      getCachedImageUrl(initialImageUrl)
+        .then((cachedUrl) => {
+          if (cachedUrl) {
+            setImageUrl(cachedUrl);
+            setHasError(false);
+          } else {
+            setImageUrl(initialImageUrl);
+            setHasError(false);
+          }
+        })
+        .catch(() => {
+          setImageUrl(initialImageUrl);
+          setHasError(false);
+        });
+    } else {
+      setImageUrl(undefined);
+      setHasError(false);
+    }
   }, [initialImageUrl]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,17 +72,21 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       const objectUrl = URL.createObjectURL(file);
       setImageUrl(objectUrl);
 
-      // Handle actual upload if needed immediately
-      // Fix: Remove the second argument (bookMetadata) as getImageUrl only accepts one parameter
+      // Upload and cache the image
       const uploadUrl = await getImageUrl(file);
       
       if (uploadUrl) {
-        setImageUrl(uploadUrl);
-        onImageUploaded(uploadUrl);
+        // Get the cached version of the uploaded image
+        const cachedUrl = await getCachedImageUrl(uploadUrl);
+        setImageUrl(cachedUrl || uploadUrl);
+        onImageUploaded(uploadUrl); // Still pass the original URL to parent
+      } else {
+        throw new Error("Upload failed");
       }
       
     } catch (error) {
       console.error("Error uploading image:", error);
+      setHasError(true);
     } finally {
       setIsUploading(false);
     }
@@ -122,7 +144,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       ) : (
         <div 
           onClick={() => fileInputRef.current?.click()}
-          className="cursor-pointer border-2 border-dashed border-gray-300 rounded-md p-6 flex flex-col items-center justify-center"
+          className="cursor-pointer border-2 border-dashed border-gray-300 rounded-md p-6 flex flex-col items-center justify-center hover:border-gray-400 transition-colors"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -137,6 +159,12 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       {isUploading && (
         <div className="mt-2 text-center">
           <p className="text-sm text-gray-500">{t("common.uploading")}...</p>
+        </div>
+      )}
+
+      {hasError && (
+        <div className="mt-2 text-center">
+          <p className="text-sm text-red-500">Failed to load image</p>
         </div>
       )}
     </div>

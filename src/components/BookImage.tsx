@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { getCachedImageUrl } from "@/services/imageService";
 
 export interface BookImageProps {
   imageUrl?: string;
@@ -25,23 +26,38 @@ const BookImage: React.FC<BookImageProps> = ({
       return;
     }
     
-    console.log("Loading image:", imageUrl);
+    console.log("Loading image with caching:", imageUrl);
     setIsLoading(true);
     setHasError(false);
     
-    // Use the image URL directly - remove all caching for now to fix loading issues
-    setDisplayUrl(imageUrl);
-    setIsLoading(false);
+    // Use cached image service
+    getCachedImageUrl(imageUrl)
+      .then((cachedUrl) => {
+        if (cachedUrl) {
+          setDisplayUrl(cachedUrl);
+          setHasError(false);
+        } else {
+          console.error("Failed to load cached image for:", imageUrl);
+          setHasError(true);
+        }
+      })
+      .catch((error) => {
+        console.error("Error loading cached image:", error);
+        setHasError(true);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, [imageUrl]);
 
   const handleImageLoad = () => {
-    console.log("Image loaded successfully:", imageUrl);
+    console.log("Cached image loaded successfully:", imageUrl);
     setIsLoading(false);
     setHasError(false);
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    console.log("Image failed to load:", imageUrl);
+    console.log("Cached image failed to load:", imageUrl);
     console.log("Error details:", e);
     setHasError(true);
     setIsLoading(false);
@@ -61,7 +77,6 @@ const BookImage: React.FC<BookImageProps> = ({
           loading="lazy"
           onLoad={handleImageLoad}
           onError={handleImageError}
-          referrerPolicy="no-referrer"
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
