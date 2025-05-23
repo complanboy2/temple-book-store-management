@@ -65,6 +65,7 @@ const BookCard: React.FC<BookCardProps> = ({
             imageUrl={book.imageUrl} 
             alt={book.name}
             className="w-full h-full"
+            size="medium"
           />
         </AspectRatio>
       </CardHeader>

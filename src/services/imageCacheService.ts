@@ -41,22 +41,22 @@ class ImageCacheService {
   async getCachedImageUrl(originalUrl: string): Promise<string | null> {
     if (!originalUrl) return null;
 
-    // Clean up the URL if it has query parameters
-    const cleanUrl = originalUrl.split('?')[0];
-    const urlHash = this.generateUrlHash(cleanUrl);
-    const cached = this.cache.get(urlHash);
-
-    if (cached && Date.now() - cached.timestamp < this.CACHE_EXPIRY) {
-      return URL.createObjectURL(cached.blob);
-    }
-
     try {
+      // Clean up the URL if it has query parameters
+      const cleanUrl = originalUrl.split('?')[0];
+      const urlHash = this.generateUrlHash(cleanUrl);
+      const cached = this.cache.get(urlHash);
+
+      if (cached && Date.now() - cached.timestamp < this.CACHE_EXPIRY) {
+        return URL.createObjectURL(cached.blob);
+      }
+
       console.log(`Fetching image from URL: ${cleanUrl}`);
       
-      // Add cache busting parameter to avoid browser caching
-      const cacheBustUrl = `${cleanUrl}${cleanUrl.includes('?') ? '&' : '?'}cacheBust=${Date.now()}`;
-      
-      const response = await fetch(cacheBustUrl, { 
+      // Try to fetch without cache busting first
+      let response = await fetch(cleanUrl, { 
+        mode: 'cors',
+        credentials: 'omit',
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache',
@@ -64,15 +64,21 @@ class ImageCacheService {
         }
       });
       
+      // If that fails with a 400/401/403, try the URL directly without any parameters
+      if (!response.ok && [400, 401, 403].includes(response.status)) {
+        console.log("Initial fetch failed, trying direct URL");
+        response = await fetch(cleanUrl, { mode: 'cors', credentials: 'omit' });
+      }
+      
       if (!response.ok) {
         console.error(`Failed to fetch image: ${response.status} ${response.statusText}`);
-        return null;
+        return originalUrl; // Fall back to original URL
       }
 
       const blob = await response.blob();
       if (!blob.type.startsWith('image/')) {
         console.error(`Invalid image type: ${blob.type}`);
-        return null;
+        return originalUrl; // Fall back to original URL
       }
 
       this.cache.set(urlHash, {
@@ -85,22 +91,33 @@ class ImageCacheService {
       return URL.createObjectURL(blob);
     } catch (error) {
       console.error(`Error fetching image: ${error}`);
-      return null;
+      return originalUrl; // Fall back to original URL as last resort
     }
   }
 
   async uploadAndCacheImage(file: File): Promise<string | null> {
     try {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        console.error(`Invalid file type: ${file.type}`);
+        return null;
+      }
+
       const fileHash = await this.generateHash(file);
       const fileName = `${fileHash}-${file.name.replace(/\s+/g, '-')}`;
       console.log(`Uploading file: ${fileName} to book-images bucket`);
 
       // First check if the image already exists in storage
-      const { data: existingData } = await supabase.storage
+      const { data: existingData, error: listError } = await supabase.storage
         .from('book-images')
         .list('', {
           search: fileName
         });
+
+      if (listError) {
+        console.error('Error checking existing file:', listError);
+        // Continue with upload attempt even if listing failed
+      }
 
       if (existingData && existingData.length > 0) {
         console.log('File already exists, retrieving URL');
@@ -121,7 +138,7 @@ class ImageCacheService {
         }
       }
 
-      // File doesn't exist, upload it
+      // File doesn't exist or listing failed, upload it
       const { error: uploadError } = await supabase.storage
         .from('book-images')
         .upload(fileName, file, { 
@@ -132,7 +149,7 @@ class ImageCacheService {
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
-        return null;
+        throw new Error(`Upload failed: ${uploadError.message}`);
       }
 
       // Get the public URL
@@ -142,7 +159,7 @@ class ImageCacheService {
 
       if (!urlData?.publicUrl) {
         console.error('Failed to get public URL');
-        return null;
+        throw new Error('Failed to get public URL');
       }
 
       // Store in cache without verification to avoid extra requests
@@ -158,7 +175,7 @@ class ImageCacheService {
       return urlData.publicUrl;
     } catch (error) {
       console.error('Unexpected error during upload:', error);
-      return null;
+      throw error; // Re-throw to let caller handle
     }
   }
 

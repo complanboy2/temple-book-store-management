@@ -17,7 +17,7 @@ const BookImage: React.FC<BookImageProps> = ({
   alt = "Book cover",
   size = "medium"
 }) => {
-  const [displayUrl, setDisplayUrl] = useState<string>();
+  const [displayUrl, setDisplayUrl] = useState<string | undefined>(imageUrl);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
@@ -36,6 +36,8 @@ const BookImage: React.FC<BookImageProps> = ({
     let objectUrl: string | undefined;
 
     const load = async () => {
+      if (!active) return;
+      
       setIsLoading(true);
       setHasError(false);
 
@@ -48,7 +50,7 @@ const BookImage: React.FC<BookImageProps> = ({
       }
 
       try {
-        console.log(`Loading image for URL: ${imageUrl}`);
+        console.log(`BookImage: Loading image for URL: ${imageUrl}`);
         
         // Try to get the cached image URL
         const cached = await getCachedImageUrl(imageUrl);
@@ -61,11 +63,12 @@ const BookImage: React.FC<BookImageProps> = ({
           setHasError(false);
         } else {
           // If caching fails, fall back to direct URL
+          console.log("BookImage: Cache miss, using direct URL");
           setDisplayUrl(imageUrl);
           setHasError(false);
         }
       } catch (error) {
-        console.error(`Error loading image: ${error}`);
+        console.error(`BookImage: Error loading image: ${error}`);
         if (active) {
           // Fallback to direct URL if caching fails
           setDisplayUrl(imageUrl);
@@ -96,7 +99,7 @@ const BookImage: React.FC<BookImageProps> = ({
         <img
           src={displayUrl}
           alt={alt}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
           loading="lazy"
           onError={() => setHasError(true)}
         />

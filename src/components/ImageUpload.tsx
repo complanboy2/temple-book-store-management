@@ -46,6 +46,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
   // Load initial image with caching
   useEffect(() => {
+    console.log("ImageUpload: initialImageUrl changed:", initialImageUrl);
+    
     if (!initialImageUrl) {
       setImageUrl(undefined);
       setHasError(false);
@@ -57,23 +59,25 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     
     const loadImage = async () => {
       try {
+        console.log(`ImageUpload: Trying to load image from URL: ${initialImageUrl}`);
+        setHasError(false);
+        
         const cachedUrl = await getCachedImageUrl(initialImageUrl);
         if (!active) return;
         
         if (cachedUrl) {
+          console.log("ImageUpload: Using cached image");
           tempObjectUrl = cachedUrl;
           setImageUrl(cachedUrl);
-          setHasError(false);
         } else {
-          console.log(`No cached version, using direct URL: ${initialImageUrl}`);
+          console.log(`ImageUpload: No cached version, using direct URL: ${initialImageUrl}`);
           setImageUrl(initialImageUrl); // Fallback to direct URL
-          setHasError(false);
         }
       } catch (error) {
-        console.error(`Error loading initial image: ${error}`);
+        console.error(`ImageUpload: Error loading initial image: ${error}`);
         if (active) {
+          console.log(`ImageUpload: Falling back to direct URL due to error`);
           setImageUrl(initialImageUrl); // Fallback to direct URL
-          setHasError(false);
         }
       }
     };
@@ -130,15 +134,15 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       setImageUrl(objectUrl);
 
       // Upload to Supabase
-      console.log(`Uploading image: ${file.name} (${file.size} bytes)`);
+      console.log(`ImageUpload: Uploading image: ${file.name} (${file.size} bytes)`);
       const uploadedUrl = await getImageUrl(file);
       
       if (!uploadedUrl) {
-        console.error("Upload failed");
+        console.error("ImageUpload: Upload failed");
         throw new Error("Upload failed");
       }
       
-      console.log(`Image uploaded successfully: ${uploadedUrl}`);
+      console.log(`ImageUpload: Uploaded successfully: ${uploadedUrl}`);
       
       // Set the uploaded URL directly
       setImageUrl(uploadedUrl);
@@ -151,7 +155,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       });
 
     } catch (error) {
-      console.error("Upload error:", error);
+      console.error("ImageUpload: Upload error:", error);
       setHasError(true);
       toast({
         title: t("common.error"),
@@ -165,7 +169,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   };
 
   const handleImageError = () => {
-    console.log("Image failed to load");
+    console.log("ImageUpload: Image failed to load");
     setHasError(true);
   };
 
