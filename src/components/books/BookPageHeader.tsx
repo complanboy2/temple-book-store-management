@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import ExportReportButton from "@/components/ExportReportButton";
 import { BookReportData } from "@/types/reportTypes";
+import { Button } from "@/components/ui/button"; 
+import { Plus } from "lucide-react";
 
 interface BookPageHeaderProps {
   exportBooks: BookReportData[];
@@ -30,15 +32,14 @@ const BookPageHeader: React.FC<BookPageHeaderProps> = ({ exportBooks, isAdmin })
         )}
         
         {isAdmin && (
-          <button 
+          <Button 
             onClick={() => navigate("/books/add")}
             className="bg-temple-saffron hover:bg-temple-saffron/90 text-white px-4 py-2 rounded flex items-center justify-center"
+            data-testid="add-book-button"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-            </svg>
+            <Plus className="h-5 w-5 mr-2" />
             {t("common.addBook")}
-          </button>
+          </Button>
         )}
       </div>
     </div>

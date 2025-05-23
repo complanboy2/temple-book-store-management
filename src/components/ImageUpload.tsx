@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { getImageUrl } from "@/services/imageService";
 import { useTranslation } from "react-i18next";
@@ -15,7 +15,7 @@ interface ImageUploadProps {
     name?: string;
     printingInstitute?: string;
   };
-  className?: string; // Add className prop
+  className?: string;
 }
 
 const ImageUpload: React.FC<ImageUploadProps> = ({
@@ -27,8 +27,15 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 }) => {
   const [imageUrl, setImageUrl] = useState<string | undefined>(initialImageUrl);
   const [isUploading, setIsUploading] = useState(false);
+  const [hasError, setHasError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
+
+  // Update imageUrl when initialImageUrl changes
+  useEffect(() => {
+    setImageUrl(initialImageUrl);
+    setHasError(false);
+  }, [initialImageUrl]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -36,6 +43,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
     try {
       setIsUploading(true);
+      setHasError(false);
       
       // First, notify parent of file selection
       if (onImageChange) {
@@ -61,8 +69,14 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     }
   };
 
+  const handleImageError = () => {
+    console.log("Failed to load image:", imageUrl);
+    setHasError(true);
+  };
+
   const removeImage = () => {
     setImageUrl(undefined);
+    setHasError(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -83,13 +97,14 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         ref={fileInputRef}
       />
 
-      {imageUrl ? (
+      {imageUrl && !hasError ? (
         <div className="relative mb-4">
           <AspectRatio ratio={4/3} className="bg-muted overflow-hidden rounded-lg border">
             <img 
               src={imageUrl} 
               alt={t("common.bookCover")} 
               className="object-contain w-full h-full" 
+              onError={handleImageError}
             />
           </AspectRatio>
           <div className="flex justify-end mt-2">

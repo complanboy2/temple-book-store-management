@@ -86,7 +86,7 @@ const BookCard: React.FC<BookCardProps> = ({
           </Button>
           
           {isAdmin && (
-            <div className="flex gap-2">
+            <div className="flex gap-2" data-testid="admin-buttons">
               {onEdit && (
                 <Button
                   onClick={handleEditClick}
@@ -94,6 +94,7 @@ const BookCard: React.FC<BookCardProps> = ({
                   className="hover:text-primary"
                   title={t("common.edit")}
                   type="button"
+                  data-testid="edit-book-button"
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
@@ -106,6 +107,7 @@ const BookCard: React.FC<BookCardProps> = ({
                   className="text-destructive hover:text-destructive"
                   title={t("common.delete")}
                   type="button"
+                  data-testid="delete-book-button"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

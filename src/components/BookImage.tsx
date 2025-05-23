@@ -16,6 +16,7 @@ const BookImage: React.FC<BookImageProps> = ({
 }) => {
   const [cachedImageUrl, setCachedImageUrl] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   
   useEffect(() => {
     if (!imageUrl) {
@@ -23,6 +24,10 @@ const BookImage: React.FC<BookImageProps> = ({
       setIsLoading(false);
       return;
     }
+    
+    // Reset states when imageUrl changes
+    setIsLoading(true);
+    setHasError(false);
     
     // First check if the image is already in cache
     const cached = getCachedImage(imageUrl);
@@ -48,7 +53,8 @@ const BookImage: React.FC<BookImageProps> = ({
         }
       } catch (error) {
         console.error("Error caching image:", error);
-        // Fallback to original URL
+        setHasError(true);
+        // Still try to use the original URL
         setCachedImageUrl(imageUrl);
       } finally {
         setIsLoading(false);
@@ -58,18 +64,24 @@ const BookImage: React.FC<BookImageProps> = ({
     fetchAndCacheImage();
   }, [imageUrl]);
 
+  const handleImageError = () => {
+    console.log("Image failed to load:", imageUrl);
+    setHasError(true);
+  };
+
   return (
     <div className={cn("w-full h-40 overflow-hidden rounded-md bg-gray-100 flex items-center justify-center", className)}>
       {isLoading ? (
         <div className="w-full h-full flex items-center justify-center bg-gray-100">
           <span className="animate-pulse bg-gray-200 w-12 h-12 rounded-full"></span>
         </div>
-      ) : cachedImageUrl ? (
+      ) : cachedImageUrl && !hasError ? (
         <img 
           src={cachedImageUrl} 
           alt={alt}
           className="w-full h-full object-cover" 
           loading="lazy"
+          onError={handleImageError}
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
