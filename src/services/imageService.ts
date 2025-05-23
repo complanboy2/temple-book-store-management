@@ -24,7 +24,10 @@ export const getImageUrl = async (file: File): Promise<string | null> => {
 export const getCachedImageUrl = async (url: string): Promise<string | null> => {
   try {
     if (!url) return null;
-    return await imageCacheService.getCachedImageUrl(url);
+    
+    // Clean up the URL if it has query parameters
+    const cleanUrl = url.split('?')[0];
+    return await imageCacheService.getCachedImageUrl(cleanUrl);
   } catch (error) {
     console.error("Error in getCachedImageUrl:", error);
     return null;

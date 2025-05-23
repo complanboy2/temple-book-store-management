@@ -30,6 +30,7 @@ class ImageCacheService {
   }
 
   private generateUrlHash(url: string): string {
+    if (!url) return '';
     let hash = 0;
     for (let i = 0; i < url.length; i++) {
       hash = ((hash << 5) - hash + url.charCodeAt(i)) & 0xffffffff;
@@ -40,7 +41,9 @@ class ImageCacheService {
   async getCachedImageUrl(originalUrl: string): Promise<string | null> {
     if (!originalUrl) return null;
 
-    const urlHash = this.generateUrlHash(originalUrl);
+    // Clean up the URL if it has query parameters
+    const cleanUrl = originalUrl.split('?')[0];
+    const urlHash = this.generateUrlHash(cleanUrl);
     const cached = this.cache.get(urlHash);
 
     if (cached && Date.now() - cached.timestamp < this.CACHE_EXPIRY) {
@@ -48,8 +51,19 @@ class ImageCacheService {
     }
 
     try {
-      console.log(`Fetching image from URL: ${originalUrl}`);
-      const response = await fetch(originalUrl, { cache: 'no-store' });
+      console.log(`Fetching image from URL: ${cleanUrl}`);
+      
+      // Add cache busting parameter to avoid browser caching
+      const cacheBustUrl = `${cleanUrl}${cleanUrl.includes('?') ? '&' : '?'}cacheBust=${Date.now()}`;
+      
+      const response = await fetch(cacheBustUrl, { 
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
       if (!response.ok) {
         console.error(`Failed to fetch image: ${response.status} ${response.statusText}`);
         return null;
@@ -62,7 +76,7 @@ class ImageCacheService {
       }
 
       this.cache.set(urlHash, {
-        url: originalUrl,
+        url: cleanUrl,
         hash: urlHash,
         timestamp: Date.now(),
         blob,
@@ -82,15 +96,13 @@ class ImageCacheService {
       console.log(`Uploading file: ${fileName} to book-images bucket`);
 
       // First check if the image already exists in storage
-      const { data: existingData, error: checkError } = await supabase.storage
+      const { data: existingData } = await supabase.storage
         .from('book-images')
         .list('', {
           search: fileName
         });
 
-      if (checkError) {
-        console.error('Error checking existing file:', checkError);
-      } else if (existingData && existingData.length > 0) {
+      if (existingData && existingData.length > 0) {
         console.log('File already exists, retrieving URL');
         const { data: urlData } = supabase.storage
           .from('book-images')

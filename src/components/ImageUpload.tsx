@@ -53,19 +53,21 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     }
 
     let active = true;
+    let tempObjectUrl: string | null = null;
     
     const loadImage = async () => {
       try {
         const cachedUrl = await getCachedImageUrl(initialImageUrl);
-        if (active) {
-          if (cachedUrl) {
-            setImageUrl(cachedUrl);
-            setHasError(false);
-          } else {
-            console.error(`Failed to load initial image: ${initialImageUrl}`);
-            setImageUrl(initialImageUrl); // Fallback to direct URL
-            setHasError(false);
-          }
+        if (!active) return;
+        
+        if (cachedUrl) {
+          tempObjectUrl = cachedUrl;
+          setImageUrl(cachedUrl);
+          setHasError(false);
+        } else {
+          console.log(`No cached version, using direct URL: ${initialImageUrl}`);
+          setImageUrl(initialImageUrl); // Fallback to direct URL
+          setHasError(false);
         }
       } catch (error) {
         console.error(`Error loading initial image: ${error}`);
@@ -80,6 +82,9 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     
     return () => {
       active = false;
+      if (tempObjectUrl) {
+        URL.revokeObjectURL(tempObjectUrl);
+      }
     };
   }, [initialImageUrl]);
 
@@ -113,6 +118,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         return;
       }
 
+      // Notify parent component of file selection
       onImageChange?.(file);
 
       // Create a local preview

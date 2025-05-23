@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -17,6 +16,7 @@ import { MinusCircle, PlusCircle, Search, ShoppingCart, Trash2 } from 'lucide-re
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import BookImage from '@/components/BookImage';
 
 interface CartItem {
   book: Book;
@@ -33,7 +33,7 @@ const SellMultipleBooksPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const { currentStore } = useStallContext();
-  const { currentUser } = useAuth(); // Using currentUser instead of user
+  const { currentUser } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -178,7 +178,7 @@ const SellMultipleBooksPage: React.FC = () => {
           paymentmethod: paymentMethod,
           buyername: buyerName || null,
           buyerphone: buyerPhone || null,
-          personnelid: currentUser?.id, // Using currentUser?.id instead of user?.id
+          personnelid: currentUser?.id, 
           stallid: currentStore,
           synced: false
         };
@@ -276,21 +276,14 @@ const SellMultipleBooksPage: React.FC = () => {
                             {searchResults.map(book => (
                               <TableRow key={book.id}>
                                 <TableCell className="align-top">
-                                  {book.imageUrl ? (
-                                    <div className="w-12 h-12 overflow-hidden rounded-md">
-                                      <AspectRatio ratio={1/1}>
-                                        <img 
-                                          src={book.imageUrl} 
-                                          alt={book.name} 
-                                          className="object-cover w-full h-full"
-                                        />
-                                      </AspectRatio>
-                                    </div>
-                                  ) : (
-                                    <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center">
-                                      <span className="text-xs text-gray-400">No image</span>
-                                    </div>
-                                  )}
+                                  <div className="w-12 h-12 overflow-hidden rounded-md">
+                                    <BookImage 
+                                      imageUrl={book.imageUrl} 
+                                      alt={book.name}
+                                      size="small"
+                                      className="w-12 h-12"
+                                    />
+                                  </div>
                                 </TableCell>
                                 <TableCell className="align-top">
                                   <div>
@@ -362,21 +355,14 @@ const SellMultipleBooksPage: React.FC = () => {
                       {cart.map(item => (
                         <TableRow key={item.book.id}>
                           <TableCell className="w-16">
-                            {item.book.imageUrl ? (
-                              <div className="w-10 h-10 overflow-hidden rounded-md">
-                                <AspectRatio ratio={1/1}>
-                                  <img 
-                                    src={item.book.imageUrl} 
-                                    alt={item.book.name} 
-                                    className="object-cover w-full h-full"
-                                  />
-                                </AspectRatio>
-                              </div>
-                            ) : (
-                              <div className="w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center">
-                                <span className="text-xs text-gray-400">No img</span>
-                              </div>
-                            )}
+                            <div className="w-10 h-10 overflow-hidden rounded-md">
+                              <BookImage 
+                                imageUrl={item.book.imageUrl} 
+                                alt={item.book.name}
+                                size="small"
+                                className="w-10 h-10"
+                              />
+                            </div>
                           </TableCell>
                           <TableCell>
                             <p className="font-medium">{item.book.name}</p>

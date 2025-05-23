@@ -64,7 +64,7 @@ const BookCard: React.FC<BookCardProps> = ({
           <ImageComponent 
             imageUrl={book.imageUrl} 
             alt={book.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full"
           />
         </AspectRatio>
       </CardHeader>
@@ -77,7 +77,6 @@ const BookCard: React.FC<BookCardProps> = ({
         </div>
         
         <div className="flex flex-col gap-3">
-          {/* Sell button - larger and more prominent */}
           <Button 
             onClick={handleClick}
             variant="default"
@@ -89,7 +88,6 @@ const BookCard: React.FC<BookCardProps> = ({
             {t("common.sell")}
           </Button>
           
-          {/* Admin buttons - larger and more visible for mobile */}
           {isAdmin && (
             <div className="flex gap-2 w-full" data-testid="admin-buttons">
               {onEdit && (

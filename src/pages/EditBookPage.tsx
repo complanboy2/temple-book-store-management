@@ -192,6 +192,11 @@ const EditBookPage = () => {
     setSelectedImage(file);
   };
   
+  const handleImageUploaded = (url: string) => {
+    // This function is called when the image is successfully uploaded
+    console.log("Image uploaded to:", url);
+  };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!book || !currentStore || !currentUser) return;
@@ -210,6 +215,12 @@ const EditBookPage = () => {
           imageUrl = uploadUrl;
         } else {
           console.error("Failed to upload image");
+          toast({
+            title: t("common.error"),
+            description: t("common.imageUploadFailed"),
+            variant: "destructive",
+          });
+          // Continue with the update even if image upload fails
         }
       }
       
@@ -290,7 +301,7 @@ const EditBookPage = () => {
                 <ImageUpload 
                   initialImageUrl={book.imageUrl} 
                   onImageChange={handleImageChange}
-                  onImageUploaded={() => {}}
+                  onImageUploaded={handleImageUploaded}
                   bookMetadata={{
                     author: formData.author,
                     name: formData.name,
