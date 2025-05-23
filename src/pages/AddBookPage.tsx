@@ -564,20 +564,6 @@ const AddBookPage: React.FC = () => {
                     </FormItem>
                   )}
                 />
-
-                <FormField
-                  control={form.control}
-                  name="barcode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("common.barcode")}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t("common.barcode")} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
                 
                 <div className="pt-4">
                   <Button 
