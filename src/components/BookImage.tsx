@@ -1,4 +1,4 @@
-
+// src/components/BookImage.tsx
 import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { getCachedImageUrl } from "@/services/imageService";
@@ -17,52 +17,56 @@ const BookImage: React.FC<BookImageProps> = ({
   const [displayUrl, setDisplayUrl] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  
+
   useEffect(() => {
-    if (!imageUrl) {
-      setDisplayUrl(undefined);
-      setIsLoading(false);
+    let active = true;
+
+    const loadImage = async () => {
+      if (!imageUrl) {
+        setDisplayUrl(undefined);
+        setIsLoading(false);
+        setHasError(false);
+        return;
+      }
+
+      setIsLoading(true);
       setHasError(false);
-      return;
-    }
-    
-    console.log("Loading image with caching:", imageUrl);
-    setIsLoading(true);
-    setHasError(false);
-    
-    // Use cached image service
-    getCachedImageUrl(imageUrl)
-      .then((cachedUrl) => {
-        if (cachedUrl) {
+      console.log("Loading image with caching:", imageUrl);
+
+      try {
+        const cachedUrl = await getCachedImageUrl(imageUrl);
+        if (cachedUrl && active) {
           setDisplayUrl(cachedUrl);
           setHasError(false);
-          console.log("Image loaded successfully from cache");
-        } else {
-          console.log("Failed to load cached image, showing fallback");
+        } else if (active) {
           setDisplayUrl(undefined);
           setHasError(true);
         }
-      })
-      .catch((error) => {
-        console.error("Error loading cached image:", error);
-        setDisplayUrl(undefined);
-        setHasError(true);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+      } catch (err) {
+        if (active) {
+          setDisplayUrl(undefined);
+          setHasError(true);
+        }
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    };
+
+    loadImage();
+
+    return () => {
+      active = false;
+    };
   }, [imageUrl]);
 
   const handleImageLoad = () => {
-    console.log("Cached image loaded successfully in img element");
     setIsLoading(false);
     setHasError(false);
   };
 
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    console.log("Cached image failed to load in img element:", imageUrl);
-    setHasError(true);
+  const handleImageError = () => {
     setIsLoading(false);
+    setHasError(true);
     setDisplayUrl(undefined);
   };
 
@@ -73,10 +77,10 @@ const BookImage: React.FC<BookImageProps> = ({
           <div className="animate-pulse bg-gray-200 w-12 h-12 rounded-full"></div>
         </div>
       ) : displayUrl && !hasError ? (
-        <img 
-          src={displayUrl} 
+        <img
+          src={displayUrl}
           alt={alt}
-          className="w-full h-full object-cover" 
+          className="w-full h-full object-cover"
           loading="lazy"
           onLoad={handleImageLoad}
           onError={handleImageError}
