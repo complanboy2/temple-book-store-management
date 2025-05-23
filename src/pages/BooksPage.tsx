@@ -6,7 +6,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 import { Book } from "@/types";
 import MobileHeader from "@/components/MobileHeader";
-import ScannerButton from "@/components/ScannerButton";
 import { useToast } from "@/hooks/use-toast";
 import { useBookManager } from "@/hooks/useBookManager";
 import BookPageHeader from "@/components/books/BookPageHeader";
@@ -49,22 +48,6 @@ const BooksPage = () => {
       // We'd need to fetch sales data to get quantitySold, using 0 as placeholder
       quantitySold: 0
     }));
-  };
-  
-  // Handle scan completion
-  const handleScanComplete = (barcode: string) => {
-    // Find the book by barcode
-    const book = books.find(book => book.barcode === barcode);
-    
-    if (book) {
-      navigate(`/sell/${book.id}`);
-    } else {
-      toast({
-        title: t("common.error"),
-        description: t("common.bookNotFound"),
-        variant: "destructive",
-      });
-    }
   };
   
   // Handle book editing - navigate to edit page with book ID
@@ -159,7 +142,7 @@ const BooksPage = () => {
         onDelete={handleDeleteConfirm}
       />
 
-      <ScannerButton onScanComplete={handleScanComplete} />
+      
     </div>
   );
 };
