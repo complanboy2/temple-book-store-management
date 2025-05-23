@@ -17,13 +17,13 @@ const BookPageHeader: React.FC<BookPageHeaderProps> = ({ exportBooks, isAdmin })
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-      <h1 className="text-2xl font-bold text-temple-maroon mb-4 md:mb-0">
+    <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+      <h1 className="text-2xl font-bold text-temple-maroon">
         {t("common.booksInventory")}
       </h1>
       
-      <div className="flex flex-col sm:flex-row gap-2">
-        {/* Add Export Button for admins */}
+      <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+        {/* Export Button for admins */}
         {isAdmin && (
           <ExportReportButton
             reportType="inventory"
@@ -31,10 +31,11 @@ const BookPageHeader: React.FC<BookPageHeaderProps> = ({ exportBooks, isAdmin })
           />
         )}
         
+        {/* Add Book Button for admins */}
         {isAdmin && (
           <Button 
             onClick={() => navigate("/books/add")}
-            className="bg-temple-saffron hover:bg-temple-saffron/90 text-white px-4 py-2 rounded flex items-center justify-center"
+            className="bg-temple-saffron hover:bg-temple-saffron/90 text-white px-6 py-3 rounded-lg flex items-center justify-center min-h-[44px] touch-manipulation font-medium"
             data-testid="add-book-button"
           >
             <Plus className="h-5 w-5 mr-2" />
