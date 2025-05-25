@@ -35,17 +35,20 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
   const { currentUser } = useAuth();
 
   const fetchStalls = async () => {
-    if (!currentUser?.id) {
+    if (!currentUser?.instituteId) {
+      console.log("No instituteId found for current user:", currentUser);
       setIsLoading(false);
       return;
     }
 
     try {
       setIsLoading(true);
+      console.log("Fetching stalls for instituteId:", currentUser.instituteId);
+      
       const { data, error } = await supabase
         .from("book_stalls")
         .select("*")
-        .eq("instituteid", currentUser.id)
+        .eq("instituteid", currentUser.instituteId)
         .order('createdat', { ascending: false });
 
       if (error) {
@@ -53,6 +56,7 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
         return;
       }
 
+      console.log("Fetched stalls:", data);
       setStalls(data || []);
       
       // Set current store to first available stall if not already set
@@ -71,8 +75,8 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
   };
 
   const addStore = async (name: string, location?: string) => {
-    if (!currentUser?.id) {
-      throw new Error("User not authenticated");
+    if (!currentUser?.instituteId) {
+      throw new Error("User not authenticated or missing instituteId");
     }
 
     try {
@@ -81,7 +85,7 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
         .insert({
           name,
           location: location || null,
-          instituteid: currentUser.id
+          instituteid: currentUser.instituteId
         })
         .select()
         .single();
@@ -101,7 +105,7 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
 
   useEffect(() => {
     fetchStalls();
-  }, [currentUser?.id]);
+  }, [currentUser?.instituteId]);
 
   return (
     <StallContext.Provider
