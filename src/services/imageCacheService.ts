@@ -1,5 +1,6 @@
+
 import localforage from 'localforage';
-import { generateHash } from 'hash-wasm';
+import { sha256 } from 'hash-wasm';
 
 const CACHE_EXPIRY_TIME = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 const CACHE_URLS_KEY = 'cached_image_urls';
@@ -36,7 +37,7 @@ class ImageCacheService {
   /**
    * Opens the IndexedDB database.
    */
-  private async openDB(): Promise<LocalForage> {
+  private async openDB(): Promise<typeof localforage> {
     return localforage;
   }
 
@@ -46,7 +47,7 @@ class ImageCacheService {
    * @returns A promise that resolves to the hash string.
    */
   async generateHash(url: string): Promise<string> {
-    return generateHash(url, 'SHA-256');
+    return await sha256(url);
   }
 
   /**
@@ -190,9 +191,7 @@ class ImageCacheService {
       
       // Remove from IndexedDB
       const db = await this.openDB();
-      const transaction = db.transaction([this.STORE_NAME], 'readwrite');
-      const store = transaction.objectStore(this.STORE_NAME);
-      await store.delete(hash);
+      await db.removeItem(hash);
       
       // Remove from localStorage tracking
       const cachedUrls = this.getCachedUrls();

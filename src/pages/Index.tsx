@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStallContext } from "@/contexts/StallContext";
@@ -79,13 +80,31 @@ const Index = () => {
           setTopSellingBooks(topBooks);
         }
 
-        // Fetch low stock books
+        // Fetch low stock books and transform to Book type
         const { data: lowStockData } = await supabase
           .from("books")
           .select("*")
           .eq("stallid", currentStore)
           .lt("quantity", 5);
-        setLowStockBooks(lowStockData as Book[] || []);
+        
+        if (lowStockData) {
+          const transformedBooks: Book[] = lowStockData.map(book => ({
+            id: book.id,
+            barcode: book.barcode || undefined,
+            name: book.name,
+            author: book.author,
+            category: book.category || "",
+            printingInstitute: book.printinginstitute || "",
+            originalPrice: book.originalprice,
+            salePrice: book.saleprice,
+            quantity: book.quantity,
+            stallId: book.stallid,
+            imageUrl: book.imageurl,
+            createdAt: book.createdat ? new Date(book.createdat) : new Date(),
+            updatedAt: book.updatedat ? new Date(book.updatedat) : new Date()
+          }));
+          setLowStockBooks(transformedBooks);
+        }
       } catch (error) {
         console.error("Error fetching stats:", error);
       }
@@ -103,7 +122,7 @@ const Index = () => {
       <MobileHeader
         title={t("common.dashboard")}
         showStallSelector={true}
-        rightIcon={
+        rightContent={
           <Button variant="ghost" size="sm" onClick={handleLogout}>
             {t("common.logout")}
           </Button>
