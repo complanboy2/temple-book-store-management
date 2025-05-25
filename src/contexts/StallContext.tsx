@@ -10,7 +10,8 @@ interface StallContextType {
   setCurrentStore: (storeId: string) => void;
   isLoading: boolean;
   refreshStalls: () => Promise<void>;
-  addStore: (name: string, location?: string) => Promise<any>;
+  addStore: (name: string, location?: string, isDefault?: boolean) => Promise<any>;
+  updateStoreDefault: (storeId: string) => Promise<void>;
   bookStalls: any[]; // Alias for stalls for backward compatibility
 }
 
@@ -35,20 +36,20 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
   const { currentUser } = useAuth();
 
   const fetchStalls = async () => {
-    if (!currentUser?.instituteId) {
-      console.log("No instituteId found for current user:", currentUser);
+    if (!currentUser?.id) {
+      console.log("No user ID found for current user:", currentUser);
       setIsLoading(false);
       return;
     }
 
     try {
       setIsLoading(true);
-      console.log("Fetching stalls for instituteId:", currentUser.instituteId);
+      console.log("Fetching stalls for user ID:", currentUser.id);
       
       const { data, error } = await supabase
         .from("book_stalls")
         .select("*")
-        .eq("instituteid", currentUser.instituteId)
+        .eq("admin_id", currentUser.id)
         .order('createdat', { ascending: false });
 
       if (error) {
@@ -61,12 +62,14 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
       console.log("Fetched stalls:", data);
       setStalls(data || []);
       
-      // Set current store to first available stall if not already set
-      if (data && data.length > 0 && !currentStore) {
-        setCurrentStore(data[0].id);
-        console.log("Set current store to:", data[0].id);
-      } else if (!data || data.length === 0) {
-        console.log("No stores found for institute:", currentUser.instituteId);
+      // Set current store to default store if available, otherwise first store
+      if (data && data.length > 0) {
+        const defaultStore = data.find(store => store.is_default);
+        const selectedStore = defaultStore || data[0];
+        setCurrentStore(selectedStore.id);
+        console.log("Set current store to:", selectedStore.id);
+      } else {
+        console.log("No stores found for user:", currentUser.id);
         setCurrentStore(null);
       }
     } catch (error) {
@@ -81,20 +84,21 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
     await fetchStalls();
   };
 
-  const addStore = async (name: string, location?: string) => {
-    if (!currentUser?.instituteId) {
-      throw new Error("User not authenticated or missing instituteId");
+  const addStore = async (name: string, location?: string, isDefault?: boolean) => {
+    if (!currentUser?.id) {
+      throw new Error("User not authenticated or missing user ID");
     }
 
     try {
-      console.log("Adding store:", { name, location, instituteId: currentUser.instituteId });
+      console.log("Adding store:", { name, location, admin_id: currentUser.id, is_default: isDefault });
       
       const { data, error } = await supabase
         .from("book_stalls")
         .insert({
           name,
           location: location || null,
-          instituteid: currentUser.instituteId
+          admin_id: currentUser.id,
+          is_default: isDefault || false
         })
         .select()
         .single();
@@ -119,11 +123,35 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
     }
   };
 
+  const updateStoreDefault = async (storeId: string) => {
+    if (!currentUser?.id) {
+      throw new Error("User not authenticated");
+    }
+
+    try {
+      const { error } = await supabase
+        .from("book_stalls")
+        .update({ is_default: true })
+        .eq("id", storeId)
+        .eq("admin_id", currentUser.id);
+
+      if (error) {
+        console.error("Error updating default store:", error);
+        throw error;
+      }
+
+      await refreshStalls();
+    } catch (error) {
+      console.error("Error updating default store:", error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
-    if (currentUser?.instituteId) {
+    if (currentUser?.id) {
       fetchStalls();
     }
-  }, [currentUser?.instituteId]);
+  }, [currentUser?.id]);
 
   return (
     <StallContext.Provider
@@ -135,6 +163,7 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
         isLoading,
         refreshStalls,
         addStore,
+        updateStoreDefault,
         bookStalls: stalls, // Alias for backward compatibility
       }}
     >

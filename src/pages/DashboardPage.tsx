@@ -49,7 +49,7 @@ const DashboardPage: React.FC = () => {
   const [isAddStoreDialogOpen, setIsAddStoreDialogOpen] = useState(false);
   const [showLowStockNotification, setShowLowStockNotification] = useState(false);
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, currentUser } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
   const { 
@@ -70,7 +70,7 @@ const DashboardPage: React.FC = () => {
 
   // Only show add store dialog if loading is complete, user is admin, and no stores exist
   useEffect(() => {
-    if (!isLoading && stores.length === 0 && isAdmin) {
+    if (!isLoading && stores.length === 0 && isAdmin && currentUser?.id) {
       console.log("No stores available for admin user, showing add store dialog");
       setIsAddStoreDialogOpen(true);
     } else if (stores.length > 0) {
@@ -80,7 +80,7 @@ const DashboardPage: React.FC = () => {
       console.log("User is not admin, not showing add store dialog");
       setIsAddStoreDialogOpen(false);
     }
-  }, [stores, isLoading, isAdmin]);
+  }, [stores, isLoading, isAdmin, currentUser?.id]);
 
   useEffect(() => {
     async function fetchBooksAndSales() {
@@ -179,7 +179,9 @@ const DashboardPage: React.FC = () => {
   const onSubmit = async (data: StoreFormValues) => {
     try {
       console.log("Submitting store creation:", data);
-      const result = await addStore(data.name, data.location);
+      // Set first store as default for admin
+      const isFirstStore = stores.length === 0;
+      const result = await addStore(data.name, data.location, isFirstStore);
       console.log("Store creation result:", result);
       
       if (result) {
@@ -190,13 +192,23 @@ const DashboardPage: React.FC = () => {
           description: t("common.storeAdded"),
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to add store:", error);
-      toast({
-        title: t("common.error"),
-        description: t("common.failedToAddStore"),
-        variant: "destructive",
-      });
+      
+      // Check if it's the max stores limit error
+      if (error.message?.includes('maximum 10 stores')) {
+        toast({
+          title: t("common.error"),
+          description: "You can create maximum 10 stores",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: t("common.error"),
+          description: t("common.failedToAddStore"),
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -254,6 +266,7 @@ const DashboardPage: React.FC = () => {
                     <SelectItem key={store.id} value={store.id}>
                       {store.name}
                       {store.location ? ` (${store.location})` : ""}
+                      {store.is_default ? " - Default" : ""}
                     </SelectItem>
                   ))}
                 </SelectGroup>
@@ -265,7 +278,7 @@ const DashboardPage: React.FC = () => {
             </div>
           )}
         </div>
-        {isAdmin && (
+        {isAdmin && stores.length < 10 && (
           <Button
             className="bg-temple-saffron hover:bg-temple-saffron/90"
             onClick={() => setIsAddStoreDialogOpen(true)}

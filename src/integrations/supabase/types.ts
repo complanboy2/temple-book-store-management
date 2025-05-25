@@ -32,23 +32,29 @@ export type Database = {
       }
       book_stalls: {
         Row: {
+          admin_id: string
           createdat: string
           id: string
           instituteid: string
+          is_default: boolean | null
           location: string | null
           name: string
         }
         Insert: {
+          admin_id?: string
           createdat?: string
           id?: string
           instituteid: string
+          is_default?: boolean | null
           location?: string | null
           name: string
         }
         Update: {
+          admin_id?: string
           createdat?: string
           id?: string
           instituteid?: string
+          is_default?: boolean | null
           location?: string | null
           name?: string
         }

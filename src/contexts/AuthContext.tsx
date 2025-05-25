@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, UserRole } from "../types";
 import { getCurrentUser, setCurrentUser, getUsers, setUsers, generateId } from "../services/storageService";
@@ -11,7 +10,7 @@ interface AuthContextType {
   register: (name: string, email: string, phone: string, password: string, role: UserRole, instituteId: string) => Promise<User>;
   inviteUser: (name: string, email: string, phone: string, role: UserRole) => Promise<string>;
   completeRegistration: (inviteCode: string, password: string) => Promise<User>;
-  updateUserProfile: (user: User) => void; // Add this line
+  updateUserProfile: (user: User) => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
   isLoading: boolean;
@@ -71,18 +70,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Then fall back to local storage users
       const users = getUsers();
-      const user = users.find(u => u.email === email);
+      let user = users.find(u => u.email === email);
       
       if (user) {
-        // In a real app, we would verify the password here
         setUser(user);
         setCurrentUser(user);
         return user;
       } else {
-        // For demo purposes, if user is admin@temple.com, create it
+        // For demo purposes, if user is admin@temple.com, create it with a specific ID
         if (email === 'admin@temple.com') {
           const newUser: User = {
-            id: generateId(),
+            id: 'admin-user-id', // Fixed ID for consistency with database
             name: 'Temple Admin',
             email: 'admin@temple.com',
             role: 'admin',
@@ -241,7 +239,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     register,
     inviteUser,
     completeRegistration,
-    updateUserProfile, // Add this line to include in the context value
+    updateUserProfile,
     isAuthenticated: !!currentUser,
     isAdmin: currentUser?.role === "admin" || currentUser?.role === "super_admin",
     isLoading,
