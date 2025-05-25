@@ -90,7 +90,7 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
     }
 
     try {
-      console.log("Adding store:", { name, location, admin_id: currentUser.id, is_default: isDefault });
+      console.log("Adding store:", { name, location, admin_id: currentUser.id, instituteid: currentUser.instituteId, is_default: isDefault });
       
       const { data, error } = await supabase
         .from("book_stalls")
@@ -98,6 +98,7 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
           name,
           location: location || null,
           admin_id: currentUser.id,
+          instituteid: currentUser.instituteId,
           is_default: isDefault || false
         })
         .select()
