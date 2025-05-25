@@ -68,12 +68,16 @@ const DashboardPage: React.FC = () => {
     },
   });
 
+  // Only show add store dialog if loading is complete, user is admin, and no stores exist
   useEffect(() => {
     if (!isLoading && stores.length === 0 && isAdmin) {
-      console.log("No stores available, opening add store dialog");
+      console.log("No stores available for admin user, showing add store dialog");
       setIsAddStoreDialogOpen(true);
     } else if (stores.length > 0) {
-      console.log("Stores available, not showing dialog:", stores);
+      console.log("Stores available, hiding dialog:", stores);
+      setIsAddStoreDialogOpen(false);
+    } else if (!isAdmin) {
+      console.log("User is not admin, not showing add store dialog");
       setIsAddStoreDialogOpen(false);
     }
   }, [stores, isLoading, isAdmin]);
@@ -173,10 +177,26 @@ const DashboardPage: React.FC = () => {
   };
 
   const onSubmit = async (data: StoreFormValues) => {
-    const success = await addStore(data.name, data.location);
-    if (success) {
-      setIsAddStoreDialogOpen(false);
-      form.reset();
+    try {
+      console.log("Submitting store creation:", data);
+      const result = await addStore(data.name, data.location);
+      console.log("Store creation result:", result);
+      
+      if (result) {
+        setIsAddStoreDialogOpen(false);
+        form.reset();
+        toast({
+          title: t("common.success"),
+          description: t("common.storeAdded"),
+        });
+      }
+    } catch (error) {
+      console.error("Failed to add store:", error);
+      toast({
+        title: t("common.error"),
+        description: t("common.failedToAddStore"),
+        variant: "destructive",
+      });
     }
   };
 
@@ -214,8 +234,6 @@ const DashboardPage: React.FC = () => {
         onSearch={() => navigate("/search")}
         leftIcon={<Menu size={24} />}
         onLeftIconClick={() => {
-          // Vertical options collapse could be implemented here
-          // For now, let's just navigate to settings as an example
           navigate("/settings");
         }}
       />
@@ -224,7 +242,7 @@ const DashboardPage: React.FC = () => {
         <div className="flex-1">
           {stores.length > 0 ? (
             <Select
-              value={currentStore || "default-store"}
+              value={currentStore || ""}
               onValueChange={(value) => setCurrentStore(value)}
             >
               <SelectTrigger className="temple-input w-full md:w-auto">

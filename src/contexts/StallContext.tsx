@@ -53,6 +53,8 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
 
       if (error) {
         console.error("Error fetching stalls:", error);
+        setStalls([]);
+        setIsLoading(false);
         return;
       }
 
@@ -62,9 +64,14 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
       // Set current store to first available stall if not already set
       if (data && data.length > 0 && !currentStore) {
         setCurrentStore(data[0].id);
+        console.log("Set current store to:", data[0].id);
+      } else if (!data || data.length === 0) {
+        console.log("No stores found for institute:", currentUser.instituteId);
+        setCurrentStore(null);
       }
     } catch (error) {
       console.error("Error fetching stalls:", error);
+      setStalls([]);
     } finally {
       setIsLoading(false);
     }
@@ -80,6 +87,8 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
     }
 
     try {
+      console.log("Adding store:", { name, location, instituteId: currentUser.instituteId });
+      
       const { data, error } = await supabase
         .from("book_stalls")
         .insert({
@@ -95,7 +104,14 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
         throw error;
       }
 
+      console.log("Store added successfully:", data);
       await refreshStalls();
+      
+      // Set the newly created store as current store
+      if (data) {
+        setCurrentStore(data.id);
+      }
+      
       return data;
     } catch (error) {
       console.error("Error adding store:", error);
@@ -104,7 +120,9 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
-    fetchStalls();
+    if (currentUser?.instituteId) {
+      fetchStalls();
+    }
   }, [currentUser?.instituteId]);
 
   return (
