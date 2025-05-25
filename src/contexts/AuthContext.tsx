@@ -88,7 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             role: 'admin',
             canRestock: true,
             canSell: true,
-            instituteId: 'default-institute',
+            instituteId: 'inst-1',
           };
           
           const updatedUsers = [...users, newUser];
