@@ -10,7 +10,7 @@ interface StallContextType {
   setCurrentStore: (storeId: string) => void;
   isLoading: boolean;
   refreshStalls: () => Promise<void>;
-  addStore: (name: string, location?: string) => Promise<void>;
+  addStore: (name: string, location?: string) => Promise<any>;
   bookStalls: any[]; // Alias for stalls for backward compatibility
 }
 

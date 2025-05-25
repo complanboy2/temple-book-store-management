@@ -5,19 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import BookImage, { BookImageProps } from "@/components/BookImage";
 import { Loader2 } from "lucide-react";
-
-interface Book {
-  id: string;
-  name: string;
-  author: string;
-  quantity: number;
-  saleprice: number;
-  originalprice: number;
-  category?: string;
-  language?: string;
-  imageurl?: string;
-  barcode?: string;
-}
+import { Book } from "@/types";
 
 interface BookListProps {
   books: Book[];
