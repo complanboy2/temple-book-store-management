@@ -18,21 +18,30 @@ const Index = () => {
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [topSellingBooks, setTopSellingBooks] = useState<{ bookName: string; totalSold: number }[]>([]);
   const [lowStockBooks, setLowStockBooks] = useState<Book[]>([]);
+  const [statsLoading, setStatsLoading] = useState(true);
   
   const { currentUser, logout } = useAuth();
-  const { currentStore } = useStallContext();
+  const { currentStore, isLoading: stallLoading } = useStallContext();
   const { t } = useTranslation();
 
   useEffect(() => {
     const fetchStats = async () => {
-      if (!currentStore) return;
+      if (!currentStore || stallLoading) {
+        console.log("No current store or still loading stalls, skipping stats fetch");
+        return;
+      }
 
       try {
+        setStatsLoading(true);
+        console.log("Fetching stats for store:", currentStore);
+
         // Fetch total books
         const { count: booksCount } = await supabase
           .from("books")
           .select("*", { count: "exact" })
           .eq("stallid", currentStore);
+        
+        console.log("Books count:", booksCount);
         setTotalBooks(booksCount || 0);
 
         // Fetch total sales
@@ -40,6 +49,8 @@ const Index = () => {
           .from("sales")
           .select("*", { count: "exact" })
           .eq("stallid", currentStore);
+        
+        console.log("Sales count:", salesCount);
         setTotalSales(salesCount || 0);
 
         // Fetch total revenue
@@ -49,6 +60,7 @@ const Index = () => {
           .eq("stallid", currentStore);
 
         const revenue = salesData?.reduce((acc, sale) => acc + sale.totalamount, 0) || 0;
+        console.log("Total revenue:", revenue);
         setTotalRevenue(revenue);
 
         // Fetch top selling books
@@ -107,15 +119,29 @@ const Index = () => {
         }
       } catch (error) {
         console.error("Error fetching stats:", error);
+      } finally {
+        setStatsLoading(false);
       }
     };
 
     fetchStats();
-  }, [currentStore]);
+  }, [currentStore, stallLoading]);
 
   const handleLogout = () => {
     logout();
   };
+
+  // Show loading while stalls are loading
+  if (stallLoading) {
+    return (
+      <div className="min-h-screen bg-temple-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-temple-maroon mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading stores...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-temple-background pb-20">
@@ -143,17 +169,17 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <StatsCard
               title={t("common.totalBooks")}
-              value={totalBooks.toString()}
+              value={statsLoading ? "..." : totalBooks.toString()}
               icon="📚"
             />
             <StatsCard
               title={t("common.totalSales")}
-              value={totalSales.toString()}
+              value={statsLoading ? "..." : totalSales.toString()}
               icon="💰"
             />
             <StatsCard
               title={t("common.revenue")}
-              value={`₹${totalRevenue.toFixed(2)}`}
+              value={statsLoading ? "..." : `₹${totalRevenue.toFixed(2)}`}
               icon="📈"
             />
           </div>

@@ -48,6 +48,23 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
       setIsLoading(true);
       console.log("Fetching stalls for user ID:", currentUser.id);
       
+      // Special handling for admin@temple.com - link them to existing data
+      if (currentUser.email === 'admin@temple.com') {
+        // First check if there are any stalls without admin_id and claim them
+        const { data: unclaimedStalls } = await supabase
+          .from("book_stalls")
+          .select("*")
+          .or("admin_id.is.null,admin_id.eq.''");
+
+        if (unclaimedStalls && unclaimedStalls.length > 0) {
+          console.log("Found unclaimed stalls, assigning to admin@temple.com");
+          await supabase
+            .from("book_stalls")
+            .update({ admin_id: currentUser.id })
+            .or("admin_id.is.null,admin_id.eq.''");
+        }
+      }
+      
       const { data, error } = await supabase
         .from("book_stalls")
         .select("*")
