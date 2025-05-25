@@ -5,10 +5,13 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface StallContextType {
   stalls: any[];
+  stores: any[]; // Alias for stalls for backward compatibility
   currentStore: string | null;
   setCurrentStore: (storeId: string) => void;
   isLoading: boolean;
   refreshStalls: () => Promise<void>;
+  addStore: (name: string, location?: string) => Promise<void>;
+  bookStalls: any[]; // Alias for stalls for backward compatibility
 }
 
 const StallContext = createContext<StallContextType | undefined>(undefined);
@@ -40,9 +43,9 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase
-        .from("stalls")
+        .from("book_stalls")
         .select("*")
-        .eq("userid", currentUser.id)
+        .eq("instituteid", currentUser.id)
         .order('createdat', { ascending: false });
 
       if (error) {
@@ -67,6 +70,35 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
     await fetchStalls();
   };
 
+  const addStore = async (name: string, location?: string) => {
+    if (!currentUser?.id) {
+      throw new Error("User not authenticated");
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("book_stalls")
+        .insert({
+          name,
+          location: location || null,
+          instituteid: currentUser.id
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error adding store:", error);
+        throw error;
+      }
+
+      await refreshStalls();
+      return data;
+    } catch (error) {
+      console.error("Error adding store:", error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
     fetchStalls();
   }, [currentUser?.id]);
@@ -75,10 +107,13 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
     <StallContext.Provider
       value={{
         stalls,
+        stores: stalls, // Alias for backward compatibility
         currentStore,
         setCurrentStore,
         isLoading,
         refreshStalls,
+        addStore,
+        bookStalls: stalls, // Alias for backward compatibility
       }}
     >
       {children}

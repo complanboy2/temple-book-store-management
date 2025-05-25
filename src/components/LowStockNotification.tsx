@@ -5,7 +5,12 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Book } from "@/types";
+
+interface Book {
+  id: string;
+  name: string;
+  quantity: number;
+}
 
 interface LowStockNotificationProps {
   books: Book[];

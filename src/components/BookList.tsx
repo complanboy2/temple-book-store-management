@@ -1,11 +1,23 @@
 
 import React from "react";
-import { Book } from "@/types";
 import BookCard from "@/components/BookCard";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import BookImage, { BookImageProps } from "@/components/BookImage";
 import { Loader2 } from "lucide-react";
+
+interface Book {
+  id: string;
+  name: string;
+  author: string;
+  quantity: number;
+  saleprice: number;
+  originalprice: number;
+  category?: string;
+  language?: string;
+  imageurl?: string;
+  barcode?: string;
+}
 
 interface BookListProps {
   books: Book[];
@@ -68,9 +80,9 @@ const BookList: React.FC<BookListProps> = ({
         <BookCard 
           key={book.id} 
           book={book} 
-          onDelete={onDelete || undefined}
-          onEdit={onEdit || undefined}
-          onSell={onSell || undefined}
+          onDelete={onDelete}
+          onEdit={onEdit}
+          onSell={onSell}
         />
       ))}
     </div>

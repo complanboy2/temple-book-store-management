@@ -18,12 +18,13 @@ const StallSelector: React.FC = () => {
     setCurrentStore(storeId);
   };
 
-  if (stores.length === 0) {
+  // Check if stores exists and has length before rendering
+  if (!stores || stores.length === 0) {
     return null;
   }
 
   return (
-    <Select value={currentStore} onValueChange={handleStoreChange}>
+    <Select value={currentStore || ""} onValueChange={handleStoreChange}>
       <SelectTrigger className="w-full">
         <SelectValue placeholder={t("common.selectStore")} />
       </SelectTrigger>
