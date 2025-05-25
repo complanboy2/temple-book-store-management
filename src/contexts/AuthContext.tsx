@@ -60,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             role: supaUsers.role as UserRole,
             canRestock: supaUsers.canrestock,
             canSell: supaUsers.cansell,
-            instituteId: supaUsers.instituteid || 'default-institute',
+            instituteId: supaUsers.instituteid || 'inst-1',
           };
           
           setUser(supaUser);
