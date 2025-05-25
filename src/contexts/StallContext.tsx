@@ -13,6 +13,7 @@ interface StallContextType {
   addStore: (name: string, location?: string, isDefault?: boolean) => Promise<any>;
   updateStoreDefault: (storeId: string) => Promise<void>;
   bookStalls: any[]; // Alias for stalls for backward compatibility
+  shouldShowAddStore: boolean;
 }
 
 const StallContext = createContext<StallContextType | undefined>(undefined);
@@ -33,20 +34,22 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
   const [stalls, setStalls] = useState<any[]>([]);
   const [currentStore, setCurrentStore] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [shouldShowAddStore, setShouldShowAddStore] = useState(false);
   const { currentUser, isAuthenticated } = useAuth();
 
   const fetchStalls = async () => {
-    if (!currentUser?.id || !isAuthenticated) {
+    if (!currentUser?.email || !isAuthenticated) {
       console.log("No authenticated user, skipping stall fetch");
       setStalls([]);
       setCurrentStore(null);
       setIsLoading(false);
+      setShouldShowAddStore(false);
       return;
     }
 
     try {
       setIsLoading(true);
-      console.log("Fetching stalls for user ID:", currentUser.id);
+      console.log("Fetching stalls for admin email:", currentUser.email);
       
       // Special handling for admin@temple.com - link them to existing data
       if (currentUser.email === 'admin@temple.com') {
@@ -60,7 +63,7 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
           console.log("Found unclaimed stalls, assigning to admin@temple.com");
           await supabase
             .from("book_stalls")
-            .update({ admin_id: currentUser.id })
+            .update({ admin_id: currentUser.email })
             .or("admin_id.is.null,admin_id.eq.''");
         }
       }
@@ -68,7 +71,7 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
       const { data, error } = await supabase
         .from("book_stalls")
         .select("*")
-        .eq("admin_id", currentUser.id)
+        .eq("admin_id", currentUser.email)
         .order('createdat', { ascending: false });
 
       if (error) {
@@ -87,9 +90,12 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
         const selectedStore = defaultStore || data[0];
         setCurrentStore(selectedStore.id);
         console.log("Set current store to:", selectedStore.id);
+        setShouldShowAddStore(false);
       } else {
-        console.log("No stores found for user:", currentUser.id);
+        console.log("No stores found for user:", currentUser.email);
         setCurrentStore(null);
+        // Show add store prompt for admins when they have no stores
+        setShouldShowAddStore(true);
       }
     } catch (error) {
       console.error("Error fetching stalls:", error);
@@ -104,20 +110,20 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
   };
 
   const addStore = async (name: string, location?: string, isDefault?: boolean) => {
-    if (!currentUser?.id) {
-      throw new Error("User not authenticated or missing user ID");
+    if (!currentUser?.email) {
+      throw new Error("User not authenticated or missing email");
     }
 
     try {
-      console.log("Adding store:", { name, location, admin_id: currentUser.id, instituteid: currentUser.instituteId, is_default: isDefault });
+      console.log("Adding store:", { name, location, admin_id: currentUser.email, instituteid: currentUser.instituteId, is_default: isDefault });
       
       const { data, error } = await supabase
         .from("book_stalls")
         .insert({
           name,
           location: location || null,
-          admin_id: currentUser.id,
-          instituteid: currentUser.instituteId,
+          admin_id: currentUser.email,
+          instituteid: currentUser.instituteId || 'default-institute',
           is_default: isDefault || false
         })
         .select()
@@ -134,6 +140,7 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
       // Set the newly created store as current store
       if (data) {
         setCurrentStore(data.id);
+        setShouldShowAddStore(false);
       }
       
       return data;
@@ -144,7 +151,7 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
   };
 
   const updateStoreDefault = async (storeId: string) => {
-    if (!currentUser?.id) {
+    if (!currentUser?.email) {
       throw new Error("User not authenticated");
     }
 
@@ -153,7 +160,7 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
         .from("book_stalls")
         .update({ is_default: true })
         .eq("id", storeId)
-        .eq("admin_id", currentUser.id);
+        .eq("admin_id", currentUser.email);
 
       if (error) {
         console.error("Error updating default store:", error);
@@ -169,15 +176,16 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
 
   // Only fetch stalls when user is authenticated
   useEffect(() => {
-    if (isAuthenticated && currentUser?.id) {
+    if (isAuthenticated && currentUser?.email) {
       fetchStalls();
     } else {
       // Clear state when user is not authenticated
       setStalls([]);
       setCurrentStore(null);
       setIsLoading(false);
+      setShouldShowAddStore(false);
     }
-  }, [isAuthenticated, currentUser?.id]);
+  }, [isAuthenticated, currentUser?.email]);
 
   return (
     <StallContext.Provider
@@ -191,6 +199,7 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
         addStore,
         updateStoreDefault,
         bookStalls: stalls, // Alias for backward compatibility
+        shouldShowAddStore,
       }}
     >
       {children}

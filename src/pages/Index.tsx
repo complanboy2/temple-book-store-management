@@ -11,6 +11,7 @@ import LowStockNotification from "@/components/LowStockNotification";
 import MainMenu from "@/components/MainMenu";
 import { supabase } from "@/integrations/supabase/client";
 import { Book, Sale } from "@/types";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const [totalBooks, setTotalBooks] = useState(0);
@@ -19,10 +20,12 @@ const Index = () => {
   const [topSellingBooks, setTopSellingBooks] = useState<{ bookName: string; totalSold: number }[]>([]);
   const [lowStockBooks, setLowStockBooks] = useState<Book[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [showAddStorePrompt, setShowAddStorePrompt] = useState(false);
   
   const { currentUser, logout } = useAuth();
-  const { currentStore, isLoading: stallLoading } = useStallContext();
+  const { currentStore, isLoading: stallLoading, shouldShowAddStore, addStore } = useStallContext();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -127,8 +130,30 @@ const Index = () => {
     fetchStats();
   }, [currentStore, stallLoading]);
 
+  // Show add store prompt when shouldShowAddStore is true
+  useEffect(() => {
+    if (shouldShowAddStore && !stallLoading) {
+      setShowAddStorePrompt(true);
+    } else {
+      setShowAddStorePrompt(false);
+    }
+  }, [shouldShowAddStore, stallLoading]);
+
   const handleLogout = () => {
     logout();
+  };
+
+  const handleAddStore = async () => {
+    try {
+      await addStore("My First Store", "", true);
+      setShowAddStorePrompt(false);
+    } catch (error) {
+      console.error("Error adding store:", error);
+    }
+  };
+
+  const handleSkipAddStore = () => {
+    setShowAddStorePrompt(false);
   };
 
   // Show loading while stalls are loading
@@ -139,6 +164,35 @@ const Index = () => {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-temple-maroon mx-auto"></div>
           <p className="mt-2 text-muted-foreground">Loading stores...</p>
         </div>
+      </div>
+    );
+  }
+
+  // Show add store prompt
+  if (showAddStorePrompt) {
+    return (
+      <div className="min-h-screen bg-temple-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md p-6 text-center">
+          <h2 className="text-xl font-bold text-temple-maroon mb-4">Welcome to Book Stall Manager!</h2>
+          <p className="text-muted-foreground mb-6">
+            To get started, you can add your first store. This will help you organize your book inventory.
+          </p>
+          <div className="space-y-3">
+            <Button 
+              onClick={handleAddStore}
+              className="w-full bg-temple-saffron hover:bg-temple-saffron/90"
+            >
+              Add My First Store
+            </Button>
+            <Button 
+              onClick={handleSkipAddStore}
+              variant="outline"
+              className="w-full"
+            >
+              Skip for Now
+            </Button>
+          </div>
+        </Card>
       </div>
     );
   }
@@ -167,21 +221,27 @@ const Index = () => {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <StatsCard
-              title={t("common.totalBooks")}
-              value={statsLoading ? "..." : totalBooks.toString()}
-              icon="📚"
-            />
-            <StatsCard
-              title={t("common.totalSales")}
-              value={statsLoading ? "..." : totalSales.toString()}
-              icon="💰"
-            />
-            <StatsCard
-              title={t("common.revenue")}
-              value={statsLoading ? "..." : `₹${totalRevenue.toFixed(2)}`}
-              icon="📈"
-            />
+            <div onClick={() => navigate("/books")} className="cursor-pointer">
+              <StatsCard
+                title={t("common.totalBooks")}
+                value={statsLoading ? "..." : totalBooks.toString()}
+                icon="📚"
+              />
+            </div>
+            <div onClick={() => navigate("/sales")} className="cursor-pointer">
+              <StatsCard
+                title={t("common.totalSales")}
+                value={statsLoading ? "..." : totalSales.toString()}
+                icon="💰"
+              />
+            </div>
+            <div onClick={() => navigate("/sales")} className="cursor-pointer">
+              <StatsCard
+                title={t("common.revenue")}
+                value={statsLoading ? "..." : `₹${totalRevenue.toFixed(2)}`}
+                icon="📈"
+              />
+            </div>
           </div>
 
           {/* Low Stock Notification */}
