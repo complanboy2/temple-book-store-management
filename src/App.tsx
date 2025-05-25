@@ -23,6 +23,7 @@ import ProfilePage from "./pages/ProfilePage";
 import NewOrderPage from "./pages/NewOrderPage";
 import SellMultipleBooksPage from "./pages/SellMultipleBooksPage";
 import Layout from "./components/Layout";
+import Index from "./pages/Index";
 
 function App() {
   const [initialized, setInitialized] = useState(true);
@@ -31,8 +32,8 @@ function App() {
     <Router>
       <Layout>
         <Routes>
-          {/* Set dashboard as home page */}
-          <Route path="/" element={<DashboardPage />} />
+          {/* Set Index as home page which will handle dashboard logic */}
+          <Route path="/" element={<Index />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/complete-signup" element={<CompleteSignupPage />} />
           <Route path="/complete-signup/:inviteCode" element={<CompleteSignupPage />} />

@@ -32,12 +32,14 @@ interface StallProviderProps {
 export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
   const [stalls, setStalls] = useState<any[]>([]);
   const [currentStore, setCurrentStore] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { currentUser } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const { currentUser, isAuthenticated } = useAuth();
 
   const fetchStalls = async () => {
-    if (!currentUser?.id) {
-      console.log("No user ID found for current user:", currentUser);
+    if (!currentUser?.id || !isAuthenticated) {
+      console.log("No authenticated user, skipping stall fetch");
+      setStalls([]);
+      setCurrentStore(null);
       setIsLoading(false);
       return;
     }
@@ -148,11 +150,17 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
     }
   };
 
+  // Only fetch stalls when user is authenticated
   useEffect(() => {
-    if (currentUser?.id) {
+    if (isAuthenticated && currentUser?.id) {
       fetchStalls();
+    } else {
+      // Clear state when user is not authenticated
+      setStalls([]);
+      setCurrentStore(null);
+      setIsLoading(false);
     }
-  }, [currentUser?.id]);
+  }, [isAuthenticated, currentUser?.id]);
 
   return (
     <StallContext.Provider
