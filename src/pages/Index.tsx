@@ -1,275 +1,171 @@
-
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Plus, Search, BarChart2, BookIcon } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useStallContext } from "@/contexts/StallContext";
+import { useTranslation } from "react-i18next";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import MobileHeader from "@/components/MobileHeader";
-import { useStallContext } from "@/contexts/StallContext";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useTranslation } from "react-i18next";
-import { Card, CardContent } from "@/components/ui/card";
+import StatsCard from "@/components/StatsCard";
 import LowStockNotification from "@/components/LowStockNotification";
+import MainMenu from "@/components/MainMenu";
+import { supabase } from "@/integrations/supabase/client";
+import { Book, Sale } from "@/types";
 
 const Index = () => {
-  const navigate = useNavigate();
-  const { currentStore, stores } = useStallContext();
-  const { currentUser, isAdmin, isAuthenticated } = useAuth();
-  const { t } = useTranslation();
   const [totalBooks, setTotalBooks] = useState(0);
-  const [todaySales, setTodaySales] = useState(0);
+  const [totalSales, setTotalSales] = useState(0);
   const [totalRevenue, setTotalRevenue] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [lowStockCount, setLowStockCount] = useState(0);
+  const [topSellingBooks, setTopSellingBooks] = useState<{ bookName: string; totalSold: number }[]>([]);
+  const [lowStockBooks, setLowStockBooks] = useState<Book[]>([]);
   
-  // Threshold for low stock
-  const LOW_STOCK_THRESHOLD = 5;
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate("/login");
-      return;
-    }
-  }, [isAuthenticated, navigate]);
+  const { currentUser, logout } = useAuth();
+  const { currentStore } = useStallContext();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchStats = async () => {
       if (!currentStore) return;
-      
-      setIsLoading(true);
-      
+
       try {
-        // Get total books count
+        // Fetch total books
         const { count: booksCount } = await supabase
-          .from('books')
-          .select('*', { count: 'exact', head: true })
-          .eq('stallid', currentStore);
-        
-        // Get today's sales
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        const { data: todaySalesData } = await supabase
-          .from('sales')
-          .select('quantity, totalamount')
-          .eq('stallid', currentStore)
-          .gte('createdat', today.toISOString());
-        
-        const salesCount = todaySalesData?.reduce((sum, item) => sum + item.quantity, 0) || 0;
-        const revenue = todaySalesData?.reduce((sum, item) => sum + item.totalamount, 0) || 0;
-        
-        // Get low stock count
-        const { count: lowStock } = await supabase
-          .from('books')
-          .select('*', { count: 'exact', head: true })
-          .eq('stallid', currentStore)
-          .lt('quantity', LOW_STOCK_THRESHOLD);
-        
+          .from("books")
+          .select("*", { count: "exact" })
+          .eq("stallid", currentStore);
         setTotalBooks(booksCount || 0);
-        setTodaySales(salesCount);
+
+        // Fetch total sales
+        const { count: salesCount } = await supabase
+          .from("sales")
+          .select("*", { count: "exact" })
+          .eq("stallid", currentStore);
+        setTotalSales(salesCount || 0);
+
+        // Fetch total revenue
+        const { data: salesData } = await supabase
+          .from("sales")
+          .select("totalamount")
+          .eq("stallid", currentStore);
+
+        const revenue = salesData?.reduce((acc, sale) => acc + sale.totalamount, 0) || 0;
         setTotalRevenue(revenue);
-        setLowStockCount(lowStock || 0);
+
+        // Fetch top selling books
+        const { data: topBooksData } = await supabase.from("sales").select(`
+            bookid,
+            books (
+              name
+            )
+          `).eq("stallid", currentStore);
+
+        if (topBooksData) {
+          const bookCounts: { [bookId: string]: number } = {};
+          topBooksData.forEach((sale) => {
+            const bookId = sale.bookid;
+            bookCounts[bookId] = (bookCounts[bookId] || 0) + 1;
+          });
+
+          const sortedBooks = Object.entries(bookCounts)
+            .sort(([, countA], [, countB]) => countB - countA)
+            .slice(0, 5);
+
+          const topBooks = sortedBooks.map(([bookId]) => {
+            const book = topBooksData.find((sale) => sale.bookid === bookId);
+            return {
+              bookName: book?.books?.name || "Unknown",
+              totalSold: bookCounts[bookId],
+            };
+          });
+          setTopSellingBooks(topBooks);
+        }
+
+        // Fetch low stock books
+        const { data: lowStockData } = await supabase
+          .from("books")
+          .select("*")
+          .eq("stallid", currentStore)
+          .lt("quantity", 5);
+        setLowStockBooks(lowStockData as Book[] || []);
       } catch (error) {
-        console.error("Error fetching statistics:", error);
-      } finally {
-        setIsLoading(false);
+        console.error("Error fetching stats:", error);
       }
     };
-    
+
     fetchStats();
-    
-    // Refresh stats every 5 minutes
-    const intervalId = setInterval(fetchStats, 5 * 60 * 1000);
-    
-    return () => clearInterval(intervalId);
   }, [currentStore]);
-  
-  // Navigation handlers for clickable stat cards
-  const goToBooks = () => navigate("/books");
-  
-  const goToTodaySales = () => {
-    // Create today's date string in ISO format for filtering
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString().split('T')[0];
-    navigate(`/sales?fromDate=${todayStr}`);
+
+  const handleLogout = () => {
+    logout();
   };
-  
-  const goToRevenue = () => navigate("/sales");
-  
-  const goToLowStock = () => navigate("/books?lowStock=true");
-  
-  if (!isAuthenticated) {
-    return null; // Will redirect to login in useEffect
-  }
 
   return (
-    <div className="bg-temple-background min-h-screen pb-20">
-      <MobileHeader 
-        title={t("common.templeBookStall")}
-        showBackButton={false}
-        showSearchButton={true}
-        onSearch={() => navigate("/search")}
-        showStallSelector={stores.length > 1}
+    <div className="min-h-screen bg-temple-background pb-20">
+      <MobileHeader
+        title={t("common.dashboard")}
+        showStallSelector={true}
+        rightIcon={
+          <Button variant="ghost" size="sm" onClick={handleLogout}>
+            {t("common.logout")}
+          </Button>
+        }
       />
       
-      <div className="bg-temple-maroon/80 py-2 px-4 text-center">
-        <h2 className="text-sm font-medium text-white">{t("common.bookStoreManager")}</h2>
-      </div>
-      
-      {currentStore ? (
-        <div className="mobile-container px-4 py-6">
-          {/* Stats Cards - Improved mobile layout with fixed alignment */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <Card 
-              onClick={goToBooks}
-              className="bg-white border-temple-gold/20 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
-            >
-              <CardContent className="p-3">
-                <div className="flex flex-col">
-                  <h3 className="text-xs sm:text-sm text-gray-600 mb-1">{t("dashboard.totalBooks")}</h3>
-                  <p className="text-xl sm:text-2xl font-bold text-temple-maroon truncate">{isLoading ? "..." : totalBooks}</p>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card 
-              onClick={goToTodaySales}
-              className="bg-white border-temple-gold/20 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
-            >
-              <CardContent className="p-3">
-                <div className="flex flex-col">
-                  <h3 className="text-xs sm:text-sm text-gray-600 mb-1">{t("dashboard.salesToday")}</h3>
-                  <p className="text-xl sm:text-2xl font-bold text-temple-saffron truncate">{isLoading ? "..." : todaySales}</p>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card 
-              onClick={goToRevenue}
-              className="bg-white border-temple-gold/20 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
-            >
-              <CardContent className="p-3">
-                <div className="flex flex-col">
-                  <h3 className="text-xs sm:text-sm text-gray-600 mb-1">{t("dashboard.revenue")}</h3>
-                  <p className="text-xl sm:text-2xl font-bold text-green-600 truncate">
-                    {isLoading ? "..." : `₹${totalRevenue.toFixed(2)}`}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card 
-              onClick={goToLowStock}
-              className={`bg-white border-temple-gold/20 shadow-sm cursor-pointer hover:bg-gray-50 transition-colors ${lowStockCount > 0 ? 'border-red-300' : ''}`}
-            >
-              <CardContent className="p-3">
-                <div className="flex flex-col">
-                  <h3 className="text-xs sm:text-sm text-gray-600 mb-1">{t("dashboard.lowStock")}</h3>
-                  <p className={`text-xl sm:text-2xl font-bold truncate ${lowStockCount > 0 ? 'text-red-500' : 'text-temple-maroon'}`}>
-                    {isLoading ? "..." : lowStockCount}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+      <main className="container mx-auto px-4 py-6">
+        <div className="space-y-6">
+          {/* Welcome Section */}
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-temple-maroon mb-2">
+              {t("common.welcome")}, {currentUser?.name}
+            </h1>
+            <p className="text-muted-foreground">{t("common.manageBooksEfficiently")}</p>
           </div>
-          
-          {/* Action Cards */}
-          <div className="space-y-4">
-            {/* Book Management */}
-            <div className="mobile-card">
-              <h2 className="mobile-header">{t("common.bookManagement")}</h2>
-              
-              <div className="grid grid-cols-1 gap-4 mt-4">
-                <div className="flex flex-col bg-temple-background/50 rounded-lg p-4 border border-temple-gold/20">
-                  <h3 className="font-medium mb-1">{t("common.manageAndSellBooks")}</h3>
-                  <p className="text-sm text-gray-600 mb-3">{t("common.manageYourBookInventory")}</p>
-                  
-                  <div className="flex flex-wrap gap-2 mt-auto">
-                    <Button 
-                      variant="outline"
-                      className="flex-1 justify-center border-temple-gold/30 text-temple-maroon flex items-center"
-                      onClick={() => navigate("/books")}
-                    >
-                      <BookIcon size={16} className="mr-1" /> {t("common.books")}
-                    </Button>
-                    
-                    <Button 
-                      variant="outline"
-                      className="flex-1 justify-center border-temple-gold/30 text-temple-maroon flex items-center"
-                      onClick={() => navigate("/sell/new")}
-                    >
-                      <Plus size={16} className="mr-1" /> {t("common.sell")}
-                    </Button>
-                    
-                    <Button 
-                      variant="outline"
-                      className="flex-1 justify-center border-temple-gold/30 text-temple-maroon flex items-center"
-                      onClick={() => navigate("/search")}
-                    >
-                      <Search size={16} className="mr-1" /> {t("common.search")}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Admin Section */}
-            {isAdmin && (
-              <div className="mobile-card">
-                <h2 className="mobile-header">{t("common.administration")}</h2>
-                
-                <div className="grid grid-cols-1 gap-4 mt-4">
-                  <div className="flex flex-col bg-temple-background/50 rounded-lg p-4 border border-temple-gold/20">
-                    <h3 className="font-medium mb-1">{t("common.analytics")}</h3>
-                    <p className="text-sm text-gray-600 mb-3">{t("common.trackYourStallPerformance")}</p>
-                    
-                    <div className="flex flex-wrap gap-2 mt-auto">
-                      <Button 
-                        variant="outline"
-                        className="flex-1 justify-center border-temple-gold/30 text-temple-maroon flex items-center"
-                        onClick={() => navigate("/reports")}
-                      >
-                        <BarChart2 size={16} className="mr-1" /> {t("common.reports")}
-                      </Button>
-                      
-                      <Button 
-                        variant="outline"
-                        className="flex-1 justify-center border-temple-gold/30 text-temple-maroon flex items-center"
-                        onClick={() => navigate("/settings")}
-                      >
-                        <BookIcon size={16} className="mr-1" /> {t("common.more")}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Privacy Policy Link */}
-            <div className="text-center mt-8 pb-4">
-              <Button 
-                variant="link" 
-                className="text-temple-maroon/70 text-sm"
-                onClick={() => navigate("/privacy-policy")}
-              >
-                {t("common.privacyPolicy")}
-              </Button>
-            </div>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <StatsCard
+              title={t("common.totalBooks")}
+              value={totalBooks.toString()}
+              icon="📚"
+            />
+            <StatsCard
+              title={t("common.totalSales")}
+              value={totalSales.toString()}
+              icon="💰"
+            />
+            <StatsCard
+              title={t("common.revenue")}
+              value={`₹${totalRevenue.toFixed(2)}`}
+              icon="📈"
+            />
           </div>
+
+          {/* Low Stock Notification */}
+          {lowStockBooks.length > 0 && (
+            <LowStockNotification books={lowStockBooks} />
+          )}
+
+          {/* Main Menu */}
+          <Card className="p-6">
+            <h2 className="text-lg font-semibold mb-4">{t("common.quickActions")}</h2>
+            <MainMenu />
+          </Card>
+
+          {/* Top Selling Books */}
+          {topSellingBooks.length > 0 && (
+            <Card className="p-6">
+              <h2 className="text-lg font-semibold mb-4">{t("common.topSellingBooks")}</h2>
+              <div className="space-y-2">
+                {topSellingBooks.slice(0, 5).map((book, index) => (
+                  <div key={index} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                    <span className="font-medium">{book.bookName}</span>
+                    <span className="text-muted-foreground">{book.totalSold} {t("common.sold")}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
         </div>
-      ) : (
-        <div className="mobile-container flex flex-col items-center justify-center py-16">
-          <h2 className="text-xl font-bold text-temple-maroon">{t("common.welcomeToBookStore")}</h2>
-          <p className="text-gray-600 mb-6 text-center">{t("common.pleaseSelectStore")}</p>
-          <Button 
-            onClick={() => navigate("/settings")} 
-            className="bg-temple-saffron hover:bg-temple-saffron/90"
-          >
-            <Plus size={16} className="mr-1" /> {t("common.addStore")}
-          </Button>
-        </div>
-      )}
+      </main>
     </div>
   );
 };

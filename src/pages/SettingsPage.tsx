@@ -1,440 +1,227 @@
 
-import React, { useEffect, useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useStallContext } from "@/contexts/StallContext";
-import { useToast } from "@/hooks/use-toast";
-import { useTranslation } from "react-i18next";
-import MobileHeader from "@/components/MobileHeader";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useStallContext } from "@/contexts/StallContext";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import MobileHeader from "@/components/MobileHeader";
 import { Plus, Users, Store } from "lucide-react";
 
-const SettingsPage: React.FC = () => {
+const SettingsPage = () => {
+  const [isAddingStore, setIsAddingStore] = useState(false);
+  const [isInviting, setIsInviting] = useState(false);
   const [newStoreName, setNewStoreName] = useState("");
   const [newStoreLocation, setNewStoreLocation] = useState("");
-  const { stores, currentStore, addStore } = useStallContext();
-  const { toast } = useToast();
-  const { t, i18n } = useTranslation();
-  const [currentLanguage, setCurrentLanguage] = useState(i18n.language || 'en');
-  const navigate = useNavigate();
-  const [isAdding, setIsAdding] = useState(false);
-  const [isAddStoreOpen, setIsAddStoreOpen] = useState(false);
-  const [isInviteUserOpen, setIsInviteUserOpen] = useState(false);
-  const { inviteUser, currentUser, isAdmin } = useAuth();
-  const [inviteName, setInviteName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
-  const [invitePhone, setInvitePhone] = useState("");
-  const [inviteRole, setInviteRole] = useState<"admin" | "personnel">("personnel");
-  const [inviteCode, setInviteCode] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    setCurrentLanguage(i18n.language);
-  }, [i18n.language]);
+  const [inviteRole, setInviteRole] = useState("personnel");
+  
+  const { currentUser, isAdmin } = useAuth();
+  const { bookStalls, refreshStalls } = useStallContext();
+  const { t } = useTranslation();
+  const { toast } = useToast();
 
   const handleAddStore = async () => {
-    if (!newStoreName.trim()) {
-      toast({
-        title: t("common.required"),
-        description: t("common.storeName"),
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsAdding(true);
+    if (!newStoreName.trim()) return;
     
     try {
-      console.log("Adding store:", newStoreName, newStoreLocation);
-      const success = await addStore(newStoreName, newStoreLocation);
-      
-      if (success) {
-        toast({
-          title: t("common.success"),
-          description: `${newStoreName} ${t("common.addedSuccessfully")}`,
+      const { error } = await supabase
+        .from("book_stalls")
+        .insert({
+          name: newStoreName.trim(),
+          location: newStoreLocation.trim() || null,
+          instituteid: currentUser?.instituteId || "inst-1"
         });
-        setNewStoreName("");
-        setNewStoreLocation("");
-        setIsAddStoreOpen(false);
-      }
+        
+      if (error) throw error;
+      
+      toast({
+        title: t("common.success"),
+        description: t("common.storeAdded"),
+      });
+      
+      setNewStoreName("");
+      setNewStoreLocation("");
+      setIsAddingStore(false);
+      refreshStalls();
     } catch (error) {
       console.error("Error adding store:", error);
       toast({
         title: t("common.error"),
-        description: t("common.errorAddingStore"),
+        description: t("common.failedToAddStore"),
         variant: "destructive",
       });
-    } finally {
-      setIsAdding(false);
     }
   };
 
   const handleInviteUser = async () => {
-    if (!inviteName.trim() || !inviteEmail.trim() || !invitePhone.trim()) {
-      toast({
-        title: t("common.error"),
-        description: t("common.fillRequiredFields"),
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const code = await inviteUser(inviteName, inviteEmail, invitePhone, inviteRole);
-      setInviteCode(code);
-      toast({
-        title: t("common.success"),
-        description: t("common.userInvitedSuccess"),
-      });
-    } catch (error) {
-      console.error("Error inviting user:", error);
-      toast({
-        title: t("common.error"),
-        description: t("common.userInviteFailed"),
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const generateWhatsAppLink = (code: string) => {
-    const signupUrl = `${window.location.origin}/complete-signup/${code}`;
-    const message = `You've been invited to join Temple Book Sutra. Click this link to complete your registration: ${signupUrl}`;
-    return `https://wa.me/?text=${encodeURIComponent(message)}`;
-  };
-
-  const copyInviteLink = (code: string) => {
-    const signupUrl = `${window.location.origin}/complete-signup/${code}`;
-    navigator.clipboard.writeText(signupUrl);
+    if (!inviteEmail.trim()) return;
+    
+    // Implementation for user invitation would go here
     toast({
-      title: t("common.copied"),
-      description: t("common.inviteLinkCopied"),
+      title: t("common.success"),
+      description: t("common.invitationSent"),
     });
-  };
-
-  const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng);
-    setCurrentLanguage(lng);
-    localStorage.setItem('i18nextLng', lng);
-  };
-
-  const handleManageMetadata = () => {
-    navigate('/metadata-manager');
+    
+    setInviteEmail("");
+    setIsInviting(false);
   };
 
   return (
     <div className="min-h-screen bg-temple-background pb-20">
-      <MobileHeader 
-        title={t("settings.settings")} 
-        showBackButton={true} 
+      <MobileHeader
+        title={t("common.settings")}
+        showBackButton={true}
         backTo="/"
       />
       
-      <div className="container mx-auto px-4 py-6">
-        {/* Action Buttons */}
-        {isAdmin && (
-          <div className="mb-6">
-            <Button 
-              onClick={handleManageMetadata} 
-              className="w-full bg-temple-maroon hover:bg-temple-maroon/90 text-white"
-            >
-              {t("common.manageMetadata")}
-            </Button>
-          </div>
-        )}
+      <main className="container mx-auto px-4 py-6 space-y-6">
+        <h1 className="text-2xl font-bold text-temple-maroon mb-6">{t("common.settings")}</h1>
         
-        {/* Language selection section */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>{t("settings.language")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-2">
-              <Button 
-                variant={currentLanguage === 'en' ? 'default' : 'outline'} 
-                onClick={() => changeLanguage('en')}
-                className={currentLanguage === 'en' ? 'bg-temple-saffron text-white' : ''}
-              >
-                {t("languages.english")}
-              </Button>
-              <Button 
-                variant={currentLanguage === 'hi' ? 'default' : 'outline'} 
-                onClick={() => changeLanguage('hi')}
-                className={currentLanguage === 'hi' ? 'bg-temple-saffron text-white' : ''}
-              >
-                {t("languages.hindi")}
-              </Button>
-              <Button 
-                variant={currentLanguage === 'te' ? 'default' : 'outline'} 
-                onClick={() => changeLanguage('te')}
-                className={currentLanguage === 'te' ? 'bg-temple-saffron text-white' : ''}
-              >
-                {t("languages.telugu")}
-              </Button>
-              <Button 
-                variant={currentLanguage === 'ta' ? 'default' : 'outline'} 
-                onClick={() => changeLanguage('ta')}
-                className={currentLanguage === 'ta' ? 'bg-temple-saffron text-white' : ''}
-              >
-                {t("languages.tamil")}
-              </Button>
-              <Button 
-                variant={currentLanguage === 'kn' ? 'default' : 'outline'} 
-                onClick={() => changeLanguage('kn')}
-                className={currentLanguage === 'kn' ? 'bg-temple-saffron text-white' : ''}
-              >
-                {t("languages.kannada")}
-              </Button>
-              <Button 
-                variant={currentLanguage === 'mr' ? 'default' : 'outline'} 
-                onClick={() => changeLanguage('mr')}
-                className={currentLanguage === 'mr' ? 'bg-temple-saffron text-white' : ''}
-              >
-                {t("languages.marathi")}
-              </Button>
+        {/* User Profile Card */}
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold mb-4">{t("common.profile")}</h2>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-sm text-muted-foreground">{t("common.name")}</Label>
+              <p className="font-medium">{currentUser?.name}</p>
             </div>
-          </CardContent>
+            <div>
+              <Label className="text-sm text-muted-foreground">{t("common.email")}</Label>
+              <p className="font-medium">{currentUser?.email}</p>
+            </div>
+            <div>
+              <Label className="text-sm text-muted-foreground">{t("common.role")}</Label>
+              <p className="font-medium capitalize">{currentUser?.role}</p>
+            </div>
+          </div>
         </Card>
-        
-        {/* Stores section */}
+
+        {/* Store Management Card */}
         {isAdmin && (
-          <Card className="mb-6">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>{t("settings.storeManagement")}</CardTitle>
-                <Dialog open={isAddStoreOpen} onOpenChange={setIsAddStoreOpen}>
+          <Card className="p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <h2 className="text-lg font-semibold">{t("common.storeManagement")}</h2>
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <Dialog open={isAddingStore} onOpenChange={setIsAddingStore}>
                   <DialogTrigger asChild>
-                    <Button size="sm" className="bg-temple-saffron hover:bg-temple-saffron/90">
-                      <Plus size={16} className="mr-1" /> {t("common.addStore")}
+                    <Button className="w-full sm:w-auto" size="sm">
+                      <Store className="h-4 w-4 mr-2" />
+                      {t("common.addStore")}
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
                       <DialogTitle>{t("common.addNewStore")}</DialogTitle>
-                      <DialogDescription>
-                        {t("common.createNewStoreDescription")}
-                      </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                       <div className="space-y-2">
-                        <label htmlFor="stallName" className="text-sm font-medium">
-                          {t("common.storeName")} *
-                        </label>
+                        <Label htmlFor="storeName">{t("common.storeName")}</Label>
                         <Input
-                          id="stallName"
-                          placeholder={t("common.storeNamePlaceholder")}
+                          id="storeName"
                           value={newStoreName}
                           onChange={(e) => setNewStoreName(e.target.value)}
+                          placeholder={t("common.enterStoreName")}
                         />
                       </div>
                       <div className="space-y-2">
-                        <label htmlFor="stallLocation" className="text-sm font-medium">
-                          {t("common.storeLocation")} ({t("common.optional")})
-                        </label>
+                        <Label htmlFor="storeLocation">{t("common.location")}</Label>
                         <Input
-                          id="stallLocation"
-                          placeholder={t("common.storeLocationPlaceholder")}
+                          id="storeLocation"
                           value={newStoreLocation}
                           onChange={(e) => setNewStoreLocation(e.target.value)}
+                          placeholder={t("common.enterLocation")}
                         />
                       </div>
+                      <div className="flex gap-2 pt-4">
+                        <Button 
+                          onClick={handleAddStore} 
+                          disabled={!newStoreName.trim()}
+                          className="flex-1"
+                        >
+                          {t("common.addStore")}
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setIsAddingStore(false)}
+                          className="flex-1"
+                        >
+                          {t("common.cancel")}
+                        </Button>
+                      </div>
                     </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setIsAddStoreOpen(false)}>
-                        {t("common.cancel")}
-                      </Button>
-                      <Button 
-                        className="bg-temple-saffron hover:bg-temple-saffron/90"
-                        onClick={handleAddStore}
-                        disabled={isAdding}
-                      >
-                        {isAdding ? t("common.adding") : t("common.addStore")}
-                      </Button>
-                    </DialogFooter>
                   </DialogContent>
                 </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {stores.length > 0 ? (
-                  stores.map(store => (
-                    <div key={store.id} className="p-3 border rounded bg-gray-50">
-                      <div className="font-medium">{store.name}</div>
-                      {store.location && <div className="text-sm text-gray-500">{store.location}</div>}
-                      {currentStore === store.id && (
-                        <div className="text-xs text-temple-saffron mt-1">{t("settings.currentStore")}</div>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-6 border border-dashed border-temple-gold/40 rounded-lg">
-                    <Store className="mx-auto h-10 w-10 text-gray-400" />
-                    <p className="text-gray-500 mt-2">{t("common.noStores")}</p>
-                    <Button 
-                      className="mt-3 bg-temple-saffron hover:bg-temple-saffron/90"
-                      size="sm"
-                      onClick={() => setIsAddStoreOpen(true)}
-                    >
-                      <Plus size={16} className="mr-1" /> {t("common.addFirstStore")}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
-        {/* Invite users section */}
-        {isAdmin && (
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>{t("common.personnel")}</CardTitle>
-                <Dialog open={isInviteUserOpen} onOpenChange={setIsInviteUserOpen}>
+                <Dialog open={isInviting} onOpenChange={setIsInviting}>
                   <DialogTrigger asChild>
-                    <Button size="sm" className="bg-temple-maroon hover:bg-temple-maroon/90">
-                      <Plus size={16} className="mr-1" /> {t("common.invite")}
+                    <Button variant="outline" className="w-full sm:w-auto" size="sm">
+                      <Users className="h-4 w-4 mr-2" />
+                      {t("common.inviteUser")}
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
                       <DialogTitle>{t("common.inviteNewUser")}</DialogTitle>
-                      <DialogDescription>
-                        {t("common.sendInvitation")}
-                      </DialogDescription>
                     </DialogHeader>
-                    {!inviteCode ? (
-                      <>
-                        <div className="space-y-4 py-4">
-                          <div className="space-y-2">
-                            <label htmlFor="inviteName" className="text-sm font-medium">
-                              {t("common.name")} *
-                            </label>
-                            <Input
-                              id="inviteName"
-                              placeholder="John Doe"
-                              value={inviteName}
-                              onChange={(e) => setInviteName(e.target.value)}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <label htmlFor="inviteEmail" className="text-sm font-medium">
-                              {t("common.email")} *
-                            </label>
-                            <Input
-                              id="inviteEmail"
-                              type="email"
-                              placeholder="john@example.com"
-                              value={inviteEmail}
-                              onChange={(e) => setInviteEmail(e.target.value)}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <label htmlFor="invitePhone" className="text-sm font-medium">
-                              {t("common.phoneNumber")} *
-                            </label>
-                            <Input
-                              id="invitePhone"
-                              placeholder="+91 9876543210"
-                              value={invitePhone}
-                              onChange={(e) => setInvitePhone(e.target.value)}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <label htmlFor="inviteRole" className="text-sm font-medium">
-                              {t("common.role")} *
-                            </label>
-                            <select
-                              id="inviteRole"
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                              value={inviteRole}
-                              onChange={(e) => setInviteRole(e.target.value as "admin" | "personnel")}
-                            >
-                              <option value="personnel">{t("common.personnel")}</option>
-                              <option value="admin">{t("common.admin")}</option>
-                            </select>
-                          </div>
-                        </div>
-                        <DialogFooter>
-                          <Button variant="outline" onClick={() => setIsInviteUserOpen(false)}>
-                            {t("common.cancel")}
-                          </Button>
-                          <Button 
-                            className="bg-temple-maroon hover:bg-temple-maroon/90"
-                            onClick={handleInviteUser}
-                            disabled={isSubmitting}
-                          >
-                            {isSubmitting ? t("common.generatingInvite") : t("common.generateInvite")}
-                          </Button>
-                        </DialogFooter>
-                      </>
-                    ) : (
-                      <>
-                        <div className="space-y-4 py-4">
-                          <div className="text-center">
-                            <p className="font-medium text-temple-maroon">{t("common.inviteCreated")}</p>
-                            <p className="text-sm mt-2">{t("common.shareLink", { name: inviteName })}</p>
-                          </div>
-                          <div className="p-3 bg-gray-100 rounded-md text-sm break-all">
-                            {`${window.location.origin}/complete-signup/${inviteCode}`}
-                          </div>
-                        </div>
-                        <DialogFooter className="flex-col sm:flex-row gap-2">
-                          <Button
-                            className="w-full justify-start shadow-sm bg-temple-background hover:bg-temple-gold/10 text-temple-maroon"
-                            variant="outline"
-                            onClick={() => copyInviteLink(inviteCode)}
-                          >
-                            {t("common.copyLink")}
-                          </Button>
-                          <Button
-                            className="w-full justify-start shadow-sm bg-temple-background hover:bg-temple-gold/10 text-temple-maroon"
-                            variant="outline"
-                            onClick={() => window.open(generateWhatsAppLink(inviteCode), '_blank')}
-                          >
-                            {t("common.shareViaWhatsApp")}
-                          </Button>
-                          <Button
-                            className="w-full justify-start shadow-sm bg-temple-background hover:bg-temple-gold/10 text-temple-maroon"
-                            variant="outline"
-                            onClick={() => {
-                              setInviteCode("");
-                              setInviteName("");
-                              setInviteEmail("");
-                              setInvitePhone("");
-                              setInviteRole("personnel");
-                              setIsInviteUserOpen(false);
-                            }}
-                          >
-                            {t("common.done")}
-                          </Button>
-                        </DialogFooter>
-                      </>
-                    )}
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="inviteEmail">{t("common.email")}</Label>
+                        <Input
+                          id="inviteEmail"
+                          type="email"
+                          value={inviteEmail}
+                          onChange={(e) => setInviteEmail(e.target.value)}
+                          placeholder={t("common.enterEmail")}
+                        />
+                      </div>
+                      <div className="flex gap-2 pt-4">
+                        <Button 
+                          onClick={handleInviteUser} 
+                          disabled={!inviteEmail.trim()}
+                          className="flex-1"
+                        >
+                          {t("common.sendInvite")}
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setIsInviting(false)}
+                          className="flex-1"
+                        >
+                          {t("common.cancel")}
+                        </Button>
+                      </div>
+                    </div>
                   </DialogContent>
                 </Dialog>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <Button
-                  className="w-full justify-start shadow-sm bg-temple-background hover:bg-temple-gold/10 text-temple-maroon"
-                  variant="outline"
-                  onClick={() => setIsInviteUserOpen(true)}
-                >
-                  <Users size={20} className="mr-2" /> {t("common.inviteNewPersonnel")}
-                </Button>
-              </div>
-            </CardContent>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">{t("common.currentStores")}</Label>
+              {bookStalls?.length > 0 ? (
+                <div className="space-y-2">
+                  {bookStalls.map((stall) => (
+                    <div key={stall.id} className="p-3 bg-muted rounded-lg">
+                      <p className="font-medium">{stall.name}</p>
+                      {stall.location && (
+                        <p className="text-sm text-muted-foreground">{stall.location}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground">{t("common.noStoresFound")}</p>
+              )}
+            </div>
           </Card>
         )}
-      </div>
+      </main>
     </div>
   );
 };

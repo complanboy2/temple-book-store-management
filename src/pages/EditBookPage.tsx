@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ImageUpload from "@/components/ImageUpload";
+import MetadataInput from "@/components/MetadataInput";
 import { getImageUrl } from "@/services/imageService";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -184,8 +184,22 @@ const EditBookPage = () => {
     }
   };
 
-  const handleSelectChange = (fieldName: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [fieldName]: value }));
+  const handleMetadataChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleAddNewMetadata = (field: string, value: string) => {
+    switch (field) {
+      case 'author':
+        setAuthors(prev => [...prev, value].sort());
+        break;
+      case 'category':
+        setCategories(prev => [...prev, value].sort());
+        break;
+      case 'printingInstitute':
+        setInstitutes(prev => [...prev, value].sort());
+        break;
+    }
   };
   
   const handleImageChange = (file: File | null) => {
@@ -321,82 +335,32 @@ const EditBookPage = () => {
                 />
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="author">{t("common.author")}</Label>
-                {authors.length > 0 ? (
-                  <Select 
-                    value={formData.author} 
-                    onValueChange={(value) => handleSelectChange("author", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("common.selectAuthor")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {authors.map((author) => (
-                        <SelectItem key={author} value={author}>
-                          {author}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Input 
-                    id="author" 
-                    name="author" 
-                    value={formData.author} 
-                    onChange={handleInputChange} 
-                    required
-                  />
-                )}
-              </div>
+              <MetadataInput
+                label={t("common.author")}
+                value={formData.author}
+                options={authors}
+                placeholder={t("common.selectAuthor")}
+                onValueChange={(value) => handleMetadataChange("author", value)}
+                onAddNew={(value) => handleAddNewMetadata("author", value)}
+              />
               
-              <div className="space-y-2">
-                <Label htmlFor="category">{t("common.category")}</Label>
-                <Select 
-                  value={formData.category} 
-                  onValueChange={(value) => handleSelectChange("category", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("common.selectCategory")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="uncategorized">{t("common.uncategorized")}</SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <MetadataInput
+                label={t("common.category")}
+                value={formData.category}
+                options={categories}
+                placeholder={t("common.selectCategory")}
+                onValueChange={(value) => handleMetadataChange("category", value)}
+                onAddNew={(value) => handleAddNewMetadata("category", value)}
+              />
               
-              <div className="space-y-2">
-                <Label htmlFor="printingInstitute">{t("common.printingInstitute")}</Label>
-                {institutes.length > 0 ? (
-                  <Select 
-                    value={formData.printingInstitute} 
-                    onValueChange={(value) => handleSelectChange("printingInstitute", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("common.selectInstitute")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {institutes.map((institute) => (
-                        <SelectItem key={institute} value={institute}>
-                          {institute}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Input 
-                    id="printingInstitute" 
-                    name="printingInstitute" 
-                    value={formData.printingInstitute} 
-                    onChange={handleInputChange}
-                  />
-                )}
-              </div>
+              <MetadataInput
+                label={t("common.printingInstitute")}
+                value={formData.printingInstitute}
+                options={institutes}
+                placeholder={t("common.selectInstitute")}
+                onValueChange={(value) => handleMetadataChange("printingInstitute", value)}
+                onAddNew={(value) => handleAddNewMetadata("printingInstitute", value)}
+              />
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">

@@ -1,199 +1,208 @@
+import localforage from 'localforage';
+import { generateHash } from 'hash-wasm';
 
-// src/services/imageCacheService.ts
-import { supabase } from '@/integrations/supabase/client';
+const CACHE_EXPIRY_TIME = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+const CACHE_URLS_KEY = 'cached_image_urls';
+const STORE_NAME = 'image_cache';
 
-interface CachedImage {
-  url: string;
-  hash: string;
-  timestamp: number;
-  blob: Blob;
+interface CachedUrls {
+  [hash: string]: {
+    url: string;
+    timestamp: number;
+  };
 }
 
 class ImageCacheService {
-  private cache = new Map<string, CachedImage>();
-  private readonly CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
+  private CACHE_EXPIRY_TIME = 7 * 24 * 60 * 60 * 1000; // 7 days
+  private CACHE_URLS_KEY = 'cached_image_urls';
+  private STORE_NAME = 'image_cache';
+  
+  constructor() {
+    this.setupCache();
+  }
 
-  private generateHash(file: File): Promise<string> {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const arrayBuffer = reader.result as ArrayBuffer;
-        const uint8Array = new Uint8Array(arrayBuffer);
-        let hash = 0;
-        for (let i = 0; i < uint8Array.length; i++) {
-          hash = ((hash << 5) - hash + uint8Array[i]) & 0xffffffff;
-        }
-        resolve(hash.toString(36));
-      };
-      reader.readAsArrayBuffer(file);
+  private async setupCache() {
+    // Initialize localForage
+    localforage.config({
+      name: 'templeBookStore',
+      storeName: this.STORE_NAME,
+      description: 'Cache for storing book images',
     });
+    
+    // Clean up expired cache entries
+    await this.removeExpiredCacheEntries();
   }
 
-  private generateUrlHash(url: string): string {
-    if (!url) return '';
-    let hash = 0;
-    for (let i = 0; i < url.length; i++) {
-      hash = ((hash << 5) - hash + url.charCodeAt(i)) & 0xffffffff;
+  /**
+   * Opens the IndexedDB database.
+   */
+  private async openDB(): Promise<LocalForage> {
+    return localforage;
+  }
+
+  /**
+   * Generates a unique hash for a given URL.
+   * @param url The URL to hash.
+   * @returns A promise that resolves to the hash string.
+   */
+  async generateHash(url: string): Promise<string> {
+    return generateHash(url, 'SHA-256');
+  }
+
+  /**
+   * Uploads an image to Supabase Storage and caches it locally.
+   * @param file The file to upload.
+   * @returns A promise that resolves to the public URL of the uploaded image.
+   */
+  async uploadAndCacheImage(file: File): Promise<string> {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error("Supabase URL or key is not defined in environment variables");
     }
-    return hash.toString(36);
+  
+    const { createClient } = require('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+  
+    const timestamp = Date.now();
+    const filename = `${timestamp}-${file.name}`;
+    
+    const { data, error } = await supabase.storage
+      .from('book-images')
+      .upload(filename, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+      
+    if (error) {
+      console.error("Error uploading image to Supabase:", error);
+      throw new Error("Failed to upload image to Supabase");
+    }
+    
+    const publicURL = `${supabaseUrl}/storage/v1/object/public/book-images/${filename}`;
+    
+    // Cache the image
+    await this.cacheImage(publicURL, file);
+    
+    return publicURL;
   }
 
-  async getCachedImageUrl(originalUrl: string): Promise<string | null> {
-    if (!originalUrl) return null;
-
+  /**
+   * Caches an image file in IndexedDB with a unique hash as the key.
+   * @param url The URL of the image to cache.
+   * @param file The image file to cache.
+   * @returns A promise that resolves when the image is successfully cached.
+   */
+  private async cacheImage(url: string, file: File): Promise<void> {
     try {
-      // Clean up the URL if it has query parameters
-      const cleanUrl = originalUrl.split('?')[0];
-      const urlHash = this.generateUrlHash(cleanUrl);
-      const cached = this.cache.get(urlHash);
-
-      if (cached && Date.now() - cached.timestamp < this.CACHE_EXPIRY) {
-        return URL.createObjectURL(cached.blob);
-      }
-
-      console.log(`Fetching image from URL: ${cleanUrl}`);
+      const hash = await this.generateHash(url);
+      const db = await this.openDB();
       
-      // Try to fetch without cache busting first
-      let response = await fetch(cleanUrl, { 
-        mode: 'cors',
-        credentials: 'omit',
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
+      // Convert file to ArrayBuffer
+      const arrayBuffer = await file.arrayBuffer();
       
-      // If that fails with a 400/401/403, try the URL directly without any parameters
-      if (!response.ok && [400, 401, 403].includes(response.status)) {
-        console.log("Initial fetch failed, trying direct URL");
-        response = await fetch(cleanUrl, { mode: 'cors', credentials: 'omit' });
-      }
+      await db.setItem(hash, arrayBuffer);
       
-      if (!response.ok) {
-        console.error(`Failed to fetch image: ${response.status} ${response.statusText}`);
-        return originalUrl; // Fall back to original URL
-      }
-
-      const blob = await response.blob();
-      if (!blob.type.startsWith('image/')) {
-        console.error(`Invalid image type: ${blob.type}`);
-        return originalUrl; // Fall back to original URL
-      }
-
-      this.cache.set(urlHash, {
-        url: cleanUrl,
-        hash: urlHash,
-        timestamp: Date.now(),
-        blob,
-      });
-
-      return URL.createObjectURL(blob);
+      // Update cache URLs
+      const cachedUrls = this.getCachedUrls();
+      cachedUrls[hash] = { url: url, timestamp: Date.now() };
+      localStorage.setItem(this.CACHE_URLS_KEY, JSON.stringify(cachedUrls));
+      
+      console.log(`Cached image with hash ${hash} for URL: ${url}`);
     } catch (error) {
-      console.error(`Error fetching image: ${error}`);
-      return originalUrl; // Fall back to original URL as last resort
+      console.error(`Failed to cache image for URL ${url}:`, error);
+      throw error;
     }
   }
 
-  async uploadAndCacheImage(file: File): Promise<string | null> {
+  /**
+   * Retrieves a cached image URL from IndexedDB.
+   * @param url The URL of the image to retrieve.
+   * @returns A promise that resolves to the cached image URL, or null if not found.
+   */
+  async getCachedImageUrl(url: string): Promise<string | null> {
     try {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        console.error(`Invalid file type: ${file.type}`);
+      const hash = await this.generateHash(url);
+      const db = await this.openDB();
+      const cachedData = await db.getItem(hash) as ArrayBuffer | null;
+      
+      if (!cachedData) {
+        console.log(`No cached image found for URL: ${url}`);
         return null;
       }
+      
+      // Convert ArrayBuffer to Blob
+      const blob = new Blob([cachedData]);
+      
+      // Create a local URL for the Blob
+      const cachedUrl = URL.createObjectURL(blob);
+      
+      console.log(`Retrieved cached image for URL: ${url}`);
+      return cachedUrl;
+    } catch (error) {
+      console.error(`Failed to retrieve cached image for URL ${url}:`, error);
+      return null;
+    }
+  }
 
-      const fileHash = await this.generateHash(file);
-      const fileName = `${fileHash}-${file.name.replace(/\s+/g, '-')}`;
-      console.log(`Uploading file: ${fileName} to book-images bucket`);
+  /**
+   * Retrieves cached URLs from localStorage.
+   * @returns The cached URLs object.
+   */
+  getCachedUrls(): CachedUrls {
+    const cachedUrlsString = localStorage.getItem(this.CACHE_URLS_KEY);
+    return cachedUrlsString ? JSON.parse(cachedUrlsString) : {};
+  }
 
-      // First check if the image already exists in storage
-      const { data: existingData, error: listError } = await supabase.storage
-        .from('book-images')
-        .list('', {
-          search: fileName
-        });
-
-      if (listError) {
-        console.error('Error checking existing file:', listError);
-        // Continue with upload attempt even if listing failed
-      }
-
-      if (existingData && existingData.length > 0) {
-        console.log('File already exists, retrieving URL');
-        const { data: urlData } = supabase.storage
-          .from('book-images')
-          .getPublicUrl(fileName);
-        
-        if (urlData?.publicUrl) {
-          // Add to cache
-          const urlHash = this.generateUrlHash(urlData.publicUrl);
-          this.cache.set(urlHash, {
-            url: urlData.publicUrl,
-            hash: fileHash,
-            timestamp: Date.now(),
-            blob: file
-          });
-          return urlData.publicUrl;
+  /**
+   * Removes expired cache entries from IndexedDB.
+   */
+  async removeExpiredCacheEntries(): Promise<void> {
+    try {
+      const cachedUrls = this.getCachedUrls();
+      const now = Date.now();
+      
+      for (const hash in cachedUrls) {
+        const { timestamp } = cachedUrls[hash];
+        if (now - timestamp > this.CACHE_EXPIRY_TIME) {
+          console.log(`Removing expired cache entry for hash ${hash}`);
+          
+          const db = await this.openDB();
+          await db.removeItem(hash);
+          
+          delete cachedUrls[hash];
         }
       }
-
-      // File doesn't exist or listing failed, upload it
-      const { error: uploadError } = await supabase.storage
-        .from('book-images')
-        .upload(fileName, file, { 
-          cacheControl: '3600', 
-          upsert: true,
-          contentType: file.type // Ensure content type is set correctly
-        });
-
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw new Error(`Upload failed: ${uploadError.message}`);
-      }
-
-      // Get the public URL
-      const { data: urlData } = supabase.storage
-        .from('book-images')
-        .getPublicUrl(fileName);
-
-      if (!urlData?.publicUrl) {
-        console.error('Failed to get public URL');
-        throw new Error('Failed to get public URL');
-      }
-
-      // Store in cache without verification to avoid extra requests
-      const urlHash = this.generateUrlHash(urlData.publicUrl);
-      this.cache.set(urlHash, {
-        url: urlData.publicUrl,
-        hash: fileHash,
-        timestamp: Date.now(),
-        blob: file,
-      });
-
-      console.log('Upload successful, public URL:', urlData.publicUrl);
-      return urlData.publicUrl;
+      
+      localStorage.setItem(this.CACHE_URLS_KEY, JSON.stringify(cachedUrls));
     } catch (error) {
-      console.error('Unexpected error during upload:', error);
-      throw error; // Re-throw to let caller handle
+      console.error("Failed to remove expired cache entries:", error);
     }
   }
 
-  clearExpiredCache(): void {
-    const now = Date.now();
-    for (const [key, cached] of this.cache.entries()) {
-      if (now - cached.timestamp > this.CACHE_EXPIRY) {
-        URL.revokeObjectURL(URL.createObjectURL(cached.blob));
-        this.cache.delete(key);
-      }
+  /**
+   * Remove a cached image
+   */
+  async removeCachedImage(originalUrl: string): Promise<void> {
+    try {
+      const hash = await this.generateHash(originalUrl);
+      
+      // Remove from IndexedDB
+      const db = await this.openDB();
+      const transaction = db.transaction([this.STORE_NAME], 'readwrite');
+      const store = transaction.objectStore(this.STORE_NAME);
+      await store.delete(hash);
+      
+      // Remove from localStorage tracking
+      const cachedUrls = this.getCachedUrls();
+      delete cachedUrls[hash];
+      localStorage.setItem(this.CACHE_URLS_KEY, JSON.stringify(cachedUrls));
+      
+      console.log(`Removed cached image for URL: ${originalUrl}`);
+    } catch (error) {
+      console.warn(`Failed to remove cached image for ${originalUrl}:`, error);
     }
-  }
-
-  clearCache(): void {
-    for (const [key, cached] of this.cache.entries()) {
-      URL.revokeObjectURL(URL.createObjectURL(cached.blob));
-    }
-    this.cache.clear();
   }
 }
 

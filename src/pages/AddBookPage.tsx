@@ -1,587 +1,331 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Book } from "@/types";
-import MobileHeader from "@/components/MobileHeader";
 import { useStallContext } from "@/contexts/StallContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  getAuthors, 
-  getBooks, 
-  setBooks, 
-  getCategories, 
-  getPrintingInstitutes, 
-  getAuthorSalePercentage,
-  getInstituteSalePercentage,
-  setCategories,
-  setAuthors,
-  setPrintingInstitutes
-} from "@/services/storageService";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { useIsMobile } from "@/hooks/use-mobile";
+import MobileHeader from "@/components/MobileHeader";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import ImageUpload from "@/components/ImageUpload";
-import InstitutePriceSettings from "@/components/InstitutePriceSettings";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import MetadataInput from "@/components/MetadataInput";
+import { getImageUrl } from "@/services/imageService";
 
-// Form schema definition
-const bookFormSchema = z.object({
-  name: z.string().min(1, "Book name is required"),
-  author: z.string().min(1, "Author name is required"),
-  category: z.string().optional(),
-  printingInstitute: z.string().optional(),
-  quantity: z.coerce.number().int().min(1, "Quantity must be at least 1"),
-  originalPrice: z.coerce.number().positive("Price must be positive"),
-  salePrice: z.coerce.number().positive("Sale price must be positive"),
-  barcode: z.string().optional(),
-  imageUrl: z.string().optional(),
-});
-
-type BookFormValues = z.infer<typeof bookFormSchema>;
-
-const AddBookPage: React.FC = () => {
+const AddBookPage = () => {
+  const [formData, setFormData] = useState({
+    name: "",
+    author: "",
+    category: "",
+    printingInstitute: "",
+    originalPrice: 0,
+    salePrice: 0,
+    quantity: 0,
+    barcode: ""
+  });
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [authors, setAuthors] = useState<string[]>([]);
+  const [institutes, setInstitutes] = useState<string[]>([]);
+  
+  const { currentStore } = useStallContext();
+  const { currentUser } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [authors, setAuthorsState] = useState<string[]>([]);
-  const [categories, setCategoriesState] = useState<string[]>([]);
-  const [institutes, setInstitutesState] = useState<string[]>([]);
-  const [authorPercentages, setAuthorPercentages] = useState<Record<string, number>>({});
-  const [institutePercentages, setInstitutePercentages] = useState<Record<string, number>>({});
-  const [originalPrice, setOriginalPrice] = useState<string>("");
-  const [author, setAuthor] = useState<string>("");
-  const [institute, setInstitute] = useState<string>("");
-  const [imageUrl, setImageUrl] = useState<string>("");
-  const [newAuthor, setNewAuthor] = useState<string>("");
-  const [newCategory, setNewCategory] = useState<string>("");
-  const [newInstitute, setNewInstitute] = useState<string>("");
-  const [showAuthorInput, setShowAuthorInput] = useState<boolean>(false);
-  const [showCategoryInput, setShowCategoryInput] = useState<boolean>(false);
-  const [showInstituteInput, setShowInstituteInput] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState("add-book");
-  const { currentStore } = useStallContext();
-  const isMobile = useIsMobile();
 
-  // Load data
+  // Fetch existing metadata
   useEffect(() => {
-    const loadInitialData = async () => {
-      // Try to fetch categories from Supabase
+    const fetchMetadata = async () => {
+      if (!currentStore) return;
+      
       try {
-        const { data: booksData, error: booksError } = await supabase
+        // Fetch categories
+        const { data: categoriesData, error: categoriesError } = await supabase
           .from("books")
-          .select("category, author, printinginstitute")
+          .select("category")
+          .eq("stallid", currentStore)
           .not("category", "is", null);
           
-        if (!booksError && booksData && Array.isArray(booksData)) {
-          // Extract unique categories
-          const uniqueCategories = Array.from(new Set(
-            booksData
-              .filter(book => book && book.category)
-              .map(book => book.category)
-          )).sort() as string[];
+        // Fetch authors
+        const { data: authorsData, error: authorsError } = await supabase
+          .from("books")
+          .select("author")
+          .eq("stallid", currentStore)
+          .not("author", "is", null);
           
-          // Extract unique authors
-          const uniqueAuthors = Array.from(new Set(
-            booksData
-              .filter(book => book && book.author)
-              .map(book => book.author)
-          )).sort() as string[];
+        // Fetch printing institutes
+        const { data: institutesData, error: institutesError } = await supabase
+          .from("books")
+          .select("printinginstitute")
+          .eq("stallid", currentStore)
+          .not("printinginstitute", "is", null);
           
-          // Extract unique printing institutes
-          const uniquePrintingInstitutes = Array.from(new Set(
-            booksData
-              .filter(book => book && book.printinginstitute)
-              .map(book => book.printinginstitute)
-          )).sort() as string[];
-          
-          console.log("Loaded from Supabase:", { 
-            categories: uniqueCategories,
-            authors: uniqueAuthors,
-            institutes: uniquePrintingInstitutes
-          });
-          
-          // Update state with Supabase data, falling back to local storage
-          setCategoriesState(uniqueCategories.length ? uniqueCategories : getCategories());
-          setAuthorsState(uniqueAuthors.length ? uniqueAuthors : getAuthors());
-          setInstitutesState(uniquePrintingInstitutes.length ? uniquePrintingInstitutes : getPrintingInstitutes());
-          
-          // Also update local storage for offline use
-          if (uniqueCategories.length) setCategories(uniqueCategories);
-          if (uniqueAuthors.length) setAuthors(uniqueAuthors);
-          if (uniquePrintingInstitutes.length) setPrintingInstitutes(uniquePrintingInstitutes);
-        } else {
-          // Fall back to local storage
-          setCategoriesState(getCategories());
-          setAuthorsState(getAuthors());
-          setInstitutesState(getPrintingInstitutes());
+        if (!categoriesError && categoriesData) {
+          const uniqueCategories = Array.from(new Set(categoriesData
+            .map(item => item.category)
+            .filter(Boolean)
+          )).sort();
+          setCategories(uniqueCategories);
+        }
+        
+        if (!authorsError && authorsData) {
+          const uniqueAuthors = Array.from(new Set(authorsData
+            .map(item => item.author)
+            .filter(Boolean)
+          )).sort();
+          setAuthors(uniqueAuthors);
+        }
+        
+        if (!institutesError && institutesData) {
+          const uniqueInstitutes = Array.from(new Set(institutesData
+            .map(item => item.printinginstitute)
+            .filter(Boolean)
+          )).sort();
+          setInstitutes(uniqueInstitutes);
         }
       } catch (error) {
-        console.error("Error loading metadata from Supabase:", error);
-        // Fall back to local storage
-        setCategoriesState(getCategories());
-        setAuthorsState(getAuthors());
-        setInstitutesState(getPrintingInstitutes());
+        console.error("Error fetching metadata:", error);
       }
-    
-      // Load author percentages
-      const loadedAuthorPercentages = getAuthorSalePercentage();
-      setAuthorPercentages(loadedAuthorPercentages);
-      
-      // Load institute percentages
-      const loadedInstitutePercentages = getInstituteSalePercentage();
-      setInstitutePercentages(loadedInstitutePercentages);
-      
-      console.log("Loaded percentages:", {
-        authors: loadedAuthorPercentages,
-        institutes: loadedInstitutePercentages
-      });
     };
     
-    loadInitialData();
-  }, []);
+    fetchMetadata();
+  }, [currentStore]);
 
-  // Calculate sale price based on original price and author/institute percentage
-  useEffect(() => {
-    if (originalPrice) {
-      const original = parseFloat(originalPrice);
-      if (!isNaN(original)) {
-        let percentage = 0;
-        let calculatedSalePrice = original;
-        
-        // Check if there's an author percentage
-        if (author && authorPercentages[author]) {
-          percentage += authorPercentages[author] || 0;
-        }
-        
-        // Check if there's an institute percentage
-        if (institute && institutePercentages[institute]) {
-          percentage += institutePercentages[institute] || 0;
-        }
-        
-        // Apply the combined percentage
-        if (percentage > 0) {
-          calculatedSalePrice = original * (1 + percentage / 100);
-          console.log(`Calculating sale price: ${original} * (1 + ${percentage}/100) = ${calculatedSalePrice}`);
-        }
-        
-        form.setValue("salePrice", parseFloat(calculatedSalePrice.toFixed(2)));
-      }
-    }
-  }, [originalPrice, author, institute, authorPercentages, institutePercentages]);
-
-  const form = useForm<BookFormValues>({
-    resolver: zodResolver(bookFormSchema),
-    defaultValues: {
-      name: "",
-      author: "",
-      category: "",
-      printingInstitute: "",
-      quantity: 1,
-      originalPrice: 0,
-      salePrice: 0,
-      barcode: "",
-      imageUrl: "",
-    },
-  });
-
-  const handleOriginalPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setOriginalPrice(e.target.value);
-    form.setValue("originalPrice", parseFloat(e.target.value) || 0);
-  };
-
-  const handleAuthorChange = (value: string) => {
-    if (value === "add-new") {
-      setShowAuthorInput(true);
-      return;
-    }
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
     
-    setAuthor(value);
-    form.setValue("author", value);
-  };
-
-  const handleCategoryChange = (value: string) => {
-    if (value === "add-new") {
-      setShowCategoryInput(true);
-      return;
-    }
-    
-    form.setValue("category", value);
-  };
-
-  const handleInstituteChange = (value: string) => {
-    if (value === "add-new") {
-      setShowInstituteInput(true);
-      return;
-    }
-    
-    setInstitute(value);
-    form.setValue("printingInstitute", value);
-  };
-
-  const handleAddNewAuthor = () => {
-    if (newAuthor.trim()) {
-      const updatedAuthors = [...authors, newAuthor];
-      setAuthorsState(updatedAuthors);
-      setAuthors(updatedAuthors);
-      setAuthor(newAuthor);
-      form.setValue("author", newAuthor);
-      setNewAuthor("");
-      setShowAuthorInput(false);
+    if (name === "originalPrice" || name === "salePrice" || name === "quantity") {
+      const numValue = parseFloat(value);
+      setFormData((prev) => ({ ...prev, [name]: isNaN(numValue) ? 0 : numValue }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
-  const handleAddNewCategory = () => {
-    if (newCategory.trim()) {
-      const updatedCategories = [...categories, newCategory];
-      setCategoriesState(updatedCategories);
-      setCategories(updatedCategories);
-      form.setValue("category", newCategory);
-      setNewCategory("");
-      setShowCategoryInput(false);
-    }
+  const handleMetadataChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleAddNewInstitute = () => {
-    if (newInstitute.trim()) {
-      const updatedInstitutes = [...institutes, newInstitute];
-      setInstitutesState(updatedInstitutes);
-      setPrintingInstitutes(updatedInstitutes);
-      setInstitute(newInstitute);
-      form.setValue("printingInstitute", newInstitute);
-      setNewInstitute("");
-      setShowInstituteInput(false);
+  const handleAddNewMetadata = (field: string, value: string) => {
+    switch (field) {
+      case 'author':
+        setAuthors(prev => [...prev, value].sort());
+        break;
+      case 'category':
+        setCategories(prev => [...prev, value].sort());
+        break;
+      case 'printingInstitute':
+        setInstitutes(prev => [...prev, value].sort());
+        break;
     }
   };
   
-  const handleImageUploaded = (url: string) => {
-    setImageUrl(url);
-    form.setValue("imageUrl", url);
+  const handleImageChange = (file: File | null) => {
+    setSelectedImage(file);
   };
-
-  const onSubmit = async (data: BookFormValues) => {
-    if (!currentStore) {
-      toast({
-        title: "Error",
-        description: "No store is selected. Please select a store first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  
+  const handleImageUploaded = (url: string) => {
+    console.log("Image uploaded to:", url);
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentStore || !currentUser) return;
+    
     try {
-      // Create a book object from form data
-      const newBook: Book = {
-        id: crypto.randomUUID(),
-        barcode: data.barcode,
-        name: data.name,
-        author: data.author,
-        category: data.category || "",
-        printingInstitute: data.printingInstitute || "",
-        originalPrice: data.originalPrice,
-        salePrice: data.salePrice,
-        quantity: data.quantity,
-        imageUrl: data.imageUrl,
-        stallId: currentStore,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-
-      console.log("Adding book to Supabase:", newBook);
-
-      // Save to local storage first for offline resilience
-      const books = getBooks();
-      setBooks([...books, newBook]);
-
-      // Now try to save to Supabase
-      try {
-        const { error } = await supabase
-          .from("books")
-          .insert({
-            id: newBook.id,
-            barcode: newBook.barcode || null,
-            name: newBook.name,
-            author: newBook.author,
-            category: newBook.category || null,
-            printinginstitute: newBook.printingInstitute || null,
-            originalprice: newBook.originalPrice,
-            saleprice: newBook.salePrice,
-            quantity: newBook.quantity,
-            imageurl: newBook.imageUrl || null,
-            stallid: newBook.stallId,
-            createdat: newBook.createdAt.toISOString(),
-            updatedat: newBook.updatedAt.toISOString(),
-          });
-        
-        if (error) {
-          console.error("Error adding book to Supabase:", error);
+      setIsSaving(true);
+      
+      let imageUrl = null;
+      
+      if (selectedImage) {
+        console.log("Uploading image...");
+        imageUrl = await getImageUrl(selectedImage);
+        if (!imageUrl) {
           toast({
-            title: "Error",
-            description: "Error saving book to database. Saved locally only.",
+            title: t("common.error"),
+            description: t("common.imageUploadFailed"),
             variant: "destructive",
           });
-        } else {
-          console.log("Book added to Supabase successfully");
-          toast({
-            title: "Success",
-            description: "Book added successfully!",
-            variant: "default",
-          });
-          
-          form.reset();
-          navigate("/books");
+          return;
         }
-      } catch (supabaseError) {
-        console.error("Exception when adding book to Supabase:", supabaseError);
-        toast({
-          title: t("common.warning"),
-          description: t("common.savedLocallyOnly"),
-          variant: "default",
-        });
       }
-    } catch (error) {
-      console.error("Error creating book:", error);
+      
+      const { error } = await supabase
+        .from("books")
+        .insert({
+          name: formData.name,
+          author: formData.author,
+          category: formData.category || null,
+          printinginstitute: formData.printingInstitute || null,
+          originalprice: formData.originalPrice,
+          saleprice: formData.salePrice,
+          quantity: formData.quantity,
+          barcode: formData.barcode || null,
+          stallid: currentStore,
+          imageurl: imageUrl,
+          createdat: new Date().toISOString(),
+          updatedat: new Date().toISOString()
+        });
+        
+      if (error) throw error;
+      
       toast({
-        title: "Error",
-        description: "Failed to create book",
+        title: t("common.success"),
+        description: t("common.bookAdded"),
+      });
+      
+      navigate("/books");
+    } catch (error) {
+      console.error("Error adding book:", error);
+      toast({
+        title: t("common.error"),
+        description: t("common.failedToAddBook"),
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-temple-background pb-20">
-      <MobileHeader title={activeTab === "add-book" ? t("common.addBook") : "Price Settings"} showBackButton={true} backTo="/books" />
+      <MobileHeader
+        title={t("common.addBook")}
+        showBackButton={true}
+        backTo="/books"
+      />
       
-      <div className={`container mx-auto px-4 py-6 ${isMobile ? 'max-w-md' : ''}`}>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="add-book">Add Book</TabsTrigger>
-            <TabsTrigger value="price-settings">Price Settings</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="add-book">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <ImageUpload 
-                  initialImageUrl={imageUrl}
-                  onImageUploaded={handleImageUploaded}
-                  className="mb-6"
+      <main className="container mx-auto px-4 py-6">
+        <h1 className="text-2xl font-bold text-temple-maroon mb-6">{t("common.addBook")}</h1>
+        
+        <Card className="p-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="image">{t("common.image")}</Label>
+              <ImageUpload 
+                onImageChange={handleImageChange}
+                onImageUploaded={handleImageUploaded}
+                bookMetadata={{
+                  author: formData.author,
+                  name: formData.name,
+                  printingInstitute: formData.printingInstitute
+                }}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="name">{t("common.bookName")}</Label>
+              <Input 
+                id="name" 
+                name="name" 
+                value={formData.name} 
+                onChange={handleInputChange} 
+                required
+              />
+            </div>
+            
+            <MetadataInput
+              label={t("common.author")}
+              value={formData.author}
+              options={authors}
+              placeholder={t("common.selectAuthor")}
+              onValueChange={(value) => handleMetadataChange("author", value)}
+              onAddNew={(value) => handleAddNewMetadata("author", value)}
+            />
+            
+            <MetadataInput
+              label={t("common.category")}
+              value={formData.category}
+              options={categories}
+              placeholder={t("common.selectCategory")}
+              onValueChange={(value) => handleMetadataChange("category", value)}
+              onAddNew={(value) => handleAddNewMetadata("category", value)}
+            />
+            
+            <MetadataInput
+              label={t("common.printingInstitute")}
+              value={formData.printingInstitute}
+              options={institutes}
+              placeholder={t("common.selectInstitute")}
+              onValueChange={(value) => handleMetadataChange("printingInstitute", value)}
+              onAddNew={(value) => handleAddNewMetadata("printingInstitute", value)}
+            />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="originalPrice">{t("common.originalPrice")}</Label>
+                <Input 
+                  id="originalPrice" 
+                  name="originalPrice" 
+                  type="number" 
+                  value={formData.originalPrice} 
+                  onChange={handleInputChange} 
+                  required
+                  min={0}
+                  step={0.01}
                 />
+              </div>
               
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("common.bookName")}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t("common.bookName")} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+              <div className="space-y-2">
+                <Label htmlFor="salePrice">{t("common.salePrice")}</Label>
+                <Input 
+                  id="salePrice" 
+                  name="salePrice" 
+                  type="number" 
+                  value={formData.salePrice} 
+                  onChange={handleInputChange} 
+                  required
+                  min={0}
+                  step={0.01}
                 />
-
-                <FormField
-                  control={form.control}
-                  name="author"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("common.authorName")}</FormLabel>
-                      {!showAuthorInput ? (
-                        <Select onValueChange={handleAuthorChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="temple-input">
-                              <SelectValue placeholder={t("common.selectAuthor")} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {authors.map(author => (
-                              <SelectItem key={author} value={author}>{author}</SelectItem>
-                            ))}
-                            <SelectItem key="add-new" value="add-new">{t("common.addNew")}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <div className="flex gap-2">
-                          <Input 
-                            placeholder={t("common.newAuthor")}
-                            value={newAuthor}
-                            onChange={(e) => setNewAuthor(e.target.value)}
-                            className="flex-1"
-                          />
-                          <Button type="button" onClick={handleAddNewAuthor}>Add</Button>
-                        </div>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="category"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("common.category")}</FormLabel>
-                      {!showCategoryInput ? (
-                        <Select onValueChange={handleCategoryChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="temple-input">
-                              <SelectValue placeholder={t("common.selectCategory")} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {categories.map(category => (
-                              <SelectItem key={category} value={category}>{category}</SelectItem>
-                            ))}
-                            <SelectItem key="add-new" value="add-new">{t("common.addNew")}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <div className="flex gap-2">
-                          <Input 
-                            placeholder={t("common.newCategory")}
-                            value={newCategory}
-                            onChange={(e) => setNewCategory(e.target.value)}
-                            className="flex-1"
-                          />
-                          <Button type="button" onClick={handleAddNewCategory}>Add</Button>
-                        </div>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="printingInstitute"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("common.printingInstitute")}</FormLabel>
-                      {!showInstituteInput ? (
-                        <Select onValueChange={handleInstituteChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="temple-input">
-                              <SelectValue placeholder={t("common.selectInstitute")} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {institutes.map(institute => (
-                              <SelectItem key={institute} value={institute}>{institute}</SelectItem>
-                            ))}
-                            <SelectItem key="add-new" value="add-new">{t("common.addNew")}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <div className="flex gap-2">
-                          <Input 
-                            placeholder={t("common.newInstitute")}
-                            value={newInstitute}
-                            onChange={(e) => setNewInstitute(e.target.value)}
-                            className="flex-1"
-                          />
-                          <Button type="button" onClick={handleAddNewInstitute}>Add</Button>
-                        </div>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="quantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("common.quantity")}</FormLabel>
-                      <FormControl>
-                        <Input type="number" min="1" placeholder="1" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="originalPrice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("common.originalPrice")}</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.01" 
-                          min="0" 
-                          placeholder="0.00" 
-                          value={originalPrice} 
-                          onChange={handleOriginalPriceChange} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="salePrice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("common.salePrice")}</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.01" 
-                          min="0" 
-                          placeholder="0.00" 
-                          {...field}
-                          value={field.value || ''} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="pt-4">
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-temple-saffron hover:bg-temple-saffron/90"
-                  >
-                    {t("common.addBook")}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </TabsContent>
-          
-          <TabsContent value="price-settings">
-            <InstitutePriceSettings />
-          </TabsContent>
-        </Tabs>
-      </div>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="quantity">{t("common.quantity")}</Label>
+              <Input 
+                id="quantity" 
+                name="quantity" 
+                type="number" 
+                value={formData.quantity} 
+                onChange={handleInputChange} 
+                required
+                min={0}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="barcode">{t("common.barcode")}</Label>
+              <Input 
+                id="barcode" 
+                name="barcode" 
+                value={formData.barcode} 
+                onChange={handleInputChange}
+              />
+            </div>
+            
+            <div className="flex justify-end gap-4 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate("/books")}
+              >
+                {t("common.cancel")}
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={isSaving}
+              >
+                {isSaving ? t("common.saving") : t("common.addBook")}
+              </Button>
+            </div>
+          </form>
+        </Card>
+      </main>
     </div>
   );
 };

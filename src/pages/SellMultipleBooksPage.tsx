@@ -1,89 +1,80 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Header from '@/components/Header';
-import { supabase } from '@/integrations/supabase/client';
-import { Book } from '@/types';
-import { useStallContext } from '@/contexts/StallContext';
-import { useTranslation } from 'react-i18next';
-import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { MinusCircle, PlusCircle, Search, ShoppingCart, Trash2 } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
-import { useAuth } from '@/contexts/AuthContext';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
-import BookImage from '@/components/BookImage';
+
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useStallContext } from "@/contexts/StallContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import MobileHeader from "@/components/MobileHeader";
+import BookImage from "@/components/BookImage";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Book } from "@/types";
+import { Search, Plus, Minus, Trash2 } from "lucide-react";
 
 interface CartItem {
   book: Book;
   quantity: number;
 }
 
-const SellMultipleBooksPage: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Book[]>([]);
+const SellMultipleBooksPage = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [books, setBooks] = useState<Book[]>([]);
+  const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState<string>('cash');
-  const [buyerName, setBuyerName] = useState<string>('');
-  const [buyerPhone, setBuyerPhone] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSelling, setIsSelling] = useState(false);
+
   const { currentStore } = useStallContext();
   const { currentUser } = useAuth();
   const { t } = useTranslation();
-  const { toast } = useToast();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
+  // Fetch books
   useEffect(() => {
-    if (!currentStore) {
-      toast({
-        title: t("common.error"),
-        description: t("common.selectStallFirst"),
-        variant: "destructive",
-      });
-      navigate('/');
-    }
-  }, [currentStore, navigate, t, toast]);
+    const fetchBooks = async () => {
+      if (!currentStore) return;
 
-  // Search for books as user types
-  useEffect(() => {
-    const searchBooks = async () => {
-      if (!searchQuery || searchQuery.length < 2 || !currentStore) return;
-      
-      setIsLoading(true);
       try {
+        setIsLoading(true);
         const { data, error } = await supabase
-          .from('books')
-          .select('*')
-          .eq('stallid', currentStore)
-          .or(`name.ilike.%${searchQuery}%, barcode.ilike.%${searchQuery}%, author.ilike.%${searchQuery}%`)
-          .limit(10);
-          
+          .from("books")
+          .select("*")
+          .eq("stallid", currentStore)
+          .gt("quantity", 0)
+          .order("name");
+
         if (error) throw error;
-        
-        const formattedBooks = data.map(book => ({
-          id: book.id,
-          barcode: book.barcode,
-          name: book.name,
-          author: book.author,
-          category: book.category,
-          printingInstitute: book.printinginstitute,
-          originalPrice: book.originalprice,
-          salePrice: book.saleprice,
-          quantity: book.quantity,
-          stallId: book.stallid,
-          imageUrl: book.imageurl,
-          createdAt: new Date(book.createdat),
-          updatedAt: new Date(book.updatedat)
+
+        const booksData: Book[] = data.map((row: any) => ({
+          id: row.id,
+          barcode: row.barcode ?? "",
+          name: row.name,
+          author: row.author,
+          category: row.category ?? "",
+          printingInstitute: row.printinginstitute ?? "",
+          originalPrice: row.originalprice,
+          salePrice: row.saleprice,
+          quantity: row.quantity,
+          stallId: row.stallid,
+          imageUrl: row.imageurl,
+          createdAt: new Date(row.createdat),
+          updatedAt: new Date(row.updatedat)
         }));
-        
-        setSearchResults(formattedBooks);
+
+        setBooks(booksData);
+        setFilteredBooks(booksData);
       } catch (error) {
-        console.error("Error searching books:", error);
+        console.error("Error fetching books:", error);
         toast({
           title: t("common.error"),
           description: t("common.failedToLoadBooks"),
@@ -93,393 +84,352 @@ const SellMultipleBooksPage: React.FC = () => {
         setIsLoading(false);
       }
     };
-    
-    const debounceTimer = setTimeout(searchBooks, 300);
-    return () => clearTimeout(debounceTimer);
-  }, [searchQuery, currentStore, toast, t]);
+
+    fetchBooks();
+  }, [currentStore, toast, t]);
+
+  // Filter books based on search
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredBooks(books);
+    } else {
+      const filtered = books.filter(book =>
+        book.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (book.barcode && book.barcode.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+      setFilteredBooks(filtered);
+    }
+  }, [searchTerm, books]);
 
   const addToCart = (book: Book) => {
-    setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.book.id === book.id);
-      if (existingItem) {
-        return prevCart.map(item => 
-          item.book.id === book.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
+    const existingItem = cart.find(item => item.book.id === book.id);
+    
+    if (existingItem) {
+      if (existingItem.quantity < book.quantity) {
+        setCart(cart.map(item =>
+          item.book.id === book.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        ));
       } else {
-        return [...prevCart, { book, quantity: 1 }];
+        toast({
+          title: t("common.error"),
+          description: t("sell.quantityExceedsStock"),
+          variant: "destructive",
+        });
       }
-    });
-    
-    toast({
-      title: t("common.added"),
-      description: `${book.name} ${t("common.addedToCart")}`,
-    });
-    
-    // Clear search after adding
-    setSearchQuery('');
-    setSearchResults([]);
+    } else {
+      setCart([...cart, { book, quantity: 1 }]);
+    }
   };
 
-  const increaseQuantity = (bookId: string) => {
-    setCart(prevCart => {
-      return prevCart.map(item => {
-        if (item.book.id === bookId) {
-          const newQuantity = Math.min(item.quantity + 1, item.book.quantity);
-          return { ...item, quantity: newQuantity };
-        }
-        return item;
-      });
-    });
-  };
+  const updateCartQuantity = (bookId: string, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      removeFromCart(bookId);
+      return;
+    }
 
-  const decreaseQuantity = (bookId: string) => {
-    setCart(prevCart => {
-      return prevCart.map(item => {
-        if (item.book.id === bookId) {
-          const newQuantity = Math.max(1, item.quantity - 1);
-          return { ...item, quantity: newQuantity };
-        }
-        return item;
-      });
-    });
-  };
-
-  const removeFromCart = (bookId: string) => {
-    setCart(prevCart => prevCart.filter(item => item.book.id !== bookId));
-    
-    toast({
-      title: t("common.removed"),
-      description: t("common.removedFromCart"),
-    });
-  };
-
-  const calculateTotal = () => {
-    return cart.reduce((total, item) => total + (item.book.salePrice * item.quantity), 0);
-  };
-
-  const handleCheckout = async () => {
-    if (cart.length === 0) {
+    const book = books.find(b => b.id === bookId);
+    if (book && newQuantity > book.quantity) {
       toast({
-        title: t("common.emptyCart"),
-        description: t("common.addBooksToCart"),
+        title: t("common.error"),
+        description: t("sell.quantityExceedsStock"),
         variant: "destructive",
       });
       return;
     }
-    
-    setIsProcessing(true);
+
+    setCart(cart.map(item =>
+      item.book.id === bookId
+        ? { ...item, quantity: newQuantity }
+        : item
+    ));
+  };
+
+  const removeFromCart = (bookId: string) => {
+    setCart(cart.filter(item => item.book.id !== bookId));
+  };
+
+  const getTotalAmount = () => {
+    return cart.reduce((total, item) => total + (item.book.salePrice * item.quantity), 0);
+  };
+
+  const handleSell = async () => {
+    if (cart.length === 0) {
+      toast({
+        title: t("common.error"),
+        description: t("sell.noItemsInCart"),
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      // Process each item as a separate sale
+      setIsSelling(true);
+
+      // Process each sale
       for (const item of cart) {
-        const sale = {
-          bookid: item.book.id,
-          quantity: item.quantity,
-          totalamount: item.book.salePrice * item.quantity,
-          paymentmethod: paymentMethod,
-          buyername: buyerName || null,
-          buyerphone: buyerPhone || null,
-          personnelid: currentUser?.id, 
-          stallid: currentStore,
-          synced: false
-        };
-        
-        // 1. Insert the sale
-        const { data: saleData, error: saleError } = await supabase
-          .from('sales')
-          .insert([sale])
-          .select();
-          
+        // Insert sale record
+        const { error: saleError } = await supabase
+          .from("sales")
+          .insert({
+            bookid: item.book.id,
+            quantity: item.quantity,
+            totalamount: item.book.salePrice * item.quantity,
+            paymentmethod: paymentMethod,
+            buyername: customerName || null,
+            buyerphone: customerPhone || null,
+            personnelid: currentUser?.id || "unknown",
+            stallid: currentStore,
+          });
+
         if (saleError) throw saleError;
-        
-        // 2. Update book quantity
+
+        // Update book quantity
         const { error: updateError } = await supabase
-          .from('books')
-          .update({ 
+          .from("books")
+          .update({
             quantity: item.book.quantity - item.quantity,
             updatedat: new Date().toISOString()
           })
-          .eq('id', item.book.id);
-          
+          .eq("id", item.book.id);
+
         if (updateError) throw updateError;
       }
-      
+
       toast({
         title: t("common.success"),
-        description: t("common.saleComplete"),
+        description: t("sell.saleCompleted"),
       });
-      
-      // Reset the form
+
+      // Reset form
       setCart([]);
-      setPaymentMethod('cash');
-      setBuyerName('');
-      setBuyerPhone('');
+      setCustomerName("");
+      setCustomerPhone("");
+      setPaymentMethod("cash");
       
+      // Refresh books
+      const { data, error } = await supabase
+        .from("books")
+        .select("*")
+        .eq("stallid", currentStore)
+        .gt("quantity", 0)
+        .order("name");
+
+      if (!error && data) {
+        const booksData: Book[] = data.map((row: any) => ({
+          id: row.id,
+          barcode: row.barcode ?? "",
+          name: row.name,
+          author: row.author,
+          category: row.category ?? "",
+          printingInstitute: row.printinginstitute ?? "",
+          originalPrice: row.originalprice,
+          salePrice: row.saleprice,
+          quantity: row.quantity,
+          stallId: row.stallid,
+          imageUrl: row.imageurl,
+          createdAt: new Date(row.createdat),
+          updatedAt: new Date(row.updatedat)
+        }));
+        setBooks(booksData);
+      }
+
     } catch (error) {
-      console.error("Error processing checkout:", error);
+      console.error("Error processing sale:", error);
       toast({
         title: t("common.error"),
-        description: t("common.saleError"),
+        description: t("sell.saleProcessingFailed"),
         variant: "destructive",
       });
     } finally {
-      setIsProcessing(false);
+      setIsSelling(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-temple-background pb-20">
-      <Header />
-      
+      <MobileHeader
+        title={t("sell.sellMultipleBooks")}
+        showBackButton={true}
+        backTo="/"
+      />
+
       <main className="container mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold text-temple-maroon mb-6">
-          {t("common.sellMultipleBooks")}
-        </h1>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Search and results */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("common.searchBooks")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex space-x-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                  <Input
-                    type="text"
-                    placeholder={t("common.searchByNameOrBarcode")}
-                    className="pl-9"
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                  />
-                </div>
-              </div>
-              
-              <div className="mt-4">
-                {isLoading ? (
-                  <p className="text-center py-4 text-gray-500">{t("common.loading")}...</p>
-                ) : (
-                  <div className="max-h-72 overflow-y-auto">
-                    {searchResults.length > 0 ? (
-                      <div className="w-full overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-16">{t("common.image")}</TableHead>
-                              <TableHead>{t("common.name")}</TableHead>
-                              <TableHead className="w-20">{t("common.price")}</TableHead>
-                              <TableHead className="w-20">{t("common.stock")}</TableHead>
-                              <TableHead className="w-20 text-right">{t("common.action")}</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {searchResults.map(book => (
-                              <TableRow key={book.id}>
-                                <TableCell className="align-top">
-                                  <div className="w-12 h-12 overflow-hidden rounded-md">
-                                    <BookImage 
-                                      imageUrl={book.imageUrl} 
-                                      alt={book.name}
-                                      size="small"
-                                      className="w-12 h-12"
-                                    />
-                                  </div>
-                                </TableCell>
-                                <TableCell className="align-top">
-                                  <div>
-                                    <p className="font-medium line-clamp-2">{book.name}</p>
-                                    <p className="text-sm text-gray-500 line-clamp-1">{book.author}</p>
-                                  </div>
-                                </TableCell>
-                                <TableCell className="align-top">₹{book.salePrice}</TableCell>
-                                <TableCell className="align-top">
-                                  <span className={book.quantity <= 0 ? "text-red-500" : ""}>
-                                    {book.quantity}
-                                  </span>
-                                </TableCell>
-                                <TableCell className="text-right align-top">
-                                  <Button 
-                                    size="sm" 
-                                    variant={book.quantity <= 0 ? "outline" : "default"}
-                                    onClick={() => addToCart(book)}
-                                    disabled={book.quantity <= 0}
-                                    className="px-2 py-1 h-auto"
-                                  >
-                                    {book.quantity <= 0 ? t("common.outOfStock") : t("common.add")}
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    ) : (
-                      searchQuery.length >= 2 && (
-                        <p className="text-center py-4 text-gray-500">
-                          {t("common.noResults")}
-                        </p>
-                      )
-                    )}
-                  </div>
-                )}
-              </div>
-            </CardContent>
+        <div className="space-y-6">
+          {/* Search Section */}
+          <Card className="p-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder={t("sell.searchBooks")}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
           </Card>
-          
-          {/* Cart and checkout */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="flex items-center">
-                <ShoppingCart className="mr-2 h-5 w-5" />
-                {t("common.cart")}
-                <span className="ml-2 text-sm text-gray-500">
-                  ({cart.length} {t("common.items")})
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {cart.length > 0 ? (
-                <div className="max-h-60 overflow-y-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t("common.image")}</TableHead>
-                        <TableHead>{t("common.book")}</TableHead>
-                        <TableHead>{t("common.price")}</TableHead>
-                        <TableHead>{t("common.quantity")}</TableHead>
-                        <TableHead className="text-right">{t("common.subtotal")}</TableHead>
-                        <TableHead></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {cart.map(item => (
-                        <TableRow key={item.book.id}>
-                          <TableCell className="w-16">
-                            <div className="w-10 h-10 overflow-hidden rounded-md">
-                              <BookImage 
-                                imageUrl={item.book.imageUrl} 
-                                alt={item.book.name}
-                                size="small"
-                                className="w-10 h-10"
-                              />
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <p className="font-medium">{item.book.name}</p>
-                          </TableCell>
-                          <TableCell>₹{item.book.salePrice}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-2">
-                              <Button 
-                                variant="outline" 
-                                size="icon" 
-                                className="h-6 w-6"
-                                onClick={() => decreaseQuantity(item.book.id)}
-                              >
-                                <MinusCircle className="h-4 w-4" />
-                              </Button>
-                              <span>{item.quantity}</span>
-                              <Button 
-                                variant="outline" 
-                                size="icon" 
-                                className="h-6 w-6"
-                                onClick={() => increaseQuantity(item.book.id)}
-                                disabled={item.quantity >= item.book.quantity}
-                              >
-                                <PlusCircle className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            ₹{(item.book.salePrice * item.quantity).toFixed(2)}
-                          </TableCell>
-                          <TableCell>
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              className="h-6 w-6 text-red-500"
-                              onClick={() => removeFromCart(item.book.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <ShoppingCart className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                  <p className="text-gray-500">{t("common.cartEmpty")}</p>
-                  <p className="text-gray-400 text-sm">{t("common.searchAndAddBooks")}</p>
-                </div>
-              )}
-              
-              {cart.length > 0 && (
-                <>
-                  <Separator className="my-4" />
-                  
-                  <div className="space-y-4 mt-4">
-                    <div className="flex justify-between font-medium">
-                      <span>{t("common.total")}</span>
-                      <span>₹{calculateTotal().toFixed(2)}</span>
+
+          {/* Books List */}
+          <Card className="p-4">
+            <h2 className="text-lg font-semibold mb-4">{t("common.availableBooks")}</h2>
+            {isLoading ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">{t("common.loading")}...</p>
+              </div>
+            ) : filteredBooks.length > 0 ? (
+              <div className="space-y-3 max-h-60 overflow-y-auto">
+                {filteredBooks.map((book) => (
+                  <div
+                    key={book.id}
+                    className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                    onClick={() => addToCart(book)}
+                  >
+                    <div className="w-12 h-16 flex-shrink-0">
+                      <BookImage
+                        imageUrl={book.imageUrl}
+                        alt={`${book.name} cover`}
+                        size="small"
+                        className="w-full h-full"
+                      />
                     </div>
-                    
-                    <div className="space-y-3">
-                      <div>
-                        <Label htmlFor="paymentMethod">{t("common.paymentMethod")}</Label>
-                        <Select
-                          value={paymentMethod}
-                          onValueChange={setPaymentMethod}
-                        >
-                          <SelectTrigger id="paymentMethod">
-                            <SelectValue placeholder={t("common.selectPayment")} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="cash">{t("common.cash")}</SelectItem>
-                            <SelectItem value="upi">{t("common.upi")}</SelectItem>
-                            <SelectItem value="card">{t("common.card")}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label htmlFor="buyerName">{t("common.buyerName")}</Label>
-                          <Input
-                            id="buyerName"
-                            value={buyerName}
-                            onChange={e => setBuyerName(e.target.value)}
-                            placeholder={t("common.optional")}
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="buyerPhone">{t("common.buyerPhone")}</Label>
-                          <Input
-                            id="buyerPhone"
-                            value={buyerPhone}
-                            onChange={e => setBuyerPhone(e.target.value)}
-                            placeholder={t("common.optional")}
-                          />
-                        </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-sm line-clamp-1">{book.name}</h3>
+                      <p className="text-xs text-muted-foreground">{book.author}</p>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-sm font-medium">₹{book.salePrice}</span>
+                        <Badge variant="secondary" className="text-xs">
+                          {book.quantity} {t("common.available")}
+                        </Badge>
                       </div>
                     </div>
                   </div>
-                </>
-              )}
-            </CardContent>
-            <CardFooter>
-              <Button 
-                className="w-full" 
-                onClick={handleCheckout}
-                disabled={cart.length === 0 || isProcessing}
-              >
-                {isProcessing ? t("common.processing") : t("common.completeSale")}
-              </Button>
-            </CardFooter>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">{t("common.noBooksFound")}</p>
+              </div>
+            )}
           </Card>
+
+          {/* Cart */}
+          {cart.length > 0 && (
+            <Card className="p-4">
+              <h2 className="text-lg font-semibold mb-4">{t("sell.cart")} ({cart.length})</h2>
+              <div className="space-y-3 mb-4">
+                {cart.map((item) => (
+                  <div key={item.book.id} className="flex items-center gap-3 p-3 border rounded-lg">
+                    <div className="w-10 h-12 flex-shrink-0">
+                      <BookImage
+                        imageUrl={item.book.imageUrl}
+                        alt={`${item.book.name} cover`}
+                        size="small"
+                        className="w-full h-full"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-sm line-clamp-1">{item.book.name}</h3>
+                      <p className="text-xs text-muted-foreground">₹{item.book.salePrice} each</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => updateCartQuantity(item.book.id, item.quantity - 1)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <span className="text-sm font-medium w-8 text-center">{item.quantity}</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => updateCartQuantity(item.book.id, item.quantity + 1)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeFromCart(item.book.id)}
+                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="border-t pt-4">
+                <div className="flex justify-between items-center text-lg font-semibold">
+                  <span>{t("common.total")}</span>
+                  <span>₹{getTotalAmount().toFixed(2)}</span>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Customer Details */}
+          <Card className="p-4">
+            <h2 className="text-lg font-semibold mb-4">{t("sell.customerDetails")}</h2>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="customerName">{t("sell.customerName")} ({t("common.optional")})</Label>
+                <Input
+                  id="customerName"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder={t("sell.enterCustomerName")}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="customerPhone">{t("sell.customerPhone")} ({t("common.optional")})</Label>
+                <Input
+                  id="customerPhone"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  placeholder={t("sell.enterCustomerPhone")}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="paymentMethod">{t("sell.paymentMethod")}</Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">{t("sell.cash")}</SelectItem>
+                    <SelectItem value="card">{t("sell.card")}</SelectItem>
+                    <SelectItem value="upi">{t("sell.upi")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </Card>
+
+          {/* Action Buttons */}
+          <div className="flex gap-4">
+            <Button
+              variant="outline"
+              onClick={() => navigate("/")}
+              className="flex-1"
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={handleSell}
+              disabled={cart.length === 0 || isSelling}
+              className="flex-1"
+            >
+              {isSelling ? t("sell.processing") : `${t("sell.completeSale")} ₹${getTotalAmount().toFixed(2)}`}
+            </Button>
+          </div>
         </div>
       </main>
     </div>

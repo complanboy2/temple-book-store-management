@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Book } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +10,7 @@ import {
   cacheBookDetails, 
   getCachedBookDetails 
 } from "@/services/localStorageService";
+import { imageCacheService } from "@/services/imageCacheService";
 
 export const useBookManager = (stallId: string | null) => {
   const [books, setBooks] = useState<Book[]>([]);
@@ -245,6 +245,9 @@ export const useBookManager = (stallId: string | null) => {
     if (!stallId) return false;
     
     try {
+      // First get the book to get its image URL
+      const bookToDelete = books.find(book => book.id === bookId);
+      
       const { error } = await supabase
         .from("books")
         .delete()
@@ -259,6 +262,26 @@ export const useBookManager = (stallId: string | null) => {
           variant: "destructive",
         });
         return false;
+      }
+      
+      // If book had an image, delete it from storage and cache
+      if (bookToDelete?.imageUrl) {
+        try {
+          // Extract filename from URL
+          const urlParts = bookToDelete.imageUrl.split('/');
+          const filename = urlParts[urlParts.length - 1];
+          
+          // Delete from Supabase storage
+          await supabase.storage
+            .from('book-images')
+            .remove([filename]);
+            
+          // Remove from local cache
+          await imageCacheService.removeCachedImage(bookToDelete.imageUrl);
+        } catch (imageError) {
+          console.warn("Error deleting book image:", imageError);
+          // Continue with book deletion even if image deletion fails
+        }
       }
       
       // Update local state
