@@ -16,6 +16,7 @@ interface MobileHeaderProps {
   mediumBand?: boolean;
   leftIcon?: React.ReactNode;
   onLeftIconClick?: () => void;
+  rightContent?: React.ReactNode;
 }
 
 const MobileHeader: React.FC<MobileHeaderProps> = ({
@@ -28,6 +29,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   mediumBand = false,
   leftIcon,
   onLeftIconClick,
+  rightContent,
 }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -62,6 +64,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
         </div>
         
         <div className="flex items-center">
+          {rightContent}
           {showSearchButton && (
             <Button 
               variant="ghost" 
