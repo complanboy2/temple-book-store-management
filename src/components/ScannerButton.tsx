@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Barcode } from "lucide-react";
+import { Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 interface ScannerButtonProps {
@@ -20,9 +20,7 @@ const ScannerButton: React.FC<ScannerButtonProps> = ({
   const [manualCode, setManualCode] = useState("");
   const { t } = useTranslation();
 
-  // In a real app, this would integrate with a barcode scanning library
-  const simulateScan = () => {
-    // For now, we'll just prompt for manual entry
+  const simulateSearch = () => {
     setIsDialogOpen(true);
   };
 
@@ -42,30 +40,30 @@ const ScannerButton: React.FC<ScannerButtonProps> = ({
     return (
       <>
         <Button 
-          onClick={simulateScan} 
+          onClick={simulateSearch} 
           className="bg-temple-gold text-white hover:bg-temple-gold/90 flex items-center justify-center gap-2"
           size="sm"
         >
-          <Barcode className="h-4 w-4" />
-          <span>{t("common.scanCode")}</span>
+          <Search className="h-4 w-4" />
+          <span>{t("common.searchBook")}</span>
         </Button>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="bg-temple-card">
             <DialogHeader>
-              <DialogTitle className="text-xl text-temple-maroon">{t("common.enterBookCode")}</DialogTitle>
+              <DialogTitle className="text-xl text-temple-maroon">{t("common.searchBook")}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleManualSubmit} className="space-y-4">
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  {t("common.enterBarcodeManually")}
+                  {t("common.enterBookName")}
                 </p>
                 <input
                   type="text"
                   value={manualCode}
                   onChange={(e) => setManualCode(e.target.value)}
                   className="temple-input w-full"
-                  placeholder={t("common.enterCodeHere")}
+                  placeholder={t("common.enterBookNameHere")}
                   autoFocus
                 />
               </div>
@@ -74,7 +72,7 @@ const ScannerButton: React.FC<ScannerButtonProps> = ({
                   type="submit" 
                   className="bg-temple-saffron hover:bg-temple-saffron/90"
                 >
-                  {t("common.submit")}
+                  {t("common.search")}
                 </Button>
               </div>
             </form>
@@ -87,29 +85,29 @@ const ScannerButton: React.FC<ScannerButtonProps> = ({
   return (
     <>
       <Button 
-        onClick={simulateScan} 
+        onClick={simulateSearch} 
         className="bg-temple-gold text-white hover:bg-temple-gold/90 w-full flex items-center justify-center gap-2 py-6 text-lg"
       >
-        <Barcode className="h-6 w-6" />
-        <span>{t("common.scanBookCode")}</span>
+        <Search className="h-6 w-6" />
+        <span>{t("common.searchBooks")}</span>
       </Button>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="bg-temple-card">
           <DialogHeader>
-            <DialogTitle className="text-xl text-temple-maroon">{t("common.enterBookCode")}</DialogTitle>
+            <DialogTitle className="text-xl text-temple-maroon">{t("common.searchBook")}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleManualSubmit} className="space-y-4">
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">
-                {t("common.enterBarcodeManually")}
+                {t("common.enterBookName")}
               </p>
               <input
                 type="text"
                 value={manualCode}
                 onChange={(e) => setManualCode(e.target.value)}
                 className="temple-input w-full"
-                placeholder={t("common.enterCodeHere")}
+                placeholder={t("common.enterBookNameHere")}
                 autoFocus
               />
             </div>
@@ -118,7 +116,7 @@ const ScannerButton: React.FC<ScannerButtonProps> = ({
                 type="submit" 
                 className="bg-temple-saffron hover:bg-temple-saffron/90"
               >
-                {t("common.submit")}
+                {t("common.search")}
               </Button>
             </div>
           </form>

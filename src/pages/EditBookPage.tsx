@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useStallContext } from "@/contexts/StallContext";
@@ -27,8 +28,7 @@ const EditBookPage = () => {
     printingInstitute: "",
     originalPrice: 0,
     salePrice: 0,
-    quantity: 0,
-    barcode: ""
+    quantity: 0
   });
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
@@ -132,14 +132,13 @@ const EditBookPage = () => {
         // Transform API result to local Book type
         const bookData: Book = {
           id: data.id,
-          barcode: data.barcode ?? undefined,
           name: data.name,
           author: data.author,
           category: data.category ?? "",
           printingInstitute: data.printinginstitute ?? "",
-          originalPrice: data.originalprice,
-          salePrice: data.saleprice,
-          quantity: data.quantity,
+          originalPrice: data.originalprice || 0,
+          salePrice: data.saleprice || 0,
+          quantity: data.quantity || 0,
           stallId: data.stallid,
           imageUrl: data.imageurl,
           createdAt: data.createdat ? new Date(data.createdat) : new Date(),
@@ -154,8 +153,7 @@ const EditBookPage = () => {
           printingInstitute: bookData.printingInstitute || "",
           originalPrice: bookData.originalPrice,
           salePrice: bookData.salePrice,
-          quantity: bookData.quantity,
-          barcode: bookData.barcode || ""
+          quantity: bookData.quantity
         });
       } catch (error) {
         console.error("Error fetching book details:", error);
@@ -177,8 +175,18 @@ const EditBookPage = () => {
     const { name, value } = e.target;
     
     if (name === "originalPrice" || name === "salePrice" || name === "quantity") {
-      const numValue = parseFloat(value);
-      setFormData((prev) => ({ ...prev, [name]: isNaN(numValue) ? 0 : numValue }));
+      const numValue = parseFloat(value) || 0;
+      
+      // When original price changes, automatically update sale price to match
+      if (name === "originalPrice") {
+        setFormData((prev) => ({ 
+          ...prev, 
+          originalPrice: numValue,
+          salePrice: numValue // Auto-update sale price
+        }));
+      } else {
+        setFormData((prev) => ({ ...prev, [name]: numValue }));
+      }
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -207,7 +215,6 @@ const EditBookPage = () => {
   };
   
   const handleImageUploaded = (url: string) => {
-    // This function is called when the image is successfully uploaded
     console.log("Image uploaded to:", url);
   };
   
@@ -234,7 +241,6 @@ const EditBookPage = () => {
             description: t("common.imageUploadFailed"),
             variant: "destructive",
           });
-          // Continue with the update even if image upload fails
         }
       }
       
@@ -246,7 +252,6 @@ const EditBookPage = () => {
         originalprice: formData.originalPrice,
         saleprice: formData.salePrice,
         quantity: formData.quantity,
-        barcode: formData.barcode || null,
         updatedat: new Date().toISOString(),
         imageurl: imageUrl
       });
@@ -261,7 +266,6 @@ const EditBookPage = () => {
           originalprice: formData.originalPrice,
           saleprice: formData.salePrice,
           quantity: formData.quantity,
-          barcode: formData.barcode || null,
           updatedat: new Date().toISOString(),
           imageurl: imageUrl
         })

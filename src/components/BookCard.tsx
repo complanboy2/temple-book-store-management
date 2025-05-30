@@ -47,19 +47,12 @@ const BookCard: React.FC<BookCardProps> = ({
         
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-sm line-clamp-2 mb-1">{book.name}</h3>
-          <p className="text-xs text-muted-foreground mb-1">{book.author}</p>
-          {book.category && (
-            <p className="text-xs text-muted-foreground mb-2">{book.category}</p>
-          )}
+          <p className="text-xs text-muted-foreground mb-2">{book.author}</p>
           
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
+              {/* Only show sale price */}
               <span className="text-sm font-medium">₹{book.salePrice}</span>
-              {book.originalPrice !== book.salePrice && (
-                <span className="text-xs text-muted-foreground line-through">
-                  ₹{book.originalPrice}
-                </span>
-              )}
             </div>
             <Badge 
               variant={stockStatus.variant}
