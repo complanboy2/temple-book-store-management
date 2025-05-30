@@ -172,7 +172,12 @@
         "book": "Book",
         "by": "By",
         "publisher": "Publisher",
-        "searchBooksPlaceholder": "Search by name, author, publisher..."
+        "searchBooksPlaceholder": "Search by name, author, publisher...",
+        "booksRunningLow": "Books Running Low",
+        "manageBooksEfficiently": "Manage Books Efficiently",
+        "dashboard": "Dashboard",
+        "viewLowStockBooks": "View Low Stock Books",
+        "failedToLoadOrUploadImage": "Failed To Load Or Upload Image"
     },
     "dashboard": {
         "revenue": "Revenue",
