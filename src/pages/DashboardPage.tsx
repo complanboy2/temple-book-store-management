@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import StatsCard from "@/components/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,7 +43,6 @@ type StoreFormValues = z.infer<typeof storeFormSchema>;
 const DashboardPage: React.FC = () => {
   const [books, setBooks] = useState<any[]>([]);
   const [sales, setSales] = useState<any[]>([]);
-  const [totalRevenue, setTotalRevenue] = useState(0);
   const [lowStockCount, setLowStockCount] = useState(0);
   const [topSellingBooks, setTopSellingBooks] = useState<{ id: string, name: string, count: number }[]>([]);
   const [lowStockBooks, setLowStockBooks] = useState<any[]>([]);
@@ -127,13 +127,6 @@ const DashboardPage: React.FC = () => {
   }, [currentStore]);
 
   useEffect(() => {
-    // Calculate total revenue from sales
-    const revenue = sales.reduce((sum, sale) => {
-      const amount = parseFloat(String(sale.totalamount || 0));
-      return sum + (isNaN(amount) ? 0 : amount);
-    }, 0);
-    setTotalRevenue(revenue);
-
     // Calculate low stock books
     const lowStock = books.filter(book => (book.quantity ?? 0) < 5);
     setLowStockCount(lowStock.length);
@@ -164,7 +157,7 @@ const DashboardPage: React.FC = () => {
   }, [books, sales]);
 
   const handleCodeScanned = (code: string) => {
-    const book = books.find(b => b.id === code || b.barcode === code);
+    const book = books.find(b => b.id === code);
     if (book) {
       navigate(`/sell/${book.id}`);
     } else {
@@ -213,9 +206,6 @@ const DashboardPage: React.FC = () => {
   };
 
   const analyticsLinks = {
-    books: () => navigate(`/books`),
-    sales: () => navigate(`/sales?today=1`),
-    revenue: () => navigate(`/sales`),
     lowStock: () => navigate(`/books?lowStock=1`),
   };
 
@@ -355,7 +345,7 @@ const DashboardPage: React.FC = () => {
                     <div className="mt-1 space-y-1">
                       {lowStockBooks.slice(0, 3).map((book) => (
                         <p key={book.id} className="text-sm text-yellow-700">
-                          <span className="font-medium">{book.name}</span>: {t("common.onlyRemaining")} <span className="font-semibold">{book.quantity}</span> {t("common.left")}
+                          <span className="font-medium">{book.name}</span>: In Stock: <span className="font-semibold">{book.quantity}</span>
                         </p>
                       ))}
                       {lowStockBooks.length > 3 && (
@@ -373,45 +363,7 @@ const DashboardPage: React.FC = () => {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div
-                tabIndex={0}
-                role="button"
-                onClick={analyticsLinks.books}
-                className="cursor-pointer"
-              >
-                <StatsCard
-                  title={t("dashboard.totalBooks")}
-                  value={books.length}
-                  icon={<BookOpen className="text-temple-maroon" size={18} />}
-                />
-              </div>
-              <div
-                tabIndex={0}
-                role="button"
-                onClick={analyticsLinks.sales}
-                className="cursor-pointer"
-              >
-                <StatsCard
-                  title={t("dashboard.salesToday")}
-                  value={todaySales.length}
-                  trend="up"
-                  trendValue={`${todaySales.length > 0 ? "+" : ""}${todaySales.length}`}
-                  icon={<TrendingUp className="text-temple-maroon" size={18} />}
-                />
-              </div>
-              <div
-                tabIndex={0}
-                role="button"
-                onClick={analyticsLinks.revenue}
-                className="cursor-pointer"
-              >
-                <StatsCard
-                  title={t("dashboard.revenue")}
-                  value={`₹${totalRevenue}`}
-                  icon={<BarChart2 className="text-temple-maroon" size={18} />}
-                />
-              </div>
+            <div className="grid grid-cols-1 gap-3 mb-4">
               <div
                 tabIndex={0}
                 role="button"
