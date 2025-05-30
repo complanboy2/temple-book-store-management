@@ -229,7 +229,7 @@ const DashboardPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-temple-background pb-20">
       <MobileHeader 
-        title="Book Stall Manager"
+        title={t("common.bookStoreManager")}
         showBackButton={false}
         showSearchButton={true}
         showStallSelector={false}
@@ -264,7 +264,7 @@ const DashboardPage: React.FC = () => {
             </Select>
           ) : (
             <div className="text-sm text-muted-foreground py-2">
-              {isLoading ? "Loading stores..." : "No stores available"}
+              {isLoading ? t("common.loading") : t("common.noStoresAvailable")}
             </div>
           )}
         </div>
@@ -345,7 +345,7 @@ const DashboardPage: React.FC = () => {
                     <div className="mt-1 space-y-1">
                       {lowStockBooks.slice(0, 3).map((book) => (
                         <p key={book.id} className="text-sm text-yellow-700">
-                          <span className="font-medium">{book.name}</span>: In Stock: <span className="font-semibold">{book.quantity}</span>
+                          <span className="font-medium">{book.name}</span>: {t("common.inStock")}: <span className="font-semibold">{book.quantity}</span>
                         </p>
                       ))}
                       {lowStockBooks.length > 3 && (
@@ -362,23 +362,6 @@ const DashboardPage: React.FC = () => {
                 </div>
               </div>
             )}
-
-            <div className="grid grid-cols-1 gap-3 mb-4">
-              <div
-                tabIndex={0}
-                role="button"
-                onClick={analyticsLinks.lowStock}
-                className="cursor-pointer"
-              >
-                <StatsCard
-                  title={t("dashboard.lowStock")}
-                  value={lowStockCount}
-                  trend={lowStockCount > 0 ? "down" : "neutral"}
-                  trendValue={lowStockCount > 0 ? "Need restock" : "All good"}
-                  icon={<BookOpen className="text-temple-maroon" size={18} />}
-                />
-              </div>
-            </div>
 
             {topSellingBooks.length > 0 && (
               <Card className="mobile-card mb-4">
@@ -409,7 +392,7 @@ const DashboardPage: React.FC = () => {
 
             <Card className="mobile-card mb-4">
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg text-temple-maroon">Quick Actions</CardTitle>
+                <CardTitle className="text-lg text-temple-maroon">{t("common.quickActions")}</CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="grid grid-cols-2 gap-3">
@@ -418,7 +401,7 @@ const DashboardPage: React.FC = () => {
                     onClick={() => navigate("/books")}
                   >
                     <BookOpen size={24} className="mb-1" />
-                    <span>View Books</span>
+                    <span>{t("common.viewBooks")}</span>
                   </Button>
 
                   <Button
@@ -426,7 +409,7 @@ const DashboardPage: React.FC = () => {
                     onClick={() => navigate("/sales")}
                   >
                     <BarChart2 size={24} className="mb-1" />
-                    <span>Sales History</span>
+                    <span>{t("common.salesHistory")}</span>
                   </Button>
 
                   {isAdmin && (
@@ -435,7 +418,7 @@ const DashboardPage: React.FC = () => {
                       onClick={() => navigate("/add-book")}
                     >
                       <PlusCircle size={24} className="mb-1" />
-                      <span>Add Book</span>
+                      <span>{t("common.addBook")}</span>
                     </Button>
                   )}
 
@@ -445,7 +428,7 @@ const DashboardPage: React.FC = () => {
                     onClick={() => navigate("/search")}
                   >
                     <Search size={24} className="mb-1" />
-                    <span>Search</span>
+                    <span>{t("common.search")}</span>
                   </Button>
                 </div>
               </CardContent>
@@ -463,7 +446,7 @@ const DashboardPage: React.FC = () => {
                       return (
                         <div key={sale.id} className="flex justify-between items-center border-b border-border pb-2">
                           <div>
-                            <p className="font-medium">{book?.name || "Unknown Book"}</p>
+                            <p className="font-medium">{book?.name || t("common.unknownBook")}</p>
                             <p className="text-sm text-muted-foreground">
                               {t("common.quantity")}: {sale.quantity} • {new Date(sale.createdat).toLocaleDateString()}
                             </p>
@@ -483,8 +466,8 @@ const DashboardPage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
-                    <p>No sales recorded yet</p>
-                    <p className="text-sm mt-1">Scan a book barcode to make a sale</p>
+                    <p>{t("common.noSalesRecorded")}</p>
+                    <p className="text-sm mt-1">{t("common.scanBookToMakeSale")}</p>
                   </div>
                 )}
               </CardContent>
@@ -493,16 +476,16 @@ const DashboardPage: React.FC = () => {
         ) : (
           <div className="text-center py-12">
             {isLoading ? (
-              <p>Loading stores...</p>
+              <p>{t("common.loadingStores")}</p>
             ) : (
               <div className="space-y-4">
-                <p className="text-temple-maroon font-medium">No stores available</p>
+                <p className="text-temple-maroon font-medium">{t("common.noStoresAvailable")}</p>
                 {isAdmin && (
                   <Button 
                     className="bg-temple-saffron hover:bg-temple-saffron/90"
                     onClick={() => setIsAddStoreDialogOpen(true)}
                   >
-                    Add Your First Store
+                    {t("common.addYourFirstStore")}
                   </Button>
                 )}
               </div>

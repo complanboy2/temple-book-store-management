@@ -1,3 +1,4 @@
+
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
@@ -20,7 +21,7 @@ const newEnTranslations = {
     backToBooks: "Back to Books",
     bookDeleted: "Book deleted successfully",
     bookNotFound: "Book not found",
-    bookStoreManager: "Book Stall Management",
+    bookStoreManager: "Book Stall Manager",
     booksInventory: "Books Inventory",
     clearFilters: "Clear Filters",
     createNewOrder: "Create New Order",
@@ -111,7 +112,6 @@ const newEnTranslations = {
     language: "Language",
     printingInstitute: "Printing Institute",
     selectInstitute: "Select Printing Institute",
-    barcode: "Barcode",
     image: "Image",
     save: "Save",
     update: "Update",
@@ -198,6 +198,17 @@ const newEnTranslations = {
     enterCodeHere: "Enter code here",
     submit: "Submit",
     scanBookCode: "Scan Book Code",
+    inStock: "In Stock",
+    noStoresAvailable: "No stores available",
+    loadingStores: "Loading stores...",
+    addYourFirstStore: "Add Your First Store",
+    noSalesRecorded: "No sales recorded yet",
+    scanBookToMakeSale: "Scan a book barcode to make a sale",
+    viewBooks: "View Books",
+    salesHistory: "Sales History",
+    quickActions: "Quick Actions",
+    failedToAddStore: "Failed to add store",
+    storeAdded: "Store added successfully"
   },
   
   dashboard: {
