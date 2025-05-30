@@ -25,7 +25,6 @@ interface ExportFields {
   category: boolean;
   price: boolean;
   quantity: boolean;
-  barcode: boolean;
   printingInstitute: boolean;
   image: boolean;
 }
@@ -41,7 +40,6 @@ const ExportBookListButton: React.FC<ExportBookListButtonProps> = ({
     category: true,
     price: true,
     quantity: true,
-    barcode: false,
     printingInstitute: false,
     image: true,
   });
@@ -144,7 +142,6 @@ const ExportBookListButton: React.FC<ExportBookListButtonProps> = ({
             ${fields.printingInstitute ? `<div class="book-meta"><strong>Publisher:</strong> ${book.printingInstitute || 'N/A'}</div>` : ''}
             ${fields.price ? `<div class="book-meta"><strong>Price:</strong> ₹${book.salePrice.toFixed(2)}</div>` : ''}
             ${fields.quantity ? `<div class="book-meta"><strong>In Stock:</strong> ${book.quantity}</div>` : ''}
-            ${fields.barcode ? `<div class="book-meta"><strong>Barcode:</strong> ${book.barcode || 'N/A'}</div>` : ''}
           </div>
         </div>
         ${(index + 1) % 12 === 0 ? '<div class="page-break"></div>' : ''}
@@ -280,15 +277,6 @@ const ExportBookListButton: React.FC<ExportBookListButtonProps> = ({
                 onCheckedChange={(checked) => handleFieldChange('quantity', !!checked)} 
               />
               <Label htmlFor="quantity">Quantity</Label>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="barcode" 
-                checked={fields.barcode} 
-                onCheckedChange={(checked) => handleFieldChange('barcode', !!checked)} 
-              />
-              <Label htmlFor="barcode">Barcode</Label>
             </div>
             
             <div className="flex items-center space-x-2">

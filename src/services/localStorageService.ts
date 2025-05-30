@@ -62,7 +62,6 @@ interface BookDetailsCache {
     category?: string;
     printingInstitute?: string;
     imageUrl?: string;
-    barcode?: string;
   }
 }
 
@@ -76,8 +75,7 @@ export const cacheBookDetails = (book: Book): void => {
       author: book.author,
       category: book.category,
       printingInstitute: book.printingInstitute,
-      imageUrl: book.imageUrl,
-      barcode: book.barcode
+      imageUrl: book.imageUrl
     };
     
     const cache: BookDetailsCache = {

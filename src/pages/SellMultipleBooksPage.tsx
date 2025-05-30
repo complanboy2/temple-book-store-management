@@ -57,14 +57,13 @@ const SellMultipleBooksPage = () => {
 
         const booksData: Book[] = data.map((row: any) => ({
           id: row.id,
-          barcode: row.barcode ?? "",
           name: row.name,
           author: row.author,
           category: row.category ?? "",
           printingInstitute: row.printinginstitute ?? "",
-          originalPrice: row.originalprice,
-          salePrice: row.saleprice,
-          quantity: row.quantity,
+          originalPrice: row.originalprice || 0,
+          salePrice: row.saleprice || 0,
+          quantity: row.quantity || 0,
           stallId: row.stallid,
           imageUrl: row.imageurl,
           createdAt: new Date(row.createdat),
@@ -95,8 +94,7 @@ const SellMultipleBooksPage = () => {
     } else {
       const filtered = books.filter(book =>
         book.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (book.barcode && book.barcode.toLowerCase().includes(searchTerm.toLowerCase()))
+        book.author.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredBooks(filtered);
     }
@@ -220,14 +218,13 @@ const SellMultipleBooksPage = () => {
       if (!error && data) {
         const booksData: Book[] = data.map((row: any) => ({
           id: row.id,
-          barcode: row.barcode ?? "",
           name: row.name,
           author: row.author,
           category: row.category ?? "",
           printingInstitute: row.printinginstitute ?? "",
-          originalPrice: row.originalprice,
-          salePrice: row.saleprice,
-          quantity: row.quantity,
+          originalPrice: row.originalprice || 0,
+          salePrice: row.saleprice || 0,
+          quantity: row.quantity || 0,
           stallId: row.stallid,
           imageUrl: row.imageurl,
           createdAt: new Date(row.createdat),

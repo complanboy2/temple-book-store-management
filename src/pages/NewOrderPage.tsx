@@ -72,7 +72,6 @@ const NewOrderPage: React.FC = () => {
           console.log(`NewOrderPage: Fetched ${data.length} books`);
           const formattedBooks = data.map((item): Book => ({
             id: item.id,
-            barcode: item.barcode || "",
             name: item.name,
             author: item.author,
             category: item.category || "",

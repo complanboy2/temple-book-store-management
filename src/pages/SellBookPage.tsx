@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -83,14 +84,13 @@ const SellBookPage: React.FC = () => {
 
         const formattedBook: Book = {
           id: supabaseBook.id,
-          barcode: supabaseBook.barcode || undefined,
           name: supabaseBook.name,
           author: supabaseBook.author,
           category: supabaseBook.category || "",
           printingInstitute: supabaseBook.printinginstitute || "",
-          originalPrice: supabaseBook.originalprice,
-          salePrice: supabaseBook.saleprice,
-          quantity: supabaseBook.quantity,
+          originalPrice: supabaseBook.originalprice || 0,
+          salePrice: supabaseBook.saleprice || 0,
+          quantity: supabaseBook.quantity || 0,
           stallId: supabaseBook.stallid,
           imageUrl: supabaseBook.imageurl,
           createdAt: supabaseBook.createdat ? new Date(supabaseBook.createdat) : new Date(),
