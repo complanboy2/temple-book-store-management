@@ -30,7 +30,7 @@ import { TrendingUp, ShoppingBag, UserIcon, Banknote, BarChart3, Table } from "l
 
 const ReportsPage = () => {
   const [sales, setSales] = useState([]);
-  const [viewMode, setViewMode<'charts' | 'table'>('charts');
+  const [viewMode, setViewMode] = useState<'charts' | 'table'>('charts');
   const today = new Date();
   const [dateRange, setDateRange] = useState({ 
     from: today, 
@@ -328,6 +328,42 @@ const ReportsPage = () => {
     );
   };
 
+  const salesByAuthor = () => {
+    const authorSales = {};
+
+    filteredSales.forEach(sale => {
+      const book = bookDetailsMap[sale.bookid];
+      const author = book?.author || 'Unknown';
+      if (!authorSales[author]) {
+        authorSales[author] = 0;
+      }
+      authorSales[author] += sale.totalamount;
+    });
+
+    return Object.keys(authorSales).map(author => ({
+      name: author,
+      revenue: authorSales[author],
+    }));
+  };
+
+  const salesByInstitute = () => {
+    const instituteSales = {};
+
+    filteredSales.forEach(sale => {
+      const book = bookDetailsMap[sale.bookid];
+      const institute = book?.institute || 'Unknown';
+      if (!instituteSales[institute]) {
+        instituteSales[institute] = 0;
+      }
+      instituteSales[institute] += sale.totalamount;
+    });
+
+    return Object.keys(instituteSales).map(institute => ({
+      name: institute,
+      revenue: instituteSales[institute],
+    }));
+  };
+
   const salesTrendData = () => {
     const dailySales = {};
 
@@ -457,58 +493,5 @@ const ReportsPage = () => {
     </div>
   );
 };
-
-const salesByAuthor = () => {
-    const authorSales = {};
-
-    filteredSales.forEach(sale => {
-      const book = bookDetailsMap[sale.bookid];
-      const author = book?.author || 'Unknown';
-      if (!authorSales[author]) {
-        authorSales[author] = 0;
-      }
-      authorSales[author] += sale.totalamount;
-    });
-
-    return Object.keys(authorSales).map(author => ({
-      name: author,
-      revenue: authorSales[author],
-    }));
-  };
-
-  const salesByInstitute = () => {
-    const instituteSales = {};
-
-    filteredSales.forEach(sale => {
-      const book = bookDetailsMap[sale.bookid];
-      const institute = book?.institute || 'Unknown';
-      if (!instituteSales[institute]) {
-        instituteSales[institute] = 0;
-      }
-      instituteSales[institute] += sale.totalamount;
-    });
-
-    return Object.keys(instituteSales).map(institute => ({
-      name: institute,
-      revenue: instituteSales[institute],
-    }));
-  };
-
-  const salesTrendData = () => {
-    const dailySales = {};
-
-    filteredSales.forEach(sale => {
-      const date = new Date(sale.createdat).toLocaleDateString();
-      if (!dailySales[date]) {
-        dailySales[date] = 0;
-      }
-      dailySales[date] += sale.totalamount;
-    });
-
-    return Object.keys(dailySales).map(date => ({
-      date: date,
-      revenue: dailySales[date],
-    }));
-  };
 
 export default ReportsPage;
