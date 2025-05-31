@@ -1,3 +1,4 @@
+
 {
     "common": {
         "backToBooks": "Back to Books",
@@ -27,7 +28,7 @@
         "selectBook": "Select Book",
         "templeBookStall": "Temple Book Stall",
         "unknownError": "Unknown error occurred",
-        "welcomeToBookStore": "Welcome to Temple Book Store",
+        "welcomeToBookStore": "Welcome to Book Store Manager",
         "pleaseSelectStore": "Please select a store to continue",
         "manageMetadata": "Manage Metadata",
         "storeManagement": "Store Management",
@@ -177,7 +178,31 @@
         "manageBooksEfficiently": "Manage Books Efficiently",
         "dashboard": "Dashboard",
         "viewLowStockBooks": "View Low Stock Books",
-        "failedToLoadOrUploadImage": "Failed To Load Or Upload Image"
+        "failedToLoadOrUploadImage": "Failed To Load Or Upload Image",
+        "inStock": "In Stock",
+        "noStoresAvailable": "No stores available",
+        "loadingStores": "Loading stores...",
+        "addYourFirstStore": "Add Your First Store",
+        "noSalesRecorded": "No sales recorded yet",
+        "scanBookToMakeSale": "Scan a book barcode to make a sale",
+        "viewBooks": "View Books",
+        "salesHistory": "Sales History",
+        "quickActions": "Quick Actions",
+        "failedToAddStore": "Failed to add store",
+        "storeAdded": "Store added successfully",
+        "unknownBook": "Unknown Book",
+        "new": "New",
+        "percentage": "Percentage",
+        "charts": "Charts",
+        "table": "Table",
+        "salesData": "Sales Data",
+        "export": "Export",
+        "totalItems": "Total Items",
+        "totalRevenue": "Total Revenue",
+        "uniqueBooks": "Unique Books",
+        "uniqueSellers": "Unique Sellers",
+        "addAllToOrder": "Add All to Order",
+        "addLowStock": "Add Low Stock"
     },
     "dashboard": {
         "revenue": "Revenue",

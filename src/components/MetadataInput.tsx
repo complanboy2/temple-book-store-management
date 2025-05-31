@@ -14,6 +14,9 @@ interface MetadataInputProps {
   placeholder: string;
   onValueChange: (value: string) => void;
   onAddNew?: (newValue: string) => void;
+  showPercentage?: boolean;
+  percentageValue?: number;
+  onPercentageChange?: (percentage: number) => void;
 }
 
 const MetadataInput: React.FC<MetadataInputProps> = ({
@@ -22,7 +25,10 @@ const MetadataInput: React.FC<MetadataInputProps> = ({
   options,
   placeholder,
   onValueChange,
-  onAddNew
+  onAddNew,
+  showPercentage = false,
+  percentageValue = 0,
+  onPercentageChange
 }) => {
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [newValue, setNewValue] = useState("");
@@ -40,6 +46,13 @@ const MetadataInput: React.FC<MetadataInputProps> = ({
   const handleUndo = () => {
     setIsAddingNew(false);
     setNewValue("");
+  };
+
+  const handlePercentageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const percentage = parseFloat(e.target.value) || 0;
+    if (percentage >= 0 && percentage <= 100 && onPercentageChange) {
+      onPercentageChange(percentage);
+    }
   };
 
   if (isAddingNew) {
@@ -112,6 +125,23 @@ const MetadataInput: React.FC<MetadataInputProps> = ({
             </Button>
           )}
         </div>
+        {showPercentage && value && (
+          <div className="mt-2">
+            <Label className="text-sm text-gray-600">
+              {t("common.percentage")} (%)
+            </Label>
+            <Input
+              type="number"
+              min="0"
+              max="100"
+              step="0.1"
+              value={percentageValue}
+              onChange={handlePercentageChange}
+              placeholder="0"
+              className="mt-1"
+            />
+          </div>
+        )}
       </div>
     );
   }
