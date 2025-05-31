@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState("");
+  const [emailOrPhone, setEmailOrPhone] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
@@ -20,13 +20,13 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await login(email, password);
+      await login(emailOrPhone, password);
       navigate("/");
     } catch (error) {
       console.error("Login failed:", error);
       toast({
         title: "Login Failed",
-        description: "Invalid email or password. Please try again.",
+        description: "Invalid email/phone or password. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -51,17 +51,17 @@ const LoginPage: React.FC = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <label htmlFor="email" className="text-lg font-medium">
-                  Email
+                <label htmlFor="emailOrPhone" className="text-lg font-medium">
+                  Email or Phone
                 </label>
                 <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="emailOrPhone"
+                  type="text"
+                  value={emailOrPhone}
+                  onChange={(e) => setEmailOrPhone(e.target.value)}
                   required
                   className="temple-input w-full"
-                  placeholder="Enter your email"
+                  placeholder="Enter your email or phone number"
                 />
               </div>
 
@@ -100,8 +100,12 @@ const LoginPage: React.FC = () => {
         <div className="text-center mt-6">
           <div className="text-sm text-muted-foreground space-y-1">
             <p>For demo purposes, use one of these accounts:</p>
-            <p><strong>Admin:</strong> admin@temple.com</p>
+            <p><strong>Admin Email:</strong> admin@temple.com</p>
+            <p><strong>Admin Phone:</strong> 8885378147</p>
             <p><strong>Super Admin:</strong> complanboy2@gmail.com</p>
+            <p><strong>Seller 1:</strong> seller1@nampally.com or 9989143572</p>
+            <p><strong>Seller 2:</strong> seller2@nampally.com or 8919032243</p>
+            <p><strong>Seller 3:</strong> seller3@nampally.com or 9100916479</p>
           </div>
         </div>
       </div>

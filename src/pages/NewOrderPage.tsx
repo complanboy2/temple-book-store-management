@@ -53,7 +53,7 @@ const NewOrderPage = () => {
         .from("books")
         .select("*")
         .eq("stallid", currentStore)
-        .gt("quantity", 0);
+        .order("name");
 
       if (error) throw error;
       setBooks(data || []);
@@ -76,7 +76,7 @@ const NewOrderPage = () => {
         .select("*")
         .eq("stallid", currentStore)
         .lt("quantity", 5)
-        .gt("quantity", 0);
+        .order("name");
 
       if (error) throw error;
       setLowStockBooks(data || []);
@@ -86,6 +86,15 @@ const NewOrderPage = () => {
   };
 
   const addLowStockBooks = () => {
+    if (lowStockBooks.length === 0) {
+      toast({
+        title: "No Low Stock Books",
+        description: "There are no books with low stock to add",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const newItems: OrderItem[] = lowStockBooks
       .filter(book => !orderItems.some(item => item.bookId === book.id))
       .map(book => ({
@@ -94,8 +103,17 @@ const NewOrderPage = () => {
         author: book.author,
         price: book.saleprice,
         availableStock: book.quantity,
-        quantity: Math.max(5 - book.quantity, 1), // Order enough to reach 5 stock
+        quantity: Math.max(10 - book.quantity, 1), // Order enough to reach 10 stock
       }));
+
+    if (newItems.length === 0) {
+      toast({
+        title: "Already Added",
+        description: "All low stock books are already in the order",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setOrderItems(prev => [...prev, ...newItems]);
     
@@ -238,10 +256,10 @@ const NewOrderPage = () => {
             <Button
               onClick={addLowStockBooks}
               className="w-full bg-temple-saffron hover:bg-temple-saffron/90"
-              disabled={lowStockBooks.length === 0}
+              disabled={isSubmitting}
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add Low Stock Books ({lowStockBooks.length} available)
+              Add All Low Stock Books ({lowStockBooks.length} available)
             </Button>
             
             <div>
@@ -259,7 +277,7 @@ const NewOrderPage = () => {
                 <option value="">Choose a book to add...</option>
                 {books.map(book => (
                   <option key={book.id} value={book.id}>
-                    {book.name} by {book.author} (Stock: {book.quantity})
+                    {book.name} by {book.author} (Stock: {book.quantity}, Price: ₹{book.saleprice})
                   </option>
                 ))}
               </select>
@@ -287,7 +305,6 @@ const NewOrderPage = () => {
                       <Input
                         type="number"
                         min="1"
-                        max={item.availableStock}
                         value={item.quantity}
                         onChange={(e) => updateItemQuantity(item.bookId, parseInt(e.target.value) || 0)}
                         className="w-20"
@@ -314,7 +331,7 @@ const NewOrderPage = () => {
           </Card>
         )}
 
-        {/* Customer Details */}
+        {/* Customer Details - Removed Customer Name field */}
         <Card>
           <CardHeader>
             <CardTitle>Customer Details</CardTitle>
