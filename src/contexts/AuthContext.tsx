@@ -70,7 +70,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Then fall back to local storage users
       const users = getUsers();
-      let user = users.find(u => u.email === email);
+      
+      // Support both email and phone number login
+      let user = users.find(u => u.email === email || u.phone === email);
+      
+      // Check in Supabase users table as well
+      if (!user) {
+        const { data: supaUsers, error } = await supabase
+          .from('users')
+          .select('*')
+          .or(`email.eq.${email},phone.eq.${email}`)
+          .single();
+
+        if (supaUsers && !error) {
+          user = {
+            id: supaUsers.id,
+            name: supaUsers.name,
+            email: supaUsers.email,
+            phone: supaUsers.phone || '',
+            role: supaUsers.role as UserRole,
+            canRestock: supaUsers.canrestock || false,
+            canSell: supaUsers.cansell || false,
+            instituteId: supaUsers.instituteid || 'inst-1',
+          };
+          
+          // Add to local storage for future access
+          const updatedUsers = [...users, user];
+          setUsers(updatedUsers);
+        }
+      }
       
       if (user) {
         setUser(user);
@@ -80,7 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // For demo purposes, if user is admin@temple.com, create it with a specific ID
         if (email === 'admin@temple.com') {
           const newUser: User = {
-            id: 'admin-user-id', // Fixed ID for consistency with database
+            id: 'admin-user-id',
             name: 'Temple Admin',
             email: 'admin@temple.com',
             role: 'admin',
@@ -158,10 +186,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error("User already exists");
     }
     
-    // Generate invite code
     const inviteCode = generateId();
     
-    // Store invite data
     const inviteData = {
       name,
       email,
@@ -176,8 +202,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setInvites(updatedInvites);
     localStorage.setItem('temple_invites', JSON.stringify(updatedInvites));
     
-    // In a real app, this would send a WhatsApp message with a link
-    // For now, we'll just return the invite code
     return inviteCode;
   };
   
@@ -193,7 +217,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error("Invalid invite data");
     }
     
-    // Create the user
     const newUser: User = {
       id: generateId(),
       name: inviteData.name,
@@ -209,12 +232,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updatedUsers = [...users, newUser];
     setUsers(updatedUsers);
     
-    // Remove the invite
     const { [inviteCode]: _, ...remainingInvites } = invites;
     setInvites(remainingInvites);
     localStorage.setItem('temple_invites', JSON.stringify(remainingInvites));
     
-    // Log in the user
     setUser(newUser);
     setCurrentUser(newUser);
     
