@@ -12,7 +12,7 @@ import { useStallContext } from "@/contexts/StallContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 import MobileHeader from "@/components/MobileHeader";
-import { Users, UserPlus, Settings } from "lucide-react";
+import { Users, UserPlus } from "lucide-react";
 
 interface User {
   id: string;
@@ -33,7 +33,7 @@ const AdminPage = () => {
     name: "",
     email: "",
     phone: "",
-    role: "personnel",
+    role: "personnel" as "super_admin" | "admin" | "personnel",
     canRestock: false,
     canSell: true
   });
@@ -66,7 +66,7 @@ const AdminPage = () => {
       console.error("Error fetching users:", error);
       toast({
         title: t("common.error"),
-        description: "Failed to load users",
+        description: t("admin.failedToLoadUsers"),
         variant: "destructive",
       });
     } finally {
@@ -96,7 +96,7 @@ const AdminPage = () => {
 
       toast({
         title: t("common.success"),
-        description: "User added successfully",
+        description: t("admin.userAddedSuccessfully"),
       });
 
       setNewUser({
@@ -113,7 +113,7 @@ const AdminPage = () => {
       console.error("Error adding user:", error);
       toast({
         title: t("common.error"),
-        description: "Failed to add user",
+        description: t("admin.failedToAddUser"),
         variant: "destructive",
       });
     } finally {
@@ -132,7 +132,7 @@ const AdminPage = () => {
 
       toast({
         title: t("common.success"),
-        description: "User permissions updated",
+        description: t("admin.userPermissionsUpdated"),
       });
 
       fetchUsers();
@@ -140,7 +140,7 @@ const AdminPage = () => {
       console.error("Error updating user permissions:", error);
       toast({
         title: t("common.error"),
-        description: "Failed to update permissions",
+        description: t("admin.failedToUpdatePermissions"),
         variant: "destructive",
       });
     }
@@ -151,8 +151,8 @@ const AdminPage = () => {
       <div className="min-h-screen bg-temple-background flex items-center justify-center">
         <Card className="max-w-md mx-auto">
           <CardContent className="p-6 text-center">
-            <p className="text-lg text-red-600">Access Denied</p>
-            <p className="text-sm text-gray-600 mt-2">You don't have permission to access this page.</p>
+            <p className="text-lg text-red-600">{t("admin.accessDenied")}</p>
+            <p className="text-sm text-gray-600 mt-2">{t("admin.noPermission")}</p>
           </CardContent>
         </Card>
       </div>
@@ -173,13 +173,13 @@ const AdminPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <UserPlus className="h-5 w-5" />
-              Add New User
+              {t("admin.addNewUser")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleAddUser} className="space-y-4">
               <div>
-                <Label htmlFor="name">Name *</Label>
+                <Label htmlFor="name">{t("common.name")} *</Label>
                 <Input
                   id="name"
                   value={newUser.name}
@@ -189,7 +189,7 @@ const AdminPage = () => {
               </div>
 
               <div>
-                <Label htmlFor="email">Email *</Label>
+                <Label htmlFor="email">{t("common.email")} *</Label>
                 <Input
                   id="email"
                   type="email"
@@ -200,7 +200,7 @@ const AdminPage = () => {
               </div>
 
               <div>
-                <Label htmlFor="phone">Phone</Label>
+                <Label htmlFor="phone">{t("common.phone")}</Label>
                 <Input
                   id="phone"
                   value={newUser.phone}
@@ -209,14 +209,14 @@ const AdminPage = () => {
               </div>
 
               <div>
-                <Label htmlFor="role">Role</Label>
-                <Select value={newUser.role} onValueChange={(value) => setNewUser({ ...newUser, role: value })}>
+                <Label htmlFor="role">{t("common.role")}</Label>
+                <Select value={newUser.role} onValueChange={(value: "super_admin" | "admin" | "personnel") => setNewUser({ ...newUser, role: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="personnel">Personnel</SelectItem>
+                    <SelectItem value="admin">{t("common.admin")}</SelectItem>
+                    <SelectItem value="personnel">{t("common.personnel")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -227,7 +227,7 @@ const AdminPage = () => {
                   checked={newUser.canSell}
                   onCheckedChange={(checked) => setNewUser({ ...newUser, canSell: checked })}
                 />
-                <Label htmlFor="canSell">Can Sell</Label>
+                <Label htmlFor="canSell">{t("admin.canSell")}</Label>
               </div>
 
               <div className="flex items-center space-x-2">
@@ -236,11 +236,11 @@ const AdminPage = () => {
                   checked={newUser.canRestock}
                   onCheckedChange={(checked) => setNewUser({ ...newUser, canRestock: checked })}
                 />
-                <Label htmlFor="canRestock">Can Restock</Label>
+                <Label htmlFor="canRestock">{t("admin.canRestock")}</Label>
               </div>
 
               <Button type="submit" className="w-full" disabled={isAddingUser}>
-                {isAddingUser ? "Adding..." : "Add User"}
+                {isAddingUser ? t("admin.adding") : t("admin.addUser")}
               </Button>
             </form>
           </CardContent>
@@ -251,7 +251,7 @@ const AdminPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Users ({users.length})
+              {t("admin.users")} ({users.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -259,7 +259,7 @@ const AdminPage = () => {
               <div className="text-center py-8">{t("common.loading")}</div>
             ) : users.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                No users found
+                {t("admin.noUsersFound")}
               </div>
             ) : (
               <div className="space-y-4">
@@ -282,7 +282,7 @@ const AdminPage = () => {
                           checked={user.cansell}
                           onCheckedChange={() => toggleUserPermission(user.id, 'cansell', user.cansell)}
                         />
-                        <Label className="text-sm">Can Sell</Label>
+                        <Label className="text-sm">{t("admin.canSell")}</Label>
                       </div>
                       
                       <div className="flex items-center space-x-2">
@@ -290,7 +290,7 @@ const AdminPage = () => {
                           checked={user.canrestock}
                           onCheckedChange={() => toggleUserPermission(user.id, 'canrestock', user.canrestock)}
                         />
-                        <Label className="text-sm">Can Restock</Label>
+                        <Label className="text-sm">{t("admin.canRestock")}</Label>
                       </div>
                     </div>
                   </div>

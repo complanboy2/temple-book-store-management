@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useStallContext } from "@/contexts/StallContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
@@ -118,6 +117,22 @@ const ReportsPage = () => {
   const uniqueBooks = new Set(sales.map(sale => sale.bookid)).size;
   const uniqueSellers = new Set(sales.map(sale => sale.personnelid)).size;
 
+  // Convert sales data to match the Sale interface expected by ExportSalesButton
+  const convertedSales = sales.map(sale => ({
+    id: sale.id,
+    bookId: sale.bookid,
+    quantity: sale.quantity,
+    totalAmount: sale.totalamount,
+    paymentMethod: sale.paymentmethod,
+    buyerName: sale.buyername,
+    buyerPhone: sale.buyerphone,
+    personnelId: sale.personnelid,
+    personnelName: personnelDetails[sale.personnelid]?.name,
+    stallId: currentStore || '',
+    createdAt: new Date(sale.createdat),
+    synced: false
+  }));
+
   return (
     <div className="min-h-screen bg-temple-background pb-20">
       <MobileHeader 
@@ -160,17 +175,41 @@ const ReportsPage = () => {
         </Card>
 
         {/* Export Button */}
-        <div className="mb-6 flex justify-end">
+        <div className="mb-6 flex justify-center">
           <ExportSalesButton 
-            sales={sales}
+            sales={convertedSales}
             bookDetails={bookDetails}
             personnelDetails={personnelDetails}
-            className="bg-temple-maroon hover:bg-temple-maroon/90 text-white px-6 py-2 rounded-md flex items-center gap-2"
+            className="bg-temple-maroon hover:bg-temple-maroon/90 text-white px-6 py-3 rounded-md flex items-center gap-2 w-full max-w-xs"
           >
             <Download className="h-4 w-4" />
             {t("common.export")}
           </ExportSalesButton>
         </div>
+
+        {/* Compact Stats */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div>
+                <div className="text-2xl font-bold text-temple-maroon">{totalItems}</div>
+                <div className="text-xs text-gray-600">{t("reports.totalItems")}</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-green-600">₹{totalRevenue.toFixed(2)}</div>
+                <div className="text-xs text-gray-600">{t("reports.totalRevenue")}</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-blue-600">{uniqueBooks}</div>
+                <div className="text-xs text-gray-600">{t("reports.uniqueBooks")}</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-purple-600">{uniqueSellers}</div>
+                <div className="text-xs text-gray-600">{t("reports.uniqueSellers")}</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Sales Table */}
         <Card>
@@ -179,12 +218,6 @@ const ReportsPage = () => {
               <Table className="h-5 w-5" />
               {t("reports.salesData")}
             </CardTitle>
-            <div className="text-sm text-gray-600 grid grid-cols-2 md:grid-cols-4 gap-2">
-              <span>{t("reports.totalItems")}: <strong>{totalItems}</strong></span>
-              <span>{t("reports.totalRevenue")}: <strong>₹{totalRevenue.toFixed(2)}</strong></span>
-              <span>{t("reports.uniqueBooks")}: <strong>{uniqueBooks}</strong></span>
-              <span>{t("reports.uniqueSellers")}: <strong>{uniqueSellers}</strong></span>
-            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
