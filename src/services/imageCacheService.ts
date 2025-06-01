@@ -56,18 +56,17 @@ class ImageCacheService {
    * @returns A promise that resolves to the public URL of the uploaded image.
    */
   async uploadAndCacheImage(file: File): Promise<string> {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error("Supabase URL or key is not defined in environment variables");
-    }
+    // Use the hardcoded Supabase credentials from the client
+    const supabaseUrl = 'https://pijhrmuamnwdgucfnycl.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpamhybXVhbW53ZGd1Y2ZueWNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNDk1NTAsImV4cCI6MjA2MDgyNTU1MH0.qf5P5eWDSLRmFKxIwtqBygxNAvIFtqGxJN3J4nX7ocE';
   
     const { createClient } = require('@supabase/supabase-js');
     const supabase = createClient(supabaseUrl, supabaseKey);
   
     const timestamp = Date.now();
     const filename = `${timestamp}-${file.name}`;
+    
+    console.log(`Uploading image: ${filename}`);
     
     const { data, error } = await supabase.storage
       .from('book-images')
@@ -82,6 +81,7 @@ class ImageCacheService {
     }
     
     const publicURL = `${supabaseUrl}/storage/v1/object/public/book-images/${filename}`;
+    console.log(`Image uploaded successfully: ${publicURL}`);
     
     // Cache the image
     await this.cacheImage(publicURL, file);
@@ -125,11 +125,22 @@ class ImageCacheService {
   async getCachedImageUrl(url: string): Promise<string | null> {
     try {
       const hash = await this.generateHash(url);
+      const cachedUrls = this.getCachedUrls();
+      
+      // Check if we have the URL mapping first
+      if (!cachedUrls[hash]) {
+        console.log(`No cached URL mapping found for: ${url}`);
+        return null;
+      }
+      
       const db = await this.openDB();
       const cachedData = await db.getItem(hash) as ArrayBuffer | null;
       
       if (!cachedData) {
-        console.log(`No cached image found for URL: ${url}`);
+        console.log(`No cached image data found for URL: ${url}`);
+        // Clean up the URL mapping if data is missing
+        delete cachedUrls[hash];
+        localStorage.setItem(this.CACHE_URLS_KEY, JSON.stringify(cachedUrls));
         return null;
       }
       

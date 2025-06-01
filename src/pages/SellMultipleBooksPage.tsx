@@ -15,7 +15,7 @@ import BookImage from "@/components/BookImage";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Book } from "@/types";
-import { Search, Plus, Minus, Trash2 } from "lucide-react";
+import { Search, Plus, Minus, Trash2, LogOut } from "lucide-react";
 
 interface CartItem {
   book: Book;
@@ -34,7 +34,7 @@ const SellMultipleBooksPage = () => {
   const [isSelling, setIsSelling] = useState(false);
 
   const { currentStore } = useStallContext();
-  const { currentUser } = useAuth();
+  const { currentUser, logout } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -100,14 +100,15 @@ const SellMultipleBooksPage = () => {
     }
   }, [searchTerm, books]);
 
-  const addToCart = (book: Book) => {
+  const addToCart = (book: Book, quantityToAdd: number = 1) => {
     const existingItem = cart.find(item => item.book.id === book.id);
     
     if (existingItem) {
-      if (existingItem.quantity < book.quantity) {
+      const newQuantity = existingItem.quantity + quantityToAdd;
+      if (newQuantity <= book.quantity) {
         setCart(cart.map(item =>
           item.book.id === book.id
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: newQuantity }
             : item
         ));
       } else {
@@ -118,7 +119,15 @@ const SellMultipleBooksPage = () => {
         });
       }
     } else {
-      setCart([...cart, { book, quantity: 1 }]);
+      if (quantityToAdd <= book.quantity) {
+        setCart([...cart, { book, quantity: quantityToAdd }]);
+      } else {
+        toast({
+          title: t("common.error"),
+          description: t("sell.quantityExceedsStock"),
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -151,6 +160,11 @@ const SellMultipleBooksPage = () => {
 
   const getTotalAmount = () => {
     return cart.reduce((total, item) => total + (item.book.salePrice * item.quantity), 0);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
   };
 
   const handleSell = async () => {
@@ -251,6 +265,16 @@ const SellMultipleBooksPage = () => {
         title={t("sell.sellMultipleBooks")}
         showBackButton={true}
         backTo="/"
+        rightContent={
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="text-white"
+            onClick={handleLogout}
+          >
+            <LogOut size={20} />
+          </Button>
+        }
       />
 
       <main className="container mx-auto px-4 py-6">
@@ -280,8 +304,7 @@ const SellMultipleBooksPage = () => {
                 {filteredBooks.map((book) => (
                   <div
                     key={book.id}
-                    className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
-                    onClick={() => addToCart(book)}
+                    className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50"
                   >
                     <div className="w-12 h-16 flex-shrink-0">
                       <BookImage
@@ -301,6 +324,14 @@ const SellMultipleBooksPage = () => {
                         </Badge>
                       </div>
                     </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addToCart(book)}
+                      className="h-8 w-8 p-0 flex-shrink-0"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
                   </div>
                 ))}
               </div>

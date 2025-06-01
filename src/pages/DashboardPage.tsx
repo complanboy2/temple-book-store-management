@@ -6,9 +6,10 @@ import { useStallContext } from "@/contexts/StallContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Plus, BookOpen, TrendingUp, Package } from "lucide-react";
+import { Plus, BookOpen, TrendingUp, Package, LogOut } from "lucide-react";
 import MobileHeader from "@/components/MobileHeader";
 import LowStockNotification from "@/components/LowStockNotification";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Book {
   id: string;
@@ -30,6 +31,7 @@ const DashboardPage = () => {
   const [recentSales, setRecentSales] = useState<Sale[]>([]);
   const [bookDetailsMap, setBookDetailsMap] = useState<{[key: string]: {name: string}}>({});
   const { currentStore } = useStallContext();
+  const { logout } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -93,12 +95,27 @@ const DashboardPage = () => {
     navigate("/books?lowStock=true");
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
   return (
     <div className="min-h-screen bg-temple-background">
       <MobileHeader 
         title={t("common.home")}
         showBackButton={false}
         showStallSelector={true}
+        rightContent={
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="text-white"
+            onClick={handleLogout}
+          >
+            <LogOut size={20} />
+          </Button>
+        }
       />
       
       <div className="mobile-container py-4 space-y-4">

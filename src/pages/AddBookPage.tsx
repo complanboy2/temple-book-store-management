@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStallContext } from "@/contexts/StallContext";
@@ -13,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import ImageUpload from "@/components/ImageUpload";
 import MetadataInput from "@/components/MetadataInput";
 import { getImageUrl } from "@/services/imageService";
+import { LogOut } from "lucide-react";
 
 const AddBookPage = () => {
   const [formData, setFormData] = useState({
@@ -32,7 +34,7 @@ const AddBookPage = () => {
   const [institutes, setInstitutes] = useState<string[]>([]);
   
   const { currentStore } = useStallContext();
-  const { currentUser } = useAuth();
+  const { currentUser, logout } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -131,6 +133,11 @@ const AddBookPage = () => {
   const handleImageUploaded = (url: string) => {
     console.log("Image uploaded to:", url);
   };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -197,6 +204,16 @@ const AddBookPage = () => {
         title={t("common.addBook")}
         showBackButton={true}
         backTo="/books"
+        rightContent={
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="text-white"
+            onClick={handleLogout}
+          >
+            <LogOut size={20} />
+          </Button>
+        }
       />
       
       <main className="container mx-auto px-4 py-6">
