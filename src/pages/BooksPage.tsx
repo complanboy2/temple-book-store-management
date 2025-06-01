@@ -30,6 +30,8 @@ const BooksPage = () => {
     selectedCategory,
     setSelectedCategory,
     categories,
+    showLowStockOnly,
+    toggleLowStockFilter,
     deleteBook,
     refreshBooks
   } = useBookManager(currentStore);
@@ -45,7 +47,6 @@ const BooksPage = () => {
       category: book.category || "",
       printingInstitute: book.printingInstitute || "",
       imageurl: book.imageUrl,
-      // We'd need to fetch sales data to get quantitySold, using 0 as placeholder
       quantitySold: 0
     }));
   };
@@ -88,13 +89,11 @@ const BooksPage = () => {
       const success = await deleteBook(selectedBook.id);
       
       if (success) {
-        // Toast is already shown in deleteBook function
         setIsDeleteDialogOpen(false);
         setSelectedBook(null);
       }
     } catch (error) {
       console.error("Error deleting book:", error);
-      // Error toast already shown in deleteBook function
     }
   };
 
@@ -128,6 +127,8 @@ const BooksPage = () => {
           selectedCategory={selectedCategory}
           setSelectedCategory={setSelectedCategory}
           categories={categories}
+          showLowStockOnly={showLowStockOnly}
+          onToggleLowStock={toggleLowStockFilter}
           clearFilters={clearFilters}
           handleEditBook={handleEditBook}
           handleDeleteBook={handleBookDelete}
@@ -141,8 +142,6 @@ const BooksPage = () => {
         onClose={() => setIsDeleteDialogOpen(false)}
         onDelete={handleDeleteConfirm}
       />
-
-      
     </div>
   );
 };

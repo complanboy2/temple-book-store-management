@@ -1,20 +1,18 @@
 
 import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { 
-  Book, 
+  BookOpen, 
   ShoppingCart, 
-  BarChart3, 
-  Settings, 
   Plus, 
+  BarChart3, 
   Search,
-  Package,
-  FileText,
-  Database
+  Users,
+  Settings
 } from "lucide-react";
 
 const MainMenu = () => {
@@ -25,93 +23,89 @@ const MainMenu = () => {
   const menuItems = [
     {
       title: t("common.books"),
-      description: t("common.manageBooks"),
-      icon: Book,
+      description: t("menu.viewManageBooks"),
+      icon: BookOpen,
       path: "/books",
-      color: "bg-blue-500"
-    },
-    {
-      title: t("common.addBook"),
-      description: t("common.addNewBook"),
-      icon: Plus,
-      path: "/books/add",
-      color: "bg-green-500"
+      color: "bg-temple-saffron hover:bg-temple-saffron/90"
     },
     {
       title: t("common.sell"),
-      description: t("common.sellBooks"),
+      description: t("menu.sellBooks"),
+      icon: ShoppingCart,
+      path: "/sell",
+      color: "bg-temple-maroon hover:bg-temple-maroon/90"
+    },
+    {
+      title: t("menu.sellMultiple"),
+      description: t("menu.sellMultipleBooks"),
       icon: ShoppingCart,
       path: "/sell-multiple",
-      color: "bg-orange-500"
+      color: "bg-temple-gold hover:bg-temple-gold/90"
+    },
+    {
+      title: t("common.addBook"),
+      description: t("menu.addNewBook"),
+      icon: Plus,
+      path: "/books/add",
+      color: "bg-green-600 hover:bg-green-700"
     },
     {
       title: t("common.search"),
-      description: t("common.searchBooks"),
+      description: t("menu.searchBooks"),
       icon: Search,
       path: "/search",
-      color: "bg-purple-500"
-    }
-  ];
-
-  const adminItems = [
+      color: "bg-blue-600 hover:bg-blue-700"
+    },
     {
       title: t("common.reports"),
-      description: t("common.viewReports"),
+      description: t("menu.viewReports"),
       icon: BarChart3,
       path: "/reports",
-      color: "bg-indigo-500"
-    },
-    {
-      title: t("common.orders"),
-      description: t("common.manageOrders"),
-      icon: Package,
-      path: "/orders",
-      color: "bg-teal-500"
-    },
-    {
-      title: t("common.sales"),
-      description: t("common.viewSales"),
-      icon: FileText,
-      path: "/sales",
-      color: "bg-red-500"
-    },
-    {
-      title: t("common.metadata"),
-      description: t("common.manageMetadata"),
-      icon: Database,
-      path: "/metadata",
-      color: "bg-pink-500"
-    },
-    {
-      title: t("common.settings"),
-      description: t("common.appSettings"),
-      icon: Settings,
-      path: "/settings",
-      color: "bg-gray-500"
+      color: "bg-purple-600 hover:bg-purple-700"
     }
   ];
 
-  const allItems = isAdmin ? [...menuItems, ...adminItems] : menuItems;
+  // Add admin-only items
+  if (isAdmin) {
+    menuItems.push(
+      {
+        title: t("common.admin"),
+        description: t("menu.adminPanel"),
+        icon: Users,
+        path: "/admin",
+        color: "bg-red-600 hover:bg-red-700"
+      },
+      {
+        title: t("common.settings"),
+        description: t("menu.appSettings"),
+        icon: Settings,
+        path: "/settings",
+        color: "bg-gray-600 hover:bg-gray-700"
+      }
+    );
+  }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {allItems.map((item) => {
+    <div className="grid grid-cols-2 gap-4">
+      {menuItems.map((item) => {
         const IconComponent = item.icon;
         return (
-          <Card
-            key={item.path}
-            className="p-4 hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => navigate(item.path)}
-          >
-            <div className="flex items-start gap-3">
-              <div className={`p-2 rounded-lg ${item.color} text-white flex-shrink-0`}>
-                <IconComponent className="h-5 w-5" />
+          <Card key={item.path} className="temple-card hover:shadow-lg transition-shadow cursor-pointer">
+            <CardContent className="p-4" onClick={() => navigate(item.path)}>
+              <div className="flex flex-col items-center text-center space-y-3">
+                <div className={`p-3 rounded-full ${item.color} text-white`}>
+                  <IconComponent size={24} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-temple-maroon text-sm">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs text-gray-600 mt-1">
+                    {item.description}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-sm mb-1 truncate">{item.title}</h3>
-                <p className="text-xs text-muted-foreground line-clamp-2">{item.description}</p>
-              </div>
-            </div>
+            </CardContent>
           </Card>
         );
       })}

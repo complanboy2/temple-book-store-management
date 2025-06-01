@@ -1,346 +1,320 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useStallContext } from "@/contexts/StallContext";
-import { useAuth } from "@/contexts/AuthContext";
-import { useTranslation } from "react-i18next";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import MobileHeader from "@/components/MobileHeader";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { generateId } from "@/services/storageService";
+import { useStallContext } from "@/contexts/StallContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import ImageUpload from "@/components/ImageUpload";
-import MetadataInput from "@/components/MetadataInput";
-import { getImageUrl } from "@/services/imageService";
-import { LogOut } from "lucide-react";
+import MobileHeader from "@/components/MobileHeader";
+import { useTranslation } from "react-i18next";
 
 const AddBookPage = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    author: "",
-    category: "",
-    printingInstitute: "",
-    originalPrice: 0,
-    salePrice: 0,
-    quantity: 0,
-    barcode: ""
-  });
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [authors, setAuthors] = useState<string[]>([]);
-  const [institutes, setInstitutes] = useState<string[]>([]);
-  
-  const { currentStore } = useStallContext();
-  const { currentUser, logout } = useAuth();
-  const { t } = useTranslation();
+  const [bookCode, setBookCode] = useState("");
+  const [name, setName] = useState("");
+  const [author, setAuthor] = useState("");
+  const [category, setCategory] = useState("");
+  const [language, setLanguage] = useState("");
+  const [printingInstitute, setPrintingInstitute] = useState("");
+  const [originalPrice, setOriginalPrice] = useState("");
+  const [salePrice, setSalePrice] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [authorPercentage, setAuthorPercentage] = useState(0);
+  const [nextBookCode, setNextBookCode] = useState(1);
+
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { currentStore } = useStallContext();
+  const { currentUser } = useAuth();
+  const { t } = useTranslation();
 
-  // Fetch existing metadata
   useEffect(() => {
-    const fetchMetadata = async () => {
-      if (!currentStore) return;
-      
-      try {
-        // Fetch categories
-        const { data: categoriesData, error: categoriesError } = await supabase
-          .from("books")
-          .select("category")
-          .eq("stallid", currentStore)
-          .not("category", "is", null);
-          
-        // Fetch authors
-        const { data: authorsData, error: authorsError } = await supabase
-          .from("books")
-          .select("author")
-          .eq("stallid", currentStore)
-          .not("author", "is", null);
-          
-        // Fetch printing institutes
-        const { data: institutesData, error: institutesError } = await supabase
-          .from("books")
-          .select("printinginstitute")
-          .eq("stallid", currentStore)
-          .not("printinginstitute", "is", null);
-          
-        if (!categoriesError && categoriesData) {
-          const uniqueCategories = Array.from(new Set(categoriesData
-            .map(item => item.category)
-            .filter(Boolean)
-          )).sort();
-          setCategories(uniqueCategories);
-        }
-        
-        if (!authorsError && authorsData) {
-          const uniqueAuthors = Array.from(new Set(authorsData
-            .map(item => item.author)
-            .filter(Boolean)
-          )).sort();
-          setAuthors(uniqueAuthors);
-        }
-        
-        if (!institutesError && institutesData) {
-          const uniqueInstitutes = Array.from(new Set(institutesData
-            .map(item => item.printinginstitute)
-            .filter(Boolean)
-          )).sort();
-          setInstitutes(uniqueInstitutes);
-        }
-      } catch (error) {
-        console.error("Error fetching metadata:", error);
-      }
-    };
-    
-    fetchMetadata();
+    fetchNextBookCode();
   }, [currentStore]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    
-    if (name === "originalPrice" || name === "salePrice" || name === "quantity") {
-      const numValue = parseFloat(value);
-      setFormData((prev) => ({ ...prev, [name]: isNaN(numValue) ? 0 : numValue }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+  useEffect(() => {
+    // Calculate sale price when original price or author percentage changes
+    if (originalPrice && authorPercentage) {
+      const original = parseFloat(originalPrice);
+      const percentage = parseFloat(authorPercentage.toString());
+      const calculated = original + (original * percentage / 100);
+      setSalePrice(calculated.toFixed(2));
+    }
+  }, [originalPrice, authorPercentage]);
+
+  const fetchNextBookCode = async () => {
+    if (!currentStore) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('books')
+        .select('bookcode')
+        .eq('stallid', currentStore)
+        .order('bookcode', { ascending: false })
+        .limit(1);
+
+      if (error) {
+        console.error("Error fetching book codes:", error);
+        return;
+      }
+
+      let nextCode = 1;
+      if (data && data.length > 0 && data[0].bookcode) {
+        nextCode = parseInt(data[0].bookcode) + 1;
+      }
+
+      setNextBookCode(nextCode);
+      setBookCode(nextCode.toString());
+    } catch (error) {
+      console.error("Error fetching next book code:", error);
     }
   };
 
-  const handleMetadataChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleAddNewMetadata = (field: string, value: string) => {
-    switch (field) {
-      case 'author':
-        setAuthors(prev => [...prev, value].sort());
-        break;
-      case 'category':
-        setCategories(prev => [...prev, value].sort());
-        break;
-      case 'printingInstitute':
-        setInstitutes(prev => [...prev, value].sort());
-        break;
-    }
-  };
-  
-  const handleImageChange = (file: File | null) => {
-    setSelectedImage(file);
-  };
-  
-  const handleImageUploaded = (url: string) => {
-    console.log("Image uploaded to:", url);
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
-  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentStore || !currentUser) return;
     
+    if (!currentStore || !currentUser) {
+      toast({
+        title: t("common.error"),
+        description: t("common.missingRequiredInformation"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!name || !author || !originalPrice || !salePrice || !quantity) {
+      toast({
+        title: t("common.error"),
+        description: t("addBook.fillAllFields"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
-      setIsSaving(true);
-      
-      let imageUrl = null;
-      
-      if (selectedImage) {
-        console.log("Uploading image...");
-        imageUrl = await getImageUrl(selectedImage);
-        if (!imageUrl) {
-          toast({
-            title: t("common.error"),
-            description: t("common.imageUploadFailed"),
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-      
+      const bookId = generateId();
+      const currentTimestamp = new Date().toISOString();
+
       const { error } = await supabase
-        .from("books")
+        .from('books')
         .insert({
-          name: formData.name,
-          author: formData.author,
-          category: formData.category || null,
-          printinginstitute: formData.printingInstitute || null,
-          originalprice: formData.originalPrice,
-          saleprice: formData.salePrice,
-          quantity: formData.quantity,
-          barcode: formData.barcode || null,
+          id: bookId,
+          bookcode: bookCode,
+          name: name.trim(),
+          author: author.trim(),
+          category: category.trim() || null,
+          language: language.trim() || null,
+          printinginstitute: printingInstitute.trim() || null,
+          originalprice: parseFloat(originalPrice),
+          saleprice: parseFloat(salePrice),
+          quantity: parseInt(quantity),
           stallid: currentStore,
-          imageurl: imageUrl,
-          createdat: new Date().toISOString(),
-          updatedat: new Date().toISOString()
+          imageurl: imageUrl || null,
+          createdat: currentTimestamp,
+          updatedat: currentTimestamp
         });
-        
-      if (error) throw error;
-      
+
+      if (error) {
+        console.error("Error adding book:", error);
+        throw error;
+      }
+
       toast({
         title: t("common.success"),
-        description: t("common.bookAdded"),
+        description: t("addBook.bookAdded"),
       });
+
+      // Reset form
+      setName("");
+      setAuthor("");
+      setCategory("");
+      setLanguage("");
+      setPrintingInstitute("");
+      setOriginalPrice("");
+      setSalePrice("");
+      setQuantity("");
+      setImageUrl("");
+      setAuthorPercentage(0);
       
-      navigate("/books");
+      // Set next book code
+      setBookCode((nextBookCode + 1).toString());
+      setNextBookCode(prev => prev + 1);
+
     } catch (error) {
       console.error("Error adding book:", error);
       toast({
         title: t("common.error"),
-        description: t("common.failedToAddBook"),
+        description: t("addBook.errorAddingBook"),
         variant: "destructive",
       });
     } finally {
-      setIsSaving(false);
+      setIsSubmitting(false);
     }
+  };
+
+  const handleOriginalPriceChange = (value: string) => {
+    if (value === "" || value === "0") {
+      setOriginalPrice("");
+      setSalePrice("");
+      return;
+    }
+    setOriginalPrice(value);
   };
 
   return (
     <div className="min-h-screen bg-temple-background pb-20">
-      <MobileHeader
-        title={t("common.addBook")}
+      <MobileHeader 
+        title={t("addBook.addNewBook")}
         showBackButton={true}
         backTo="/books"
-        rightContent={
-          <Button 
-            variant="ghost" 
-            size="icon"
-            className="text-white"
-            onClick={handleLogout}
-          >
-            <LogOut size={20} />
-          </Button>
-        }
       />
       
       <main className="container mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold text-temple-maroon mb-6">{t("common.addBook")}</h1>
-        
-        <Card className="p-4">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="image">{t("common.image")}</Label>
-              <ImageUpload 
-                onImageChange={handleImageChange}
-                onImageUploaded={handleImageUploaded}
-                bookMetadata={{
-                  author: formData.author,
-                  name: formData.name,
-                  printingInstitute: formData.printingInstitute
-                }}
-              />
-            </div>
+        <Card className="temple-card">
+          <CardHeader>
+            <CardTitle>{t("addBook.bookDetails")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="bookCode">{t("addBook.bookCode")}</Label>
+                <Input
+                  id="bookCode"
+                  value={bookCode}
+                  onChange={(e) => setBookCode(e.target.value)}
+                  placeholder={t("addBook.enterBookCode")}
+                  required
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="name">{t("common.bookName")}</Label>
-              <Input 
-                id="name" 
-                name="name" 
-                value={formData.name} 
-                onChange={handleInputChange} 
-                required
-              />
-            </div>
-            
-            <MetadataInput
-              label={t("common.author")}
-              value={formData.author}
-              options={authors}
-              placeholder={t("common.selectAuthor")}
-              onValueChange={(value) => handleMetadataChange("author", value)}
-              onAddNew={(value) => handleAddNewMetadata("author", value)}
-            />
-            
-            <MetadataInput
-              label={t("common.category")}
-              value={formData.category}
-              options={categories}
-              placeholder={t("common.selectCategory")}
-              onValueChange={(value) => handleMetadataChange("category", value)}
-              onAddNew={(value) => handleAddNewMetadata("category", value)}
-            />
-            
-            <MetadataInput
-              label={t("common.printingInstitute")}
-              value={formData.printingInstitute}
-              options={institutes}
-              placeholder={t("common.selectInstitute")}
-              onValueChange={(value) => handleMetadataChange("printingInstitute", value)}
-              onAddNew={(value) => handleAddNewMetadata("printingInstitute", value)}
-            />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="originalPrice">{t("common.originalPrice")}</Label>
-                <Input 
-                  id="originalPrice" 
-                  name="originalPrice" 
-                  type="number" 
-                  value={formData.originalPrice} 
-                  onChange={handleInputChange} 
+              <div>
+                <Label htmlFor="name">{t("addBook.bookName")} *</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={t("addBook.enterBookName")}
                   required
-                  min={0}
-                  step={0.01}
                 />
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="salePrice">{t("common.salePrice")}</Label>
-                <Input 
-                  id="salePrice" 
-                  name="salePrice" 
-                  type="number" 
-                  value={formData.salePrice} 
-                  onChange={handleInputChange} 
+
+              <div>
+                <Label htmlFor="author">{t("addBook.author")} *</Label>
+                <Input
+                  id="author"
+                  value={author}
+                  onChange={(e) => setAuthor(e.target.value)}
+                  placeholder={t("addBook.enterAuthor")}
                   required
-                  min={0}
-                  step={0.01}
                 />
               </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="quantity">{t("common.quantity")}</Label>
-              <Input 
-                id="quantity" 
-                name="quantity" 
-                type="number" 
-                value={formData.quantity} 
-                onChange={handleInputChange} 
-                required
-                min={0}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="barcode">{t("common.barcode")}</Label>
-              <Input 
-                id="barcode" 
-                name="barcode" 
-                value={formData.barcode} 
-                onChange={handleInputChange}
-              />
-            </div>
-            
-            <div className="flex justify-end gap-4 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate("/books")}
-              >
-                {t("common.cancel")}
-              </Button>
+
+              <div>
+                <Label htmlFor="category">{t("addBook.category")}</Label>
+                <Input
+                  id="category"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  placeholder={t("addBook.enterCategory")}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="language">{t("addBook.language")}</Label>
+                <Input
+                  id="language"
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  placeholder={t("addBook.enterLanguage")}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="printingInstitute">{t("addBook.printingInstitute")}</Label>
+                <Input
+                  id="printingInstitute"
+                  value={printingInstitute}
+                  onChange={(e) => setPrintingInstitute(e.target.value)}
+                  placeholder={t("addBook.enterPrintingInstitute")}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="originalPrice">{t("addBook.originalPrice")} *</Label>
+                <Input
+                  id="originalPrice"
+                  type="number"
+                  step="0.01"
+                  value={originalPrice}
+                  onChange={(e) => handleOriginalPriceChange(e.target.value)}
+                  placeholder={t("addBook.enterOriginalPrice")}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="authorPercentage">{t("addBook.authorPercentage")} (%)</Label>
+                <Input
+                  id="authorPercentage"
+                  type="number"
+                  step="0.1"
+                  value={authorPercentage}
+                  onChange={(e) => setAuthorPercentage(parseFloat(e.target.value) || 0)}
+                  placeholder="Enter percentage markup"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="salePrice">{t("addBook.salePrice")} *</Label>
+                <Input
+                  id="salePrice"
+                  type="number"
+                  step="0.01"
+                  value={salePrice}
+                  onChange={(e) => setSalePrice(e.target.value)}
+                  placeholder={t("addBook.enterSalePrice")}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="quantity">{t("addBook.quantity")} *</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  placeholder={t("addBook.enterQuantity")}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label>{t("addBook.bookImage")}</Label>
+                <ImageUpload 
+                  onImageUploaded={setImageUrl}
+                  currentImageUrl={imageUrl}
+                />
+              </div>
+
               <Button 
                 type="submit" 
-                disabled={isSaving}
+                className="w-full bg-temple-maroon hover:bg-temple-maroon/90"
+                disabled={isSubmitting}
               >
-                {isSaving ? t("common.saving") : t("common.addBook")}
+                {isSubmitting ? t("common.saving") : t("addBook.addBook")}
               </Button>
-            </div>
-          </form>
+            </form>
+          </CardContent>
         </Card>
       </main>
     </div>

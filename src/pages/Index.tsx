@@ -53,6 +53,10 @@ const Index: React.FC = () => {
     navigate("/login");
   };
 
+  const handleLowStockClick = () => {
+    navigate("/books?filter=lowStock");
+  };
+
   return (
     <div className="min-h-screen bg-temple-background">
       <MobileHeader 
@@ -81,7 +85,7 @@ const Index: React.FC = () => {
 
         {/* Low Stock Alert */}
         {lowStockBooks.length > 0 && (
-          <div className="mb-6">
+          <div className="mb-6" onClick={handleLowStockClick}>
             <LowStockNotification books={lowStockBooks} />
           </div>
         )}
