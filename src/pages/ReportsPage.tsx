@@ -2,281 +2,233 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/date-picker";
 import { useStallContext } from "@/contexts/StallContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
+import { CalendarDays, Download, Table } from "lucide-react";
 import MobileHeader from "@/components/MobileHeader";
-import ExportReportButton from "@/components/ExportReportButton";
-import { format } from "date-fns";
-import { Table } from "lucide-react";
+import { DatePicker } from "@/components/ui/date-picker";
+import ExportSalesButton from "@/components/ExportSalesButton";
+
+interface Sale {
+  id: string;
+  bookid: string;
+  quantity: number;
+  totalamount: number;
+  createdat: string;
+  buyername?: string;
+  buyerphone?: string;
+  paymentmethod: string;
+  personnelid: string;
+}
+
+interface BookDetails {
+  [key: string]: {
+    name: string;
+    author: string;
+    category: string;
+  };
+}
+
+interface PersonnelDetails {
+  [key: string]: {
+    name: string;
+  };
+}
 
 const ReportsPage = () => {
-  const [sales, setSales] = useState([]);
-  const [fromDate, setFromDate] = useState<Date | null>(new Date(2025, 4, 1)); // May 1st, 2025
-  const [toDate, setToDate] = useState<Date | null>(new Date());
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [categories, setCategories] = useState([]);
-  const [bookDetailsMap, setBookDetailsMap] = useState({});
-  const [selectedAuthor, setSelectedAuthor] = useState<string>("");
-  const [authors, setAuthors] = useState<string[]>([]);
-  const [selectedInstitute, setSelectedInstitute] = useState<string>("");
-  const [institutes, setInstitutes] = useState<string[]>([]);
-  const [filteredSales, setFilteredSales] = useState([]);
-
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [bookDetails, setBookDetails] = useState<BookDetails>({});
+  const [personnelDetails, setPersonnelDetails] = useState<PersonnelDetails>({});
+  const [fromDate, setFromDate] = useState<Date>(new Date('2025-05-01'));
+  const [toDate, setToDate] = useState<Date>(new Date());
+  const [isLoading, setIsLoading] = useState(false);
   const { currentStore } = useStallContext();
   const { t } = useTranslation();
-  const minDate = new Date(2025, 4, 1); // May 1st, 2025
 
-  useEffect(() => {
-    const fetchSalesAndCategories = async () => {
-      if (!currentStore) return;
+  const fetchSalesData = async () => {
+    if (!currentStore) return;
 
-      try {
-        const { data: salesData, error: salesError } = await supabase
-          .from('sales')
-          .select('*')
-          .eq('stallid', currentStore);
+    setIsLoading(true);
+    try {
+      const fromDateStr = fromDate.toISOString().split('T')[0];
+      const toDateStr = toDate.toISOString().split('T')[0];
 
-        if (salesError) {
-          console.error("Error fetching sales:", salesError);
-          return;
-        }
+      const { data: salesData, error: salesError } = await supabase
+        .from('sales')
+        .select('*')
+        .eq('stallid', currentStore)
+        .gte('createdat', fromDateStr)
+        .lte('createdat', toDateStr + 'T23:59:59')
+        .order('createdat', { ascending: false });
 
-        setSales(salesData || []);
+      if (salesError) throw salesError;
 
-        const { data: booksData, error: booksError } = await supabase
+      setSales(salesData || []);
+
+      // Fetch book details
+      const bookIds = [...new Set(salesData?.map(sale => sale.bookid))];
+      if (bookIds.length > 0) {
+        const { data: booksData } = await supabase
           .from('books')
-          .select('id, category, author, printinginstitute, name, saleprice, imageurl')
-          .eq('stallid', currentStore);
+          .select('id, name, author, category')
+          .in('id', bookIds);
 
-        if (booksError) {
-          console.error("Error fetching books:", booksError);
-          return;
-        }
-
-        const uniqueCategories = new Set<string>();
-        const uniqueAuthors = new Set<string>();
-        const uniqueInstitutes = new Set<string>();
-        const bookMap = {};
-
+        const bookMap: BookDetails = {};
         booksData?.forEach(book => {
-          if (book.category) {
-            uniqueCategories.add(book.category);
-          }
-          if (book.author) {
-            uniqueAuthors.add(book.author);
-          }
-          if (book.printinginstitute) {
-            uniqueInstitutes.add(book.printinginstitute);
-          }
-          bookMap[book.id] = { 
-            category: book.category,
-            author: book.author,
-            institute: book.printinginstitute,
+          bookMap[book.id] = {
             name: book.name,
-            price: book.saleprice,
-            imageurl: book.imageurl
+            author: book.author,
+            category: book.category || ''
           };
         });
+        setBookDetails(bookMap);
+      }
 
-        setCategories(Array.from(uniqueCategories));
-        setAuthors(Array.from(uniqueAuthors));
-        setInstitutes(Array.from(uniqueInstitutes));
-        setBookDetailsMap(bookMap);
-      } catch (error) {
-        console.error("Unexpected error:", error);
-      }
-    };
+      // Fetch personnel details
+      const personnelIds = [...new Set(salesData?.map(sale => sale.personnelid))];
+      if (personnelIds.length > 0) {
+        const { data: personnelData } = await supabase
+          .from('users')
+          .select('id, name')
+          .in('id', personnelIds);
 
-    fetchSalesAndCategories();
-  }, [currentStore]);
-  
-  const generateSalesReportData = () => {
-    return filteredSales.map(sale => {
-      const book = bookDetailsMap[sale.bookid];
-      return {
-        id: sale.id,
-        bookName: book?.name || 'Unknown',
-        author: book?.author || 'Unknown',
-        price: book?.price || 0,
-        quantity: sale.quantity,
-        totalAmount: sale.totalAmount,
-        date: new Date(sale.createdat),
-        paymentMethod: sale.paymentMethod,
-        imageurl: book?.imageurl
-      };
-    });
-  };
-  
-  const filterSales = () => {
-    if (!sales.length) return [];
-    
-    const filtered = sales.filter(sale => {
-      if (fromDate && toDate) {
-        const saleDate = new Date(sale.createdat);
-        const from = new Date(fromDate);
-        from.setHours(0, 0, 0, 0);
-        
-        const to = new Date(toDate);
-        to.setHours(23, 59, 59, 999);
-        
-        if (saleDate < from || saleDate > to) return false;
+        const personnelMap: PersonnelDetails = {};
+        personnelData?.forEach(person => {
+          personnelMap[person.id] = {
+            name: person.name
+          };
+        });
+        setPersonnelDetails(personnelMap);
       }
-      
-      if (selectedCategory && bookDetailsMap[sale.bookid]) {
-        if (bookDetailsMap[sale.bookid].category !== selectedCategory) return false;
-      }
-      
-      if (selectedAuthor && bookDetailsMap[sale.bookid]) {
-        if (bookDetailsMap[sale.bookid].author !== selectedAuthor) return false;
-      }
-      
-      if (selectedInstitute && bookDetailsMap[sale.bookid]) {
-        if (bookDetailsMap[sale.bookid].institute !== selectedInstitute) return false;
-      }
-      
-      return true;
-    });
-    
-    setFilteredSales(filtered);
-    return filtered;
+
+    } catch (error) {
+      console.error("Error fetching sales data:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
-    filterSales();
-  }, [sales, fromDate, toDate, selectedCategory, selectedAuthor, selectedInstitute, bookDetailsMap]);
+    fetchSalesData();
+  }, [currentStore, fromDate, toDate]);
 
-  const getTotalItems = () => filteredSales.reduce((sum, sale) => sum + sale.quantity, 0);
-  const getTotalRevenue = () => filteredSales.reduce((sum, sale) => sum + sale.totalamount, 0);
-  const getUniqueBooks = () => new Set(filteredSales.map(sale => sale.bookid)).size;
+  const totalRevenue = sales.reduce((sum, sale) => sum + sale.totalamount, 0);
+  const totalItems = sales.reduce((sum, sale) => sum + sale.quantity, 0);
+  const uniqueBooks = new Set(sales.map(sale => sale.bookid)).size;
+  const uniqueSellers = new Set(sales.map(sale => sale.personnelid)).size;
 
   return (
-    <div className="min-h-screen bg-temple-background">
+    <div className="min-h-screen bg-temple-background pb-20">
       <MobileHeader 
-        title={t("common.salesReports")}
+        title={t("common.reports")}
         showBackButton={true}
-        showStallSelector={true}
+        backTo="/"
       />
       
-      <div className="mobile-container py-4">
-        {/* Filter Controls */}
-        <div className="space-y-3 mb-6">
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-sm font-medium mb-1">From Date</label>
-              <DatePicker
-                date={fromDate}
-                onDateChange={setFromDate}
-                placeholder="Select from date"
-                minDate={minDate}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">To Date</label>
-              <DatePicker
-                date={toDate}
-                onDateChange={setToDate}
-                placeholder="Select to date"
-                minDate={fromDate || minDate}
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 gap-2">
-            <Select 
-              value={selectedCategory} 
-              onValueChange={setSelectedCategory}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t("common.selectCategory")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">{t("common.all")}</SelectItem>
-                {categories.map(category => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          {/* Export Button */}
-          <div className="flex justify-center">
-            <ExportReportButton 
-              reportType="sales"
-              salesData={generateSalesReportData()}
-              dateRange={{ from: fromDate, to: toDate }}
-            />
-          </div>
-        </div>
-        
-        {/* Sales Table */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Table className="h-5 w-5" />
-              Sales Data
+      <main className="container mx-auto px-4 py-6">
+        {/* Date Range Filters */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5" />
+              {t("reports.dateRange")}
             </CardTitle>
-            <div className="grid grid-cols-3 gap-4 text-center text-sm">
-              <div>
-                <div className="font-semibold text-temple-maroon">{getTotalItems()}</div>
-                <div className="text-xs text-gray-600">Total Items</div>
-              </div>
-              <div>
-                <div className="font-semibold text-temple-maroon">₹{getTotalRevenue().toLocaleString()}</div>
-                <div className="text-xs text-gray-600">Total Revenue</div>
-              </div>
-              <div>
-                <div className="font-semibold text-temple-maroon">{getUniqueBooks()}</div>
-                <div className="text-xs text-gray-600">Unique Books</div>
-              </div>
-            </div>
           </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-2">{t("common.date")}</th>
-                    <th className="text-left p-2">{t("common.book")}</th>
-                    <th className="text-left p-2">{t("common.quantity")}</th>
-                    <th className="text-left p-2">{t("common.amount")}</th>
-                    <th className="text-left p-2">{t("common.buyer")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredSales.map((sale) => {
-                    const book = bookDetailsMap[sale.bookid];
-                    return (
-                      <tr key={sale.id} className="border-b">
-                        <td className="p-2">{format(new Date(sale.createdat), 'dd/MM/yyyy')}</td>
-                        <td className="p-2">{book?.name || t("common.unknownBook")}</td>
-                        <td className="p-2">{sale.quantity}</td>
-                        <td className="p-2">₹{sale.totalamount}</td>
-                        <td className="p-2">{sale.buyername || '-'}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {filteredSales.length === 0 && (
-                <div className="text-center py-4 text-gray-500">
-                  {t("common.noSales")}
-                </div>
-              )}
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">{t("reports.fromDate")}</label>
+                <DatePicker
+                  date={fromDate}
+                  onDateChange={setFromDate}
+                  minDate={new Date('2025-05-01')}
+                  maxDate={toDate}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">{t("reports.toDate")}</label>
+                <DatePicker
+                  date={toDate}
+                  onDateChange={setToDate}
+                  minDate={fromDate}
+                  maxDate={new Date()}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
-      </div>
+
+        {/* Export Button */}
+        <div className="mb-6 flex justify-end">
+          <ExportSalesButton 
+            sales={sales}
+            bookDetails={bookDetails}
+            personnelDetails={personnelDetails}
+            className="bg-temple-maroon hover:bg-temple-maroon/90 text-white px-6 py-2 rounded-md flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            {t("common.export")}
+          </ExportSalesButton>
+        </div>
+
+        {/* Sales Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Table className="h-5 w-5" />
+              {t("reports.salesData")}
+            </CardTitle>
+            <div className="text-sm text-gray-600 grid grid-cols-2 md:grid-cols-4 gap-2">
+              <span>{t("reports.totalItems")}: <strong>{totalItems}</strong></span>
+              <span>{t("reports.totalRevenue")}: <strong>₹{totalRevenue.toFixed(2)}</strong></span>
+              <span>{t("reports.uniqueBooks")}: <strong>{uniqueBooks}</strong></span>
+              <span>{t("reports.uniqueSellers")}: <strong>{uniqueSellers}</strong></span>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="text-center py-8">{t("common.loading")}</div>
+            ) : sales.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                {t("reports.noSalesData")}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2">{t("common.book")}</th>
+                      <th className="text-left p-2">{t("common.seller")}</th>
+                      <th className="text-left p-2">{t("common.quantity")}</th>
+                      <th className="text-left p-2">{t("common.amount")}</th>
+                      <th className="text-left p-2">{t("common.date")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sales.map((sale) => (
+                      <tr key={sale.id} className="border-b">
+                        <td className="p-2">
+                          <div>
+                            <div className="font-medium truncate">{bookDetails[sale.bookid]?.name || t("common.unknownBook")}</div>
+                            <div className="text-xs text-gray-500">{bookDetails[sale.bookid]?.author}</div>
+                          </div>
+                        </td>
+                        <td className="p-2">
+                          <div className="text-sm">{personnelDetails[sale.personnelid]?.name || t("common.unknown")}</div>
+                        </td>
+                        <td className="p-2">{sale.quantity}</td>
+                        <td className="p-2">₹{sale.totalamount.toFixed(2)}</td>
+                        <td className="p-2">{new Date(sale.createdat).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </main>
     </div>
   );
 };

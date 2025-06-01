@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import ImageUpload from "@/components/ImageUpload";
 import MobileHeader from "@/components/MobileHeader";
+import MetadataInput from "@/components/MetadataInput";
 import { useTranslation } from "react-i18next";
 
 const AddBookPage = () => {
@@ -25,8 +27,10 @@ const AddBookPage = () => {
   const [quantity, setQuantity] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [authorPercentage, setAuthorPercentage] = useState(0);
   const [nextBookCode, setNextBookCode] = useState(1);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [authors, setAuthors] = useState<string[]>([]);
+  const [institutes, setInstitutes] = useState<string[]>([]);
 
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -34,37 +38,76 @@ const AddBookPage = () => {
   const { currentUser } = useAuth();
   const { t } = useTranslation();
 
+  // Fetch metadata for dropdowns
+  useEffect(() => {
+    const fetchMetadata = async () => {
+      if (!currentStore) return;
+      
+      try {
+        const { data: categoriesData } = await supabase
+          .from("books")
+          .select("category")
+          .eq("stallid", currentStore)
+          .not("category", "is", null);
+          
+        const { data: authorsData } = await supabase
+          .from("books")
+          .select("author")
+          .eq("stallid", currentStore)
+          .not("author", "is", null);
+          
+        const { data: institutesData } = await supabase
+          .from("books")
+          .select("printinginstitute")
+          .eq("stallid", currentStore)
+          .not("printinginstitute", "is", null);
+          
+        if (categoriesData) {
+          const uniqueCategories = Array.from(new Set(categoriesData
+            .map(item => item.category)
+            .filter(Boolean)
+          )).sort();
+          setCategories(uniqueCategories);
+        }
+        
+        if (authorsData) {
+          const uniqueAuthors = Array.from(new Set(authorsData
+            .map(item => item.author)
+            .filter(Boolean)
+          )).sort();
+          setAuthors(uniqueAuthors);
+        }
+        
+        if (institutesData) {
+          const uniqueInstitutes = Array.from(new Set(institutesData
+            .map(item => item.printinginstitute)
+            .filter(Boolean)
+          )).sort();
+          setInstitutes(uniqueInstitutes);
+        }
+      } catch (error) {
+        console.error("Error fetching metadata:", error);
+      }
+    };
+    
+    fetchMetadata();
+  }, [currentStore]);
+
   useEffect(() => {
     fetchNextBookCode();
   }, [currentStore]);
 
+  // Auto-calculate sale price when original price changes
   useEffect(() => {
-    // Calculate sale price when original price or author percentage changes
-    if (originalPrice && authorPercentage) {
-      const original = parseFloat(originalPrice);
-      const percentage = parseFloat(authorPercentage.toString());
-      const calculated = original + (original * percentage / 100);
-      setSalePrice(calculated.toFixed(2));
+    if (originalPrice) {
+      setSalePrice(originalPrice);
     }
-  }, [originalPrice, authorPercentage]);
+  }, [originalPrice]);
 
   const fetchNextBookCode = async () => {
     if (!currentStore) return;
 
     try {
-      const { data, error } = await supabase
-        .from('books')
-        .select('id')
-        .eq('stallid', currentStore)
-        .order('createdat', { ascending: false })
-        .limit(1);
-
-      if (error) {
-        console.error("Error fetching book count:", error);
-        return;
-      }
-
-      // Get total count to generate next sequential code
       const { count } = await supabase
         .from('books')
         .select('*', { count: 'exact', head: true })
@@ -75,6 +118,37 @@ const AddBookPage = () => {
       setBookCode(nextCode.toString());
     } catch (error) {
       console.error("Error fetching next book code:", error);
+    }
+  };
+
+  const handleMetadataChange = (field: string, value: string) => {
+    switch (field) {
+      case 'author':
+        setAuthor(value);
+        break;
+      case 'category':
+        setCategory(value);
+        break;
+      case 'printingInstitute':
+        setPrintingInstitute(value);
+        break;
+    }
+  };
+
+  const handleAddNewMetadata = (field: string, value: string) => {
+    switch (field) {
+      case 'author':
+        setAuthors(prev => [...prev, value].sort());
+        setAuthor(value);
+        break;
+      case 'category':
+        setCategories(prev => [...prev, value].sort());
+        setCategory(value);
+        break;
+      case 'printingInstitute':
+        setInstitutes(prev => [...prev, value].sort());
+        setPrintingInstitute(value);
+        break;
     }
   };
 
@@ -143,7 +217,6 @@ const AddBookPage = () => {
       setSalePrice("");
       setQuantity("");
       setImageUrl("");
-      setAuthorPercentage(0);
       
       // Set next book code
       setBookCode((nextBookCode + 1).toString());
@@ -190,10 +263,10 @@ const AddBookPage = () => {
                 <Input
                   id="bookCode"
                   value={bookCode}
-                  onChange={(e) => setBookCode(e.target.value)}
-                  placeholder={t("addBook.enterBookCode")}
-                  required
+                  disabled
+                  className="bg-gray-100 cursor-not-allowed"
                 />
+                <p className="text-sm text-gray-500 mt-1">{t("addBook.bookCodeAutoGenerated")}</p>
               </div>
 
               <div>
@@ -207,26 +280,23 @@ const AddBookPage = () => {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="author">{t("addBook.author")} *</Label>
-                <Input
-                  id="author"
-                  value={author}
-                  onChange={(e) => setAuthor(e.target.value)}
-                  placeholder={t("addBook.enterAuthor")}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="category">{t("addBook.category")}</Label>
-                <Input
-                  id="category"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  placeholder={t("addBook.enterCategory")}
-                />
-              </div>
+              <MetadataInput
+                label={t("addBook.author")}
+                value={author}
+                options={authors}
+                placeholder={t("addBook.selectOrAddAuthor")}
+                onValueChange={(value) => handleMetadataChange("author", value)}
+                onAddNew={(value) => handleAddNewMetadata("author", value)}
+              />
+              
+              <MetadataInput
+                label={t("addBook.category")}
+                value={category}
+                options={categories}
+                placeholder={t("addBook.selectOrAddCategory")}
+                onValueChange={(value) => handleMetadataChange("category", value)}
+                onAddNew={(value) => handleAddNewMetadata("category", value)}
+              />
 
               <div>
                 <Label htmlFor="language">{t("addBook.language")}</Label>
@@ -238,15 +308,14 @@ const AddBookPage = () => {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="printingInstitute">{t("addBook.printingInstitute")}</Label>
-                <Input
-                  id="printingInstitute"
-                  value={printingInstitute}
-                  onChange={(e) => setPrintingInstitute(e.target.value)}
-                  placeholder={t("addBook.enterPrintingInstitute")}
-                />
-              </div>
+              <MetadataInput
+                label={t("addBook.printingInstitute")}
+                value={printingInstitute}
+                options={institutes}
+                placeholder={t("addBook.selectOrAddInstitute")}
+                onValueChange={(value) => handleMetadataChange("printingInstitute", value)}
+                onAddNew={(value) => handleAddNewMetadata("printingInstitute", value)}
+              />
 
               <div>
                 <Label htmlFor="originalPrice">{t("addBook.originalPrice")} *</Label>
@@ -264,19 +333,6 @@ const AddBookPage = () => {
                       setOriginalPrice("");
                     }
                   }}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="authorPercentage">{t("addBook.authorPercentage")} (%)</Label>
-                <Input
-                  id="authorPercentage"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={authorPercentage}
-                  onChange={(e) => setAuthorPercentage(parseFloat(e.target.value) || 0)}
-                  placeholder="Enter percentage markup"
                 />
               </div>
 

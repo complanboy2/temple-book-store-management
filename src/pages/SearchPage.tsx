@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,8 @@ import { Book } from "@/types";
 const SearchPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAuthor, setSelectedAuthor] = useState("");
-  const [quantityFilter, setQuantityFilter] = useState("");
+  const [quantityOperator, setQuantityOperator] = useState("");
+  const [quantityValue, setQuantityValue] = useState("");
   const [books, setBooks] = useState<Book[]>([]);
   const [authors, setAuthors] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -34,12 +36,12 @@ const SearchPage = () => {
   }, [currentStore, searchParams]);
 
   useEffect(() => {
-    if (searchTerm || selectedAuthor || quantityFilter) {
+    if (searchTerm || selectedAuthor || (quantityOperator && quantityValue)) {
       performSearch();
     } else {
       setBooks([]);
     }
-  }, [searchTerm, selectedAuthor, quantityFilter, currentStore]);
+  }, [searchTerm, selectedAuthor, quantityOperator, quantityValue, currentStore]);
 
   const fetchAuthors = async () => {
     if (!currentStore) return;
@@ -84,20 +86,12 @@ const SearchPage = () => {
       }
 
       // Filter by quantity
-      if (quantityFilter) {
-        switch (quantityFilter) {
-          case 'less_than_10':
-            query = query.lt('quantity', 10);
-            break;
-          case 'less_than_50':
-            query = query.lt('quantity', 50);
-            break;
-          case 'more_than_20':
-            query = query.gt('quantity', 20);
-            break;
-          case 'between_10_50':
-            query = query.gte('quantity', 10).lte('quantity', 50);
-            break;
+      if (quantityOperator && quantityValue) {
+        const qtyVal = parseInt(quantityValue);
+        if (quantityOperator === 'less_than') {
+          query = query.lt('quantity', qtyVal);
+        } else if (quantityOperator === 'more_than') {
+          query = query.gt('quantity', qtyVal);
         }
       }
 
@@ -110,7 +104,7 @@ const SearchPage = () => {
 
       const formattedBooks: Book[] = (data || []).map((book, index) => ({
         id: book.id,
-        bookCode: (index + 1).toString(), // Generate sequential book code
+        bookCode: (index + 1).toString(),
         name: book.name,
         author: book.author,
         category: book.category || "",
@@ -135,7 +129,8 @@ const SearchPage = () => {
   const clearFilters = () => {
     setSearchTerm("");
     setSelectedAuthor("");
-    setQuantityFilter("");
+    setQuantityOperator("");
+    setQuantityValue("");
     setBooks([]);
   };
 
@@ -184,19 +179,26 @@ const SearchPage = () => {
             </div>
 
             <div>
-              <Label htmlFor="quantity">{t("common.filterByQuantity")}</Label>
-              <Select value={quantityFilter} onValueChange={setQuantityFilter}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder={t("common.selectQuantityRange")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">{t("common.allQuantities")}</SelectItem>
-                  <SelectItem value="less_than_10">Less than 10</SelectItem>
-                  <SelectItem value="less_than_50">Less than 50</SelectItem>
-                  <SelectItem value="more_than_20">More than 20</SelectItem>
-                  <SelectItem value="between_10_50">Between 10-50</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>{t("common.filterByQuantity")}</Label>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                <Select value={quantityOperator} onValueChange={setQuantityOperator}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("common.selectOperator")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">{t("common.noFilter")}</SelectItem>
+                    <SelectItem value="less_than">{t("common.lessThan")}</SelectItem>
+                    <SelectItem value="more_than">{t("common.moreThan")}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="number"
+                  placeholder={t("common.enterQuantity")}
+                  value={quantityValue}
+                  onChange={(e) => setQuantityValue(e.target.value)}
+                  disabled={!quantityOperator}
+                />
+              </div>
             </div>
 
             <div className="flex gap-2">
