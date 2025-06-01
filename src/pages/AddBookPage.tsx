@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -55,21 +54,23 @@ const AddBookPage = () => {
     try {
       const { data, error } = await supabase
         .from('books')
-        .select('bookcode')
+        .select('id')
         .eq('stallid', currentStore)
-        .order('bookcode', { ascending: false })
+        .order('createdat', { ascending: false })
         .limit(1);
 
       if (error) {
-        console.error("Error fetching book codes:", error);
+        console.error("Error fetching book count:", error);
         return;
       }
 
-      let nextCode = 1;
-      if (data && data.length > 0 && data[0].bookcode) {
-        nextCode = parseInt(data[0].bookcode) + 1;
-      }
+      // Get total count to generate next sequential code
+      const { count } = await supabase
+        .from('books')
+        .select('*', { count: 'exact', head: true })
+        .eq('stallid', currentStore);
 
+      const nextCode = (count || 0) + 1;
       setNextBookCode(nextCode);
       setBookCode(nextCode.toString());
     } catch (error) {
@@ -108,7 +109,6 @@ const AddBookPage = () => {
         .from('books')
         .insert({
           id: bookId,
-          bookcode: bookCode,
           name: name.trim(),
           author: author.trim(),
           category: category.trim() || null,
@@ -254,10 +254,16 @@ const AddBookPage = () => {
                   id="originalPrice"
                   type="number"
                   step="0.01"
+                  min="0"
                   value={originalPrice}
                   onChange={(e) => handleOriginalPriceChange(e.target.value)}
                   placeholder={t("addBook.enterOriginalPrice")}
                   required
+                  onFocus={(e) => {
+                    if (e.target.value === "0") {
+                      setOriginalPrice("");
+                    }
+                  }}
                 />
               </div>
 
@@ -267,6 +273,7 @@ const AddBookPage = () => {
                   id="authorPercentage"
                   type="number"
                   step="0.1"
+                  min="0"
                   value={authorPercentage}
                   onChange={(e) => setAuthorPercentage(parseFloat(e.target.value) || 0)}
                   placeholder="Enter percentage markup"
@@ -279,10 +286,16 @@ const AddBookPage = () => {
                   id="salePrice"
                   type="number"
                   step="0.01"
+                  min="0"
                   value={salePrice}
                   onChange={(e) => setSalePrice(e.target.value)}
                   placeholder={t("addBook.enterSalePrice")}
                   required
+                  onFocus={(e) => {
+                    if (e.target.value === "0") {
+                      setSalePrice("");
+                    }
+                  }}
                 />
               </div>
 
@@ -291,6 +304,7 @@ const AddBookPage = () => {
                 <Input
                   id="quantity"
                   type="number"
+                  min="0"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
                   placeholder={t("addBook.enterQuantity")}
@@ -302,7 +316,7 @@ const AddBookPage = () => {
                 <Label>{t("addBook.bookImage")}</Label>
                 <ImageUpload 
                   onImageUploaded={setImageUrl}
-                  currentImageUrl={imageUrl}
+                  initialImageUrl={imageUrl}
                 />
               </div>
 

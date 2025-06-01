@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -74,9 +73,9 @@ const SearchPage = () => {
         .select('*')
         .eq('stallid', currentStore);
 
-      // Search by book code, name, or author
+      // Search by name, author, category, or printing institute
       if (searchTerm) {
-        query = query.or(`bookcode.ilike.%${searchTerm}%,name.ilike.%${searchTerm}%,author.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%,printinginstitute.ilike.%${searchTerm}%`);
+        query = query.or(`name.ilike.%${searchTerm}%,author.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%,printinginstitute.ilike.%${searchTerm}%`);
       }
 
       // Filter by author
@@ -109,9 +108,9 @@ const SearchPage = () => {
         return;
       }
 
-      const formattedBooks: Book[] = (data || []).map(book => ({
+      const formattedBooks: Book[] = (data || []).map((book, index) => ({
         id: book.id,
-        bookCode: book.bookcode || '',
+        bookCode: (index + 1).toString(), // Generate sequential book code
         name: book.name,
         author: book.author,
         category: book.category || "",

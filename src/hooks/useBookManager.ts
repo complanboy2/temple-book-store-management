@@ -50,9 +50,9 @@ export const useBookManager = (currentStore: string | null) => {
         return;
       }
 
-      const formattedBooks: Book[] = (supabaseBooks || []).map(book => ({
+      const formattedBooks: Book[] = (supabaseBooks || []).map((book, index) => ({
         id: book.id,
-        bookCode: book.bookcode || '',
+        bookCode: (index + 1).toString(), // Generate sequential book code
         name: book.name,
         author: book.author,
         category: book.category || "",

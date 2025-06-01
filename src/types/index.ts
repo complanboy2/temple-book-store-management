@@ -30,6 +30,7 @@ export interface BookStall {
 
 export interface Book {
   id: string;
+  bookCode?: string;
   name: string;
   author: string;
   category: string;
