@@ -26,6 +26,7 @@ interface BookDetails {
     name: string;
     author: string;
     category: string;
+    price: number;
   };
 }
 
@@ -70,7 +71,7 @@ const ReportsPage = () => {
       if (bookIds.length > 0) {
         const { data: booksData } = await supabase
           .from('books')
-          .select('id, name, author, category')
+          .select('id, name, author, category, saleprice')
           .in('id', bookIds);
 
         const bookMap: BookDetails = {};
@@ -78,7 +79,8 @@ const ReportsPage = () => {
           bookMap[book.id] = {
             name: book.name,
             author: book.author,
-            category: book.category || ''
+            category: book.category || '',
+            price: book.saleprice || 0
           };
         });
         setBookDetails(bookMap);
@@ -116,22 +118,6 @@ const ReportsPage = () => {
   const totalItems = sales.reduce((sum, sale) => sum + sale.quantity, 0);
   const uniqueBooks = new Set(sales.map(sale => sale.bookid)).size;
   const uniqueSellers = new Set(sales.map(sale => sale.personnelid)).size;
-
-  // Convert sales data to match the Sale interface expected by ExportSalesButton
-  const convertedSales = sales.map(sale => ({
-    id: sale.id,
-    bookId: sale.bookid,
-    quantity: sale.quantity,
-    totalAmount: sale.totalamount,
-    paymentMethod: sale.paymentmethod,
-    buyerName: sale.buyername,
-    buyerPhone: sale.buyerphone,
-    personnelId: sale.personnelid,
-    personnelName: personnelDetails[sale.personnelid]?.name,
-    stallId: currentStore || '',
-    createdAt: new Date(sale.createdat),
-    synced: false
-  }));
 
   return (
     <div className="min-h-screen bg-temple-background pb-20">
@@ -177,14 +163,10 @@ const ReportsPage = () => {
         {/* Export Button */}
         <div className="mb-6 flex justify-center">
           <ExportSalesButton 
-            sales={convertedSales}
-            bookDetails={bookDetails}
-            personnelDetails={personnelDetails}
-            className="bg-temple-maroon hover:bg-temple-maroon/90 text-white px-6 py-3 rounded-md flex items-center gap-2 w-full max-w-xs"
-          >
-            <Download className="h-4 w-4" />
-            {t("common.export")}
-          </ExportSalesButton>
+            sales={[]}
+            bookDetailsMap={bookDetails}
+            variant="both"
+          />
         </div>
 
         {/* Compact Stats */}
