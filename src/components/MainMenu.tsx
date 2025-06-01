@@ -2,7 +2,6 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
@@ -11,139 +10,179 @@ import {
   Plus, 
   ShoppingCart, 
   BarChart3, 
-  Settings, 
+  Users, 
+  Settings,
+  Package,
   Search,
-  Users,
-  Languages
+  Globe
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const MainMenu = () => {
+const MainMenu: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser, isAdmin } = useAuth();
   const { t, i18n } = useTranslation();
 
+  const changeLanguage = (language: string) => {
+    i18n.changeLanguage(language);
+  };
+
   const menuItems = [
     {
+      icon: BookOpen,
       title: t("common.books"),
       description: t("common.viewManageBooks"),
-      icon: BookOpen,
-      action: () => navigate("/books"),
-      color: "bg-blue-500 hover:bg-blue-600"
+      onClick: () => navigate("/books"),
+      color: "bg-temple-saffron hover:bg-temple-saffron/90",
+      available: true
     },
     {
+      icon: Plus,
       title: t("common.addBook"),
       description: t("common.addNewBookToInventory"),
-      icon: Plus,
-      action: () => navigate("/books/add"),
-      color: "bg-green-500 hover:bg-green-600",
-      adminOnly: true
+      onClick: () => navigate("/books/add"),
+      color: "bg-temple-maroon hover:bg-temple-maroon/90",
+      available: currentUser?.canrestock || isAdmin
     },
     {
+      icon: ShoppingCart,
       title: t("common.sell"),
       description: t("common.sellBooksToCustomers"),
-      icon: ShoppingCart,
-      action: () => navigate("/sell"),
-      color: "bg-purple-500 hover:bg-purple-600"
+      onClick: () => navigate("/sell"),
+      color: "bg-green-600 hover:bg-green-700",
+      available: currentUser?.cansell || isAdmin
     },
     {
+      icon: Package,
       title: t("common.sellMultiple"),
       description: t("common.sellMultipleBooksAtOnce"),
-      icon: ShoppingCart,
-      action: () => navigate("/sell-multiple"),
-      color: "bg-indigo-500 hover:bg-indigo-600"
+      onClick: () => navigate("/sell-multiple"),
+      color: "bg-blue-600 hover:bg-blue-700",
+      available: currentUser?.cansell || isAdmin
     },
     {
+      icon: Search,
       title: t("common.search"),
       description: t("common.searchAndFilterBooks"),
-      icon: Search,
-      action: () => navigate("/search"),
-      color: "bg-orange-500 hover:bg-orange-600"
+      onClick: () => navigate("/search"),
+      color: "bg-purple-600 hover:bg-purple-700",
+      available: true
     },
     {
+      icon: BarChart3,
       title: t("common.reports"),
       description: t("common.viewSalesReports"),
-      icon: BarChart3,
-      action: () => navigate("/reports"),
-      color: "bg-red-500 hover:bg-red-600"
-    },
-    {
-      title: t("common.admin"),
-      description: t("common.userManagement"),
-      icon: Users,
-      action: () => navigate("/admin"),
-      color: "bg-gray-500 hover:bg-gray-600",
-      adminOnly: true
-    },
-    {
-      title: t("common.settings"),
-      description: t("common.appSettings"),
-      icon: Settings,
-      action: () => navigate("/settings"),
-      color: "bg-teal-500 hover:bg-teal-600",
-      adminOnly: true
+      onClick: () => navigate("/reports"),
+      color: "bg-orange-600 hover:bg-orange-700",
+      available: true
     }
   ];
 
-  const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng);
-  };
+  const adminItems = [
+    {
+      icon: Users,
+      title: t("admin.users"),
+      description: t("common.userManagement"),
+      onClick: () => navigate("/admin"),
+      color: "bg-red-600 hover:bg-red-700",
+      available: isAdmin
+    },
+    {
+      icon: Settings,
+      title: t("common.settings"),
+      description: t("common.appSettings"),
+      onClick: () => navigate("/settings"),
+      color: "bg-gray-600 hover:bg-gray-700",
+      available: true
+    }
+  ];
 
-  const filteredMenuItems = menuItems.filter(item => 
-    !item.adminOnly || isAdmin
-  );
+  const visibleMenuItems = menuItems.filter(item => item.available);
+  const visibleAdminItems = adminItems.filter(item => item.available);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Language Selector */}
-      <Card className="temple-card">
+      <Card className="shadow-sm">
         <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <Languages className="h-5 w-5 text-temple-gold" />
-            <div className="flex-1">
-              <h3 className="font-medium text-temple-maroon">{t("common.selectLanguage")}</h3>
-              <Select value={i18n.language} onValueChange={changeLanguage}>
-                <SelectTrigger className="mt-2">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="hi">हिंदी</SelectItem>
-                  <SelectItem value="kn">ಕನ್ನಡ</SelectItem>
-                  <SelectItem value="ta">தமிழ்</SelectItem>
-                  <SelectItem value="te">తెలుగు</SelectItem>
-                  <SelectItem value="mr">मराठी</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Globe className="h-5 w-5 text-temple-maroon" />
+              <span className="font-medium text-temple-maroon">{t("common.selectLanguage")}</span>
             </div>
+            <Select value={i18n.language} onValueChange={changeLanguage}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="hi">हिंदी</SelectItem>
+                <SelectItem value="te">తెలుగు</SelectItem>
+                <SelectItem value="ta">தமிழ்</SelectItem>
+                <SelectItem value="kn">ಕನ್ನಡ</SelectItem>
+                <SelectItem value="mr">मराठी</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
 
-      {/* Menu Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {filteredMenuItems.map((item, index) => {
-          const Icon = item.icon;
-          return (
-            <Card key={index} className="temple-card hover:shadow-lg transition-shadow cursor-pointer" onClick={item.action}>
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-4">
-                  <div className={`p-3 rounded-lg ${item.color} text-white`}>
-                    <Icon className="h-6 w-6" />
+      {/* Main Actions */}
+      <div className="grid grid-cols-1 gap-3">
+        {visibleMenuItems.map((item, index) => (
+          <Card key={index} className="shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-0">
+              <Button
+                onClick={item.onClick}
+                className={`w-full h-auto p-4 justify-start ${item.color} text-white`}
+                variant="ghost"
+              >
+                <div className="flex items-center gap-4 w-full">
+                  <div className="bg-white/20 p-2 rounded-lg">
+                    <item.icon className="h-6 w-6" />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-temple-maroon mb-1">
-                      {item.title}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {item.description}
-                    </p>
+                  <div className="text-left flex-1">
+                    <h3 className="font-semibold text-lg">{item.title}</h3>
+                    <p className="text-sm opacity-90 mt-1">{item.description}</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
       </div>
+
+      {/* Admin Section */}
+      {visibleAdminItems.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-600 uppercase tracking-wide px-1">
+            {t("common.administration")}
+          </h3>
+          <div className="grid grid-cols-1 gap-3">
+            {visibleAdminItems.map((item, index) => (
+              <Card key={index} className="shadow-sm hover:shadow-md transition-shadow">
+                <CardContent className="p-0">
+                  <Button
+                    onClick={item.onClick}
+                    className={`w-full h-auto p-4 justify-start ${item.color} text-white`}
+                    variant="ghost"
+                  >
+                    <div className="flex items-center gap-4 w-full">
+                      <div className="bg-white/20 p-2 rounded-lg">
+                        <item.icon className="h-6 w-6" />
+                      </div>
+                      <div className="text-left flex-1">
+                        <h3 className="font-semibold text-lg">{item.title}</h3>
+                        <p className="text-sm opacity-90 mt-1">{item.description}</p>
+                      </div>
+                    </div>
+                  </Button>
+                </CardContent>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

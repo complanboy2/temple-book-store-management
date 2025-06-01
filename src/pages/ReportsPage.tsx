@@ -119,6 +119,21 @@ const ReportsPage = () => {
   const uniqueBooks = new Set(sales.map(sale => sale.bookid)).size;
   const uniqueSellers = new Set(sales.map(sale => sale.personnelid)).size;
 
+  // Convert sales data to match the Sale interface expected by ExportSalesButton
+  const convertedSales = sales.map(sale => ({
+    id: sale.id,
+    bookId: sale.bookid,
+    quantity: sale.quantity,
+    totalAmount: sale.totalamount,
+    paymentMethod: sale.paymentmethod,
+    buyerName: sale.buyername || '',
+    buyerPhone: sale.buyerphone || '',
+    personnelId: sale.personnelid,
+    stallId: currentStore || '',
+    createdAt: new Date(sale.createdat),
+    synced: false
+  }));
+
   return (
     <div className="min-h-screen bg-temple-background pb-20">
       <MobileHeader 
@@ -127,19 +142,19 @@ const ReportsPage = () => {
         backTo="/"
       />
       
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-3 py-4">
         {/* Date Range Filters */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="mb-4">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <CalendarDays className="h-5 w-5" />
               {t("reports.dateRange")}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-1 gap-3">
               <div>
-                <label className="block text-sm font-medium mb-2">{t("reports.fromDate")}</label>
+                <label className="block text-sm font-medium mb-1">{t("reports.fromDate")}</label>
                 <DatePicker
                   date={fromDate}
                   onDateChange={setFromDate}
@@ -148,7 +163,7 @@ const ReportsPage = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">{t("reports.toDate")}</label>
+                <label className="block text-sm font-medium mb-1">{t("reports.toDate")}</label>
                 <DatePicker
                   date={toDate}
                   onDateChange={setToDate}
@@ -161,32 +176,32 @@ const ReportsPage = () => {
         </Card>
 
         {/* Export Button */}
-        <div className="mb-6 flex justify-center">
+        <div className="mb-4 flex justify-center">
           <ExportSalesButton 
-            sales={[]}
+            sales={convertedSales}
             bookDetailsMap={bookDetails}
             variant="both"
           />
         </div>
 
         {/* Compact Stats */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold text-temple-maroon">{totalItems}</div>
+        <Card className="mb-4">
+          <CardContent className="p-3">
+            <div className="grid grid-cols-2 gap-3 text-center">
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="text-xl font-bold text-temple-maroon">{totalItems}</div>
                 <div className="text-xs text-gray-600">{t("reports.totalItems")}</div>
               </div>
-              <div>
-                <div className="text-2xl font-bold text-green-600">₹{totalRevenue.toFixed(2)}</div>
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="text-xl font-bold text-green-600">₹{totalRevenue.toFixed(2)}</div>
                 <div className="text-xs text-gray-600">{t("reports.totalRevenue")}</div>
               </div>
-              <div>
-                <div className="text-2xl font-bold text-blue-600">{uniqueBooks}</div>
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="text-xl font-bold text-blue-600">{uniqueBooks}</div>
                 <div className="text-xs text-gray-600">{t("reports.uniqueBooks")}</div>
               </div>
-              <div>
-                <div className="text-2xl font-bold text-purple-600">{uniqueSellers}</div>
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="text-xl font-bold text-purple-600">{uniqueSellers}</div>
                 <div className="text-xs text-gray-600">{t("reports.uniqueSellers")}</div>
               </div>
             </div>
@@ -195,13 +210,13 @@ const ReportsPage = () => {
 
         {/* Sales Table */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <Table className="h-5 w-5" />
               {t("reports.salesData")}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {isLoading ? (
               <div className="text-center py-8">{t("common.loading")}</div>
             ) : sales.length === 0 ? (
@@ -212,29 +227,29 @@ const ReportsPage = () => {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-2">{t("common.book")}</th>
-                      <th className="text-left p-2">{t("common.seller")}</th>
-                      <th className="text-left p-2">{t("common.quantity")}</th>
-                      <th className="text-left p-2">{t("common.amount")}</th>
-                      <th className="text-left p-2">{t("common.date")}</th>
+                    <tr className="border-b bg-gray-50">
+                      <th className="text-left p-3 font-medium">{t("common.book")}</th>
+                      <th className="text-left p-3 font-medium">{t("common.seller")}</th>
+                      <th className="text-left p-3 font-medium">{t("common.quantity")}</th>
+                      <th className="text-left p-3 font-medium">{t("common.amount")}</th>
+                      <th className="text-left p-3 font-medium">{t("common.date")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {sales.map((sale) => (
-                      <tr key={sale.id} className="border-b">
-                        <td className="p-2">
+                      <tr key={sale.id} className="border-b hover:bg-gray-50">
+                        <td className="p-3">
                           <div>
-                            <div className="font-medium truncate">{bookDetails[sale.bookid]?.name || t("common.unknownBook")}</div>
+                            <div className="font-medium text-sm">{bookDetails[sale.bookid]?.name || t("common.unknownBook")}</div>
                             <div className="text-xs text-gray-500">{bookDetails[sale.bookid]?.author}</div>
                           </div>
                         </td>
-                        <td className="p-2">
+                        <td className="p-3">
                           <div className="text-sm">{personnelDetails[sale.personnelid]?.name || t("common.unknown")}</div>
                         </td>
-                        <td className="p-2">{sale.quantity}</td>
-                        <td className="p-2">₹{sale.totalamount.toFixed(2)}</td>
-                        <td className="p-2">{new Date(sale.createdat).toLocaleDateString()}</td>
+                        <td className="p-3 font-medium">{sale.quantity}</td>
+                        <td className="p-3 font-medium text-green-600">₹{sale.totalamount.toFixed(2)}</td>
+                        <td className="p-3 text-sm">{new Date(sale.createdat).toLocaleDateString()}</td>
                       </tr>
                     ))}
                   </tbody>

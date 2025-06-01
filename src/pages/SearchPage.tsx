@@ -75,9 +75,9 @@ const SearchPage = () => {
         .select('*')
         .eq('stallid', currentStore);
 
-      // Search by name, author, category, or printing institute
+      // Search by name, author, category, printing institute, or book ID (which includes bookcode search)
       if (searchTerm) {
-        query = query.or(`name.ilike.%${searchTerm}%,author.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%,printinginstitute.ilike.%${searchTerm}%`);
+        query = query.or(`name.ilike.%${searchTerm}%,author.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%,printinginstitute.ilike.%${searchTerm}%,id.ilike.%${searchTerm}%`);
       }
 
       // Filter by author
@@ -104,10 +104,11 @@ const SearchPage = () => {
 
       const formattedBooks: Book[] = (data || []).map((book, index) => ({
         id: book.id,
-        bookCode: (index + 1).toString(),
+        bookCode: `BOOK-${book.id.slice(-6).toUpperCase()}`,
         name: book.name,
         author: book.author,
         category: book.category || "",
+        language: book.language || "",
         printingInstitute: book.printinginstitute || "",
         originalPrice: book.originalprice || 0,
         salePrice: book.saleprice || 0,
@@ -141,20 +142,20 @@ const SearchPage = () => {
         showBackButton={true}
       />
       
-      <main className="container mx-auto px-4 py-6">
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+      <main className="container mx-auto px-3 py-4">
+        <Card className="mb-4">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <Search className="h-5 w-5" />
               {t("common.searchFilters")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="search">{t("common.searchByCodeNameAuthor")}</Label>
+              <Label htmlFor="search" className="text-sm font-medium">{t("common.searchByCodeNameAuthor")}</Label>
               <Input
                 id="search"
-                placeholder={t("common.searchPlaceholder")}
+                placeholder={t("common.searchByCodeNameAuthor")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="mt-1"
@@ -162,7 +163,7 @@ const SearchPage = () => {
             </div>
 
             <div>
-              <Label htmlFor="author">{t("common.filterByAuthor")}</Label>
+              <Label htmlFor="author" className="text-sm font-medium">{t("common.filterByAuthor")}</Label>
               <Select value={selectedAuthor} onValueChange={setSelectedAuthor}>
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder={t("common.selectAuthor")} />
@@ -179,7 +180,7 @@ const SearchPage = () => {
             </div>
 
             <div>
-              <Label>{t("common.filterByQuantity")}</Label>
+              <Label className="text-sm font-medium">{t("common.filterByQuantity")}</Label>
               <div className="grid grid-cols-2 gap-2 mt-1">
                 <Select value={quantityOperator} onValueChange={setQuantityOperator}>
                   <SelectTrigger>
@@ -202,7 +203,7 @@ const SearchPage = () => {
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={performSearch} className="flex-1">
+              <Button onClick={performSearch} className="flex-1 bg-temple-maroon hover:bg-temple-maroon/90">
                 <Search className="h-4 w-4 mr-2" />
                 {t("common.search")}
               </Button>

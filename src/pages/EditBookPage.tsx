@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ImageUpload from "@/components/ImageUpload";
 import MetadataInput from "@/components/MetadataInput";
 import { getImageUrl } from "@/services/imageService";
@@ -25,6 +26,7 @@ const EditBookPage = () => {
     name: "",
     author: "",
     category: "",
+    language: "",
     printingInstitute: "",
     originalPrice: 0,
     salePrice: 0,
@@ -40,6 +42,8 @@ const EditBookPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { currentUser } = useAuth();
+
+  const languages = ["Telugu", "Hindi", "English", "Tamil", "Kannada", "Malayalam", "Bengali", "Gujarati", "Marathi", "Punjabi"];
 
   // Fetch all available categories, authors, and institutes
   useEffect(() => {
@@ -132,9 +136,11 @@ const EditBookPage = () => {
         // Transform API result to local Book type
         const bookData: Book = {
           id: data.id,
+          bookCode: `BOOK-${data.id.slice(-6).toUpperCase()}`,
           name: data.name,
           author: data.author,
           category: data.category ?? "",
+          language: data.language ?? "",
           printingInstitute: data.printinginstitute ?? "",
           originalPrice: data.originalprice || 0,
           salePrice: data.saleprice || 0,
@@ -150,6 +156,7 @@ const EditBookPage = () => {
           name: bookData.name,
           author: bookData.author,
           category: bookData.category || "",
+          language: bookData.language || "",
           printingInstitute: bookData.printingInstitute || "",
           originalPrice: bookData.originalPrice,
           salePrice: bookData.salePrice,
@@ -170,6 +177,12 @@ const EditBookPage = () => {
 
     fetchBookDetails();
   }, [bookId, currentStore, navigate, toast, t]);
+
+  const calculateSalePrice = (price: number): number => {
+    // Add 20% author percentage and round to nearest upper multiple of 10
+    const salePrice = price * 1.2;
+    return Math.ceil(salePrice / 10) * 10;
+  };
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -177,12 +190,12 @@ const EditBookPage = () => {
     if (name === "originalPrice" || name === "salePrice" || name === "quantity") {
       const numValue = parseFloat(value) || 0;
       
-      // When original price changes, automatically update sale price to match
+      // When original price changes, automatically update sale price
       if (name === "originalPrice") {
         setFormData((prev) => ({ 
           ...prev, 
           originalPrice: numValue,
-          salePrice: numValue // Auto-update sale price
+          salePrice: calculateSalePrice(numValue)
         }));
       } else {
         setFormData((prev) => ({ ...prev, [name]: numValue }));
@@ -244,24 +257,13 @@ const EditBookPage = () => {
         }
       }
       
-      console.log("Updating book with data:", {
-        name: formData.name,
-        author: formData.author,
-        category: formData.category || null,
-        printinginstitute: formData.printingInstitute || null,
-        originalprice: formData.originalPrice,
-        saleprice: formData.salePrice,
-        quantity: formData.quantity,
-        updatedat: new Date().toISOString(),
-        imageurl: imageUrl
-      });
-      
       const { error } = await supabase
         .from("books")
         .update({
           name: formData.name,
           author: formData.author,
           category: formData.category || null,
+          language: formData.language || null,
           printinginstitute: formData.printingInstitute || null,
           originalprice: formData.originalPrice,
           saleprice: formData.salePrice,
@@ -308,26 +310,26 @@ const EditBookPage = () => {
         backTo="/books"
       />
       
-      <main className="container mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold text-temple-maroon mb-6">{t("common.editBook")}</h1>
+      <main className="container mx-auto px-3 py-4">
+        <h1 className="text-xl font-bold text-temple-maroon mb-4">{t("common.editBook")}</h1>
         
         {book ? (
           <Card className="p-4">
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Book Code - Display Only */}
               <div className="space-y-2">
-                <Label htmlFor="bookCode">{t("addBook.bookCode")}</Label>
+                <Label htmlFor="bookCode" className="text-sm font-medium">{t("addBook.bookCode")}</Label>
                 <Input 
                   id="bookCode" 
                   value={book.bookCode || "Auto-generated"} 
                   disabled
-                  className="bg-gray-100 cursor-not-allowed"
+                  className="bg-gray-100 cursor-not-allowed text-sm"
                 />
-                <p className="text-sm text-gray-500">{t("addBook.bookCodeAutoGenerated")}</p>
+                <p className="text-xs text-gray-500">{t("addBook.bookCodeAutoGenerated")}</p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="image">{t("common.image")}</Label>
+                <Label htmlFor="image" className="text-sm font-medium">{t("common.image")}</Label>
                 <ImageUpload 
                   initialImageUrl={book.imageUrl} 
                   onImageChange={handleImageChange}
@@ -341,13 +343,14 @@ const EditBookPage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="name">{t("common.bookName")}</Label>
+                <Label htmlFor="name" className="text-sm font-medium">{t("common.bookName")}</Label>
                 <Input 
                   id="name" 
                   name="name" 
                   value={formData.name} 
                   onChange={handleInputChange} 
                   required
+                  className="text-sm"
                 />
               </div>
               
@@ -368,6 +371,22 @@ const EditBookPage = () => {
                 onValueChange={(value) => handleMetadataChange("category", value)}
                 onAddNew={(value) => handleAddNewMetadata("category", value)}
               />
+
+              <div className="space-y-2">
+                <Label htmlFor="language" className="text-sm font-medium">{t("addBook.language")}</Label>
+                <Select value={formData.language} onValueChange={(value) => handleMetadataChange("language", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("addBook.selectLanguage")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {languages.map(lang => (
+                      <SelectItem key={lang} value={lang}>
+                        {lang}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               
               <MetadataInput
                 label={t("common.printingInstitute")}
@@ -380,7 +399,7 @@ const EditBookPage = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="originalPrice">{t("common.originalPrice")}</Label>
+                  <Label htmlFor="originalPrice" className="text-sm font-medium">{t("common.originalPrice")}</Label>
                   <Input 
                     id="originalPrice" 
                     name="originalPrice" 
@@ -390,11 +409,12 @@ const EditBookPage = () => {
                     required
                     min={0}
                     step={0.01}
+                    className="text-sm"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="salePrice">{t("common.salePrice")}</Label>
+                  <Label htmlFor="salePrice" className="text-sm font-medium">{t("common.salePrice")}</Label>
                   <Input 
                     id="salePrice" 
                     name="salePrice" 
@@ -404,12 +424,13 @@ const EditBookPage = () => {
                     required
                     min={0}
                     step={0.01}
+                    className="text-sm"
                   />
                 </div>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="quantity">{t("common.quantity")}</Label>
+                <Label htmlFor="quantity" className="text-sm font-medium">{t("common.quantity")}</Label>
                 <Input 
                   id="quantity" 
                   name="quantity" 
@@ -418,26 +439,29 @@ const EditBookPage = () => {
                   onChange={handleInputChange} 
                   required
                   min={0}
+                  className="text-sm"
                 />
               </div>
               
               <div className="pt-4 border-t">
-                <p className="text-sm text-muted-foreground mb-4">
-                  {t("common.lastUpdatedBy")}: {currentUser?.name || "Unknown"}
+                <p className="text-xs text-muted-foreground mb-4">
+                  {t("common.lastUpdatedBy")}: {currentUser?.name || t("common.unknown")}
                 </p>
               </div>
               
-              <div className="flex justify-end gap-4 pt-4">
+              <div className="flex justify-end gap-3 pt-4">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => navigate("/books")}
+                  className="text-sm"
                 >
                   {t("common.cancel")}
                 </Button>
                 <Button 
                   type="submit" 
                   disabled={isSaving}
+                  className="bg-temple-maroon hover:bg-temple-maroon/90 text-sm"
                 >
                   {isSaving ? t("common.saving") : t("common.save")}
                 </Button>

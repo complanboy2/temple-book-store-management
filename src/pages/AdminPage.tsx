@@ -4,39 +4,34 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useStallContext } from "@/contexts/StallContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
+import { Users, Plus } from "lucide-react";
 import MobileHeader from "@/components/MobileHeader";
-import { Users, UserPlus } from "lucide-react";
 
 interface User {
   id: string;
   name: string;
   email: string;
   phone?: string;
-  role: string;
   canrestock: boolean;
   cansell: boolean;
-  instituteid?: string;
+  role?: string;
 }
 
 const AdminPage = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [newUserName, setNewUserName] = useState("");
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserPhone, setNewUserPhone] = useState("");
+  const [newUserCanSell, setNewUserCanSell] = useState(false);
+  const [newUserCanRestock, setNewUserCanRestock] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddingUser, setIsAddingUser] = useState(false);
-  const [newUser, setNewUser] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    role: "personnel" as "super_admin" | "admin" | "personnel",
-    canRestock: false,
-    canSell: true
-  });
 
   const { currentStore } = useStallContext();
   const { isAdmin } = useAuth();
@@ -49,6 +44,19 @@ const AdminPage = () => {
     }
   }, [currentStore, isAdmin]);
 
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-temple-background flex items-center justify-center">
+        <Card className="max-w-md mx-auto">
+          <CardContent className="text-center p-6">
+            <h2 className="text-xl font-bold text-red-600 mb-2">{t("admin.accessDenied")}</h2>
+            <p className="text-gray-600">{t("admin.noPermission")}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const fetchUsers = async () => {
     if (!currentStore) return;
 
@@ -57,10 +65,10 @@ const AdminPage = () => {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('instituteid', currentStore)
-        .order('name');
+        .eq('instituteid', currentStore);
 
       if (error) throw error;
+
       setUsers(data || []);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -74,22 +82,29 @@ const AdminPage = () => {
     }
   };
 
-  const handleAddUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentStore) return;
+  const addUser = async () => {
+    if (!newUserName || !newUserEmail || !currentStore) {
+      toast({
+        title: t("common.error"),
+        description: t("addBook.fillAllFields"),
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       setIsAddingUser(true);
+      
       const { error } = await supabase
         .from('users')
         .insert({
-          name: newUser.name,
-          email: newUser.email,
-          phone: newUser.phone || null,
-          role: newUser.role,
-          canrestock: newUser.canRestock,
-          cansell: newUser.canSell,
-          instituteid: currentStore
+          name: newUserName,
+          email: newUserEmail,
+          phone: newUserPhone || null,
+          canrestock: newUserCanRestock,
+          cansell: newUserCanSell,
+          instituteid: currentStore,
+          role: 'personnel' as const
         });
 
       if (error) throw error;
@@ -99,15 +114,14 @@ const AdminPage = () => {
         description: t("admin.userAddedSuccessfully"),
       });
 
-      setNewUser({
-        name: "",
-        email: "",
-        phone: "",
-        role: "personnel",
-        canRestock: false,
-        canSell: true
-      });
+      // Reset form
+      setNewUserName("");
+      setNewUserEmail("");
+      setNewUserPhone("");
+      setNewUserCanSell(false);
+      setNewUserCanRestock(false);
 
+      // Refresh users list
       fetchUsers();
     } catch (error) {
       console.error("Error adding user:", error);
@@ -121,11 +135,14 @@ const AdminPage = () => {
     }
   };
 
-  const toggleUserPermission = async (userId: string, field: 'canrestock' | 'cansell', currentValue: boolean) => {
+  const updateUserPermissions = async (userId: string, canSell: boolean, canRestock: boolean) => {
     try {
       const { error } = await supabase
         .from('users')
-        .update({ [field]: !currentValue })
+        .update({
+          cansell: canSell,
+          canrestock: canRestock
+        })
         .eq('id', userId);
 
       if (error) throw error;
@@ -135,9 +152,14 @@ const AdminPage = () => {
         description: t("admin.userPermissionsUpdated"),
       });
 
-      fetchUsers();
+      // Update local state
+      setUsers(users.map(user =>
+        user.id === userId
+          ? { ...user, cansell: canSell, canrestock: canRestock }
+          : user
+      ));
     } catch (error) {
-      console.error("Error updating user permissions:", error);
+      console.error("Error updating permissions:", error);
       toast({
         title: t("common.error"),
         description: t("admin.failedToUpdatePermissions"),
@@ -146,112 +168,94 @@ const AdminPage = () => {
     }
   };
 
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-temple-background flex items-center justify-center">
-        <Card className="max-w-md mx-auto">
-          <CardContent className="p-6 text-center">
-            <p className="text-lg text-red-600">{t("admin.accessDenied")}</p>
-            <p className="text-sm text-gray-600 mt-2">{t("admin.noPermission")}</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-temple-background pb-20">
       <MobileHeader 
-        title={t("common.admin")}
+        title={t("admin.users")}
         showBackButton={true}
         backTo="/"
       />
       
-      <main className="container mx-auto px-4 py-6 space-y-6">
+      <main className="container mx-auto px-3 py-4">
         {/* Add New User */}
-        <Card className="temple-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserPlus className="h-5 w-5" />
+        <Card className="mb-4">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Plus className="h-5 w-5" />
               {t("admin.addNewUser")}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleAddUser} className="space-y-4">
-              <div>
-                <Label htmlFor="name">{t("common.name")} *</Label>
-                <Input
-                  id="name"
-                  value={newUser.name}
-                  onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                  required
-                />
-              </div>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="name" className="text-sm font-medium">{t("common.name")}</Label>
+              <Input
+                id="name"
+                value={newUserName}
+                onChange={(e) => setNewUserName(e.target.value)}
+                placeholder={t("common.name")}
+                className="mt-1"
+              />
+            </div>
 
-              <div>
-                <Label htmlFor="email">{t("common.email")} *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newUser.email}
-                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                  required
-                />
-              </div>
+            <div>
+              <Label htmlFor="email" className="text-sm font-medium">{t("common.email")}</Label>
+              <Input
+                id="email"
+                type="email"
+                value={newUserEmail}
+                onChange={(e) => setNewUserEmail(e.target.value)}
+                placeholder={t("common.email")}
+                className="mt-1"
+              />
+            </div>
 
-              <div>
-                <Label htmlFor="phone">{t("common.phone")}</Label>
-                <Input
-                  id="phone"
-                  value={newUser.phone}
-                  onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
-                />
-              </div>
+            <div>
+              <Label htmlFor="phone" className="text-sm font-medium">{t("common.phone")} ({t("common.optional")})</Label>
+              <Input
+                id="phone"
+                value={newUserPhone}
+                onChange={(e) => setNewUserPhone(e.target.value)}
+                placeholder={t("common.phone")}
+                className="mt-1"
+              />
+            </div>
 
-              <div>
-                <Label htmlFor="role">{t("common.role")}</Label>
-                <Select value={newUser.role} onValueChange={(value: "super_admin" | "admin" | "personnel") => setNewUser({ ...newUser, role: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">{t("common.admin")}</SelectItem>
-                    <SelectItem value="personnel">{t("common.personnel")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
+            <div className="space-y-3">
               <div className="flex items-center space-x-2">
-                <Switch
+                <Checkbox
                   id="canSell"
-                  checked={newUser.canSell}
-                  onCheckedChange={(checked) => setNewUser({ ...newUser, canSell: checked })}
+                  checked={newUserCanSell}
+                  onCheckedChange={(checked) => setNewUserCanSell(!!checked)}
                 />
-                <Label htmlFor="canSell">{t("admin.canSell")}</Label>
+                <Label htmlFor="canSell" className="text-sm">{t("admin.canSell")}</Label>
               </div>
 
               <div className="flex items-center space-x-2">
-                <Switch
+                <Checkbox
                   id="canRestock"
-                  checked={newUser.canRestock}
-                  onCheckedChange={(checked) => setNewUser({ ...newUser, canRestock: checked })}
+                  checked={newUserCanRestock}
+                  onCheckedChange={(checked) => setNewUserCanRestock(!!checked)}
                 />
-                <Label htmlFor="canRestock">{t("admin.canRestock")}</Label>
+                <Label htmlFor="canRestock" className="text-sm">{t("admin.canRestock")}</Label>
               </div>
+            </div>
 
-              <Button type="submit" className="w-full" disabled={isAddingUser}>
-                {isAddingUser ? t("admin.adding") : t("admin.addUser")}
-              </Button>
-            </form>
+            <Button 
+              onClick={addUser}
+              className="w-full bg-temple-maroon hover:bg-temple-maroon/90"
+              disabled={isAddingUser}
+            >
+              {isAddingUser ? t("admin.adding") : t("admin.addUser")}
+            </Button>
           </CardContent>
         </Card>
 
         {/* Users List */}
-        <Card className="temple-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <Users className="h-5 w-5" />
-              {t("admin.users")} ({users.length})
+              {t("admin.users")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -262,38 +266,49 @@ const AdminPage = () => {
                 {t("admin.noUsersFound")}
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {users.map((user) => (
-                  <div key={user.id} className="border rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h3 className="font-medium">{user.name}</h3>
-                        <p className="text-sm text-gray-600">{user.email}</p>
-                        {user.phone && <p className="text-sm text-gray-600">{user.phone}</p>}
-                        <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded mt-1">
-                          {user.role}
-                        </span>
+                  <Card key={user.id} className="border">
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        <div>
+                          <h3 className="font-medium text-lg">{user.name}</h3>
+                          <p className="text-sm text-gray-600">{user.email}</p>
+                          {user.phone && (
+                            <p className="text-sm text-gray-600">{user.phone}</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`sell-${user.id}`}
+                              checked={user.cansell}
+                              onCheckedChange={(checked) =>
+                                updateUserPermissions(user.id, !!checked, user.canrestock)
+                              }
+                            />
+                            <Label htmlFor={`sell-${user.id}`} className="text-sm">
+                              {t("admin.canSell")}
+                            </Label>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`restock-${user.id}`}
+                              checked={user.canrestock}
+                              onCheckedChange={(checked) =>
+                                updateUserPermissions(user.id, user.cansell, !!checked)
+                              }
+                            />
+                            <Label htmlFor={`restock-${user.id}`} className="text-sm">
+                              {t("admin.canRestock")}
+                            </Label>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="flex flex-wrap gap-4">
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          checked={user.cansell}
-                          onCheckedChange={() => toggleUserPermission(user.id, 'cansell', user.cansell)}
-                        />
-                        <Label className="text-sm">{t("admin.canSell")}</Label>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          checked={user.canrestock}
-                          onCheckedChange={() => toggleUserPermission(user.id, 'canrestock', user.canrestock)}
-                        />
-                        <Label className="text-sm">{t("admin.canRestock")}</Label>
-                      </div>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             )}
