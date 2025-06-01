@@ -56,6 +56,7 @@ const NewOrderPage = () => {
         .order("name");
 
       if (error) throw error;
+      console.log(`Fetched ${data?.length || 0} books for order page`);
       setBooks(data || []);
     } catch (error) {
       console.error("Error fetching books:", error);
@@ -75,10 +76,11 @@ const NewOrderPage = () => {
         .from("books")
         .select("*")
         .eq("stallid", currentStore)
-        .lt("quantity", 5)
-        .order("name");
+        .lte("quantity", 5)
+        .order("quantity", { ascending: true });
 
       if (error) throw error;
+      console.log(`Fetched ${data?.length || 0} low stock books`);
       setLowStockBooks(data || []);
     } catch (error) {
       console.error("Error fetching low stock books:", error);
@@ -273,6 +275,7 @@ const NewOrderPage = () => {
                     e.target.value = "";
                   }
                 }}
+                value=""
               >
                 <option value="">Choose a book to add...</option>
                 {books.map(book => (
@@ -331,7 +334,7 @@ const NewOrderPage = () => {
           </Card>
         )}
 
-        {/* Customer Details - Removed Customer Name field */}
+        {/* Customer Details */}
         <Card>
           <CardHeader>
             <CardTitle>Customer Details</CardTitle>

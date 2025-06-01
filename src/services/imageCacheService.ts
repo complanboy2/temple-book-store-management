@@ -1,6 +1,7 @@
 
 import localforage from 'localforage';
 import { sha256 } from 'hash-wasm';
+import { createClient } from '@supabase/supabase-js';
 
 const CACHE_EXPIRY_TIME = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 const CACHE_URLS_KEY = 'cached_image_urls';
@@ -56,11 +57,10 @@ class ImageCacheService {
    * @returns A promise that resolves to the public URL of the uploaded image.
    */
   async uploadAndCacheImage(file: File): Promise<string> {
-    // Use the hardcoded Supabase credentials from the client
+    // Use the hardcoded Supabase credentials
     const supabaseUrl = 'https://pijhrmuamnwdgucfnycl.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpamhybXVhbW53ZGd1Y2ZueWNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNDk1NTAsImV4cCI6MjA2MDgyNTU1MH0.qf5P5eWDSLRmFKxIwtqBygxNAvIFtqGxJN3J4nX7ocE';
   
-    const { createClient } = require('@supabase/supabase-js');
     const supabase = createClient(supabaseUrl, supabaseKey);
   
     const timestamp = Date.now();
@@ -130,6 +130,32 @@ class ImageCacheService {
       // Check if we have the URL mapping first
       if (!cachedUrls[hash]) {
         console.log(`No cached URL mapping found for: ${url}`);
+        
+        // Try to cache the image by downloading it
+        try {
+          const response = await fetch(url);
+          if (response.ok) {
+            const blob = await response.blob();
+            const file = new File([blob], 'cached-image', { type: blob.type });
+            
+            // Cache the downloaded image
+            await this.cacheImage(url, file);
+            
+            // Now try to retrieve it
+            const db = await this.openDB();
+            const cachedData = await db.getItem(hash) as ArrayBuffer | null;
+            
+            if (cachedData) {
+              const cachedBlob = new Blob([cachedData]);
+              const cachedUrl = URL.createObjectURL(cachedBlob);
+              console.log(`Successfully cached and retrieved image for URL: ${url}`);
+              return cachedUrl;
+            }
+          }
+        } catch (downloadError) {
+          console.warn(`Failed to download and cache image: ${downloadError}`);
+        }
+        
         return null;
       }
       
