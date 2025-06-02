@@ -178,7 +178,7 @@ const MainMenu: React.FC = () => {
                     </div>
                   </Button>
                 </CardContent>
-              </div>
+              </Card>
             ))}
           </div>
         </div>
