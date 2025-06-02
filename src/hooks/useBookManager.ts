@@ -29,12 +29,12 @@ export const useBookManager = (currentStore: string | null) => {
     if (!currentStore) return;
 
     try {
-      // Check for books without book codes
+      // Check for books without book codes (using barcode column)
       const { data: booksWithoutCodes, error } = await supabase
         .from('books')
-        .select('id')
+        .select('id, barcode')
         .eq('stallid', currentStore)
-        .or('bookcode.is.null,bookcode.eq.""');
+        .or('barcode.is.null,barcode.eq.""');
 
       if (error) {
         console.error("Error checking book codes:", error);
@@ -49,7 +49,7 @@ export const useBookManager = (currentStore: string | null) => {
           const bookCode = `BOOK-${book.id.slice(-6).toUpperCase()}`;
           const { error: updateError } = await supabase
             .from('books')
-            .update({ bookcode: bookCode })
+            .update({ barcode: bookCode })
             .eq('id', book.id);
 
           if (updateError) {
@@ -91,7 +91,7 @@ export const useBookManager = (currentStore: string | null) => {
 
       const formattedBooks: Book[] = (supabaseBooks || []).map((book) => ({
         id: book.id,
-        bookCode: book.bookcode || `BOOK-${book.id.slice(-6).toUpperCase()}`,
+        bookCode: book.barcode || `BOOK-${book.id.slice(-6).toUpperCase()}`,
         name: book.name,
         author: book.author,
         category: book.category || "",

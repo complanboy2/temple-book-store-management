@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,7 +57,7 @@ const SellMultipleBooksPage = () => {
     try {
       const { data, error } = await supabase
         .from('books')
-        .select('id, name, author, saleprice, quantity, imageurl, bookcode')
+        .select('id, name, author, saleprice, quantity, imageurl, barcode')
         .eq('stallid', currentStore)
         .gt('quantity', 0)
         .order('name');
@@ -72,7 +71,7 @@ const SellMultipleBooksPage = () => {
         salePrice: book.saleprice || 0,
         quantity: book.quantity || 0,
         imageUrl: book.imageurl,
-        bookCode: book.bookcode || `BOOK-${book.id.slice(-6).toUpperCase()}`
+        bookCode: book.barcode || `BOOK-${book.id.slice(-6).toUpperCase()}`
       }));
 
       setBooks(formattedBooks);

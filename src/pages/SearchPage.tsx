@@ -60,7 +60,7 @@ const SearchPage = () => {
 
       const formattedBooks: Book[] = (data || []).map((book) => ({
         id: book.id,
-        bookCode: book.bookcode || `BOOK-${book.id.slice(-6).toUpperCase()}`,
+        bookCode: book.barcode || `BOOK-${book.id.slice(-6).toUpperCase()}`,
         name: book.name,
         author: book.author,
         category: book.category || "",
