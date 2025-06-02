@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ const SearchPage = () => {
   const [quantityOperator, setQuantityOperator] = useState("");
   const [quantityValue, setQuantityValue] = useState("");
   const [books, setBooks] = useState<Book[]>([]);
+  const [allBooks, setAllBooks] = useState<Book[]>([]);
   const [authors, setAuthors] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchParams] = useSearchParams();
@@ -28,20 +29,59 @@ const SearchPage = () => {
   const { t } = useTranslation();
 
   useEffect(() => {
-    fetchAuthors();
+    if (currentStore) {
+      fetchAllBooks();
+      fetchAuthors();
+    }
+  }, [currentStore]);
+
+  useEffect(() => {
     const initialSearch = searchParams.get('q');
     if (initialSearch) {
       setSearchTerm(initialSearch);
     }
-  }, [currentStore, searchParams]);
+  }, [searchParams]);
 
-  useEffect(() => {
-    if (searchTerm || selectedAuthor || (quantityOperator && quantityValue)) {
-      performSearch();
-    } else {
-      setBooks([]);
+  const fetchAllBooks = async () => {
+    if (!currentStore) return;
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('books')
+        .select('*')
+        .eq('stallid', currentStore)
+        .order('name');
+
+      if (error) {
+        console.error("Error fetching books:", error);
+        return;
+      }
+
+      const formattedBooks: Book[] = (data || []).map((book) => ({
+        id: book.id,
+        bookCode: book.bookcode || `BOOK-${book.id.slice(-6).toUpperCase()}`,
+        name: book.name,
+        author: book.author,
+        category: book.category || "",
+        language: book.language || "",
+        printingInstitute: book.printinginstitute || "",
+        originalPrice: book.originalprice || 0,
+        salePrice: book.saleprice || 0,
+        quantity: book.quantity || 0,
+        stallId: book.stallid,
+        imageUrl: book.imageurl,
+        createdAt: book.createdat ? new Date(book.createdat) : new Date(),
+        updatedAt: book.updatedat ? new Date(book.updatedat) : new Date()
+      }));
+
+      setAllBooks(formattedBooks);
+    } catch (error) {
+      console.error("Error fetching books:", error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [searchTerm, selectedAuthor, quantityOperator, quantityValue, currentStore]);
+  };
 
   const fetchAuthors = async () => {
     if (!currentStore) return;
@@ -65,67 +105,41 @@ const SearchPage = () => {
     }
   };
 
-  const performSearch = async () => {
-    if (!currentStore) return;
+  const filteredBooks = useMemo(() => {
+    let filtered = allBooks;
 
-    setIsLoading(true);
-    try {
-      let query = supabase
-        .from('books')
-        .select('*')
-        .eq('stallid', currentStore);
-
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase();
-        query = query.or(
-          `name.ilike.%${searchTerm}%,author.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%,printinginstitute.ilike.%${searchTerm}%,id.ilike.%${searchTerm}%`
-        );
-      }
-
-      if (selectedAuthor) {
-        query = query.eq('author', selectedAuthor);
-      }
-
-      if (quantityOperator && quantityValue) {
-        const qtyVal = parseInt(quantityValue);
-        if (quantityOperator === 'less_than') {
-          query = query.lt('quantity', qtyVal);
-        } else if (quantityOperator === 'more_than') {
-          query = query.gt('quantity', qtyVal);
-        }
-      }
-
-      const { data, error } = await query.order('name');
-
-      if (error) {
-        console.error("Search error:", error);
-        return;
-      }
-
-      const formattedBooks: Book[] = (data || []).map((book) => ({
-        id: book.id,
-        bookCode: `BOOK-${book.id.slice(-6).toUpperCase()}`,
-        name: book.name,
-        author: book.author,
-        category: book.category || "",
-        language: book.language || "",
-        printingInstitute: book.printinginstitute || "",
-        originalPrice: book.originalprice || 0,
-        salePrice: book.saleprice || 0,
-        quantity: book.quantity || 0,
-        stallId: book.stallid,
-        imageUrl: book.imageurl,
-        createdAt: book.createdat ? new Date(book.createdat) : new Date(),
-        updatedAt: book.updatedat ? new Date(book.updatedat) : new Date()
-      }));
-
-      setBooks(formattedBooks);
-    } catch (error) {
-      console.error("Search error:", error);
-    } finally {
-      setIsLoading(false);
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(book => {
+        const nameMatch = book.name.toLowerCase().includes(searchLower);
+        const authorMatch = book.author.toLowerCase().includes(searchLower);
+        const bookCodeMatch = book.bookCode?.toLowerCase().includes(searchLower);
+        const categoryMatch = book.category.toLowerCase().includes(searchLower);
+        const idMatch = book.id.toLowerCase().includes(searchLower);
+        
+        return nameMatch || authorMatch || bookCodeMatch || categoryMatch || idMatch;
+      });
     }
-  };
+
+    if (selectedAuthor) {
+      filtered = filtered.filter(book => book.author === selectedAuthor);
+    }
+
+    if (quantityOperator && quantityValue) {
+      const qtyVal = parseInt(quantityValue);
+      if (quantityOperator === 'less_than') {
+        filtered = filtered.filter(book => book.quantity < qtyVal);
+      } else if (quantityOperator === 'more_than') {
+        filtered = filtered.filter(book => book.quantity > qtyVal);
+      }
+    }
+
+    return filtered;
+  }, [allBooks, searchTerm, selectedAuthor, quantityOperator, quantityValue]);
+
+  useEffect(() => {
+    setBooks(filteredBooks);
+  }, [filteredBooks]);
 
   const clearFilters = () => {
     setSearchTerm("");
@@ -135,8 +149,13 @@ const SearchPage = () => {
     setBooks([]);
   };
 
+  const performSearch = () => {
+    // Search is already performed via useMemo
+    setBooks(filteredBooks);
+  };
+
   return (
-    <div className="min-h-screen bg-temple-background pb-20">
+    <div className="min-h-screen bg-gray-50 pb-20">
       <MobileHeader 
         title={t("common.searchBooks")}
         showBackButton={true}
@@ -203,7 +222,7 @@ const SearchPage = () => {
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={performSearch} className="flex-1 bg-temple-maroon hover:bg-temple-maroon/90">
+              <Button onClick={performSearch} className="flex-1 bg-gray-700 hover:bg-gray-800">
                 <Search className="h-4 w-4 mr-2" />
                 {t("common.search")}
               </Button>

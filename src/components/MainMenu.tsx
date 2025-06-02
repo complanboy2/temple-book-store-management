@@ -33,7 +33,6 @@ const MainMenu: React.FC = () => {
       title: t("common.books"),
       description: t("common.viewManageBooks"),
       onClick: () => navigate("/books"),
-      color: "bg-blue-500 hover:bg-blue-600",
       available: true
     },
     {
@@ -41,7 +40,6 @@ const MainMenu: React.FC = () => {
       title: t("common.addBook"),
       description: t("common.addNewBookToInventory"),
       onClick: () => navigate("/books/add"),
-      color: "bg-green-500 hover:bg-green-600",
       available: currentUser?.canRestock || isAdmin
     },
     {
@@ -49,7 +47,6 @@ const MainMenu: React.FC = () => {
       title: t("common.sell"),
       description: t("common.sellBooksToCustomers"),
       onClick: () => navigate("/sell"),
-      color: "bg-orange-500 hover:bg-orange-600",
       available: currentUser?.canSell || isAdmin
     },
     {
@@ -57,7 +54,6 @@ const MainMenu: React.FC = () => {
       title: t("common.sellMultiple"),
       description: t("common.sellMultipleBooksAtOnce"),
       onClick: () => navigate("/sell-multiple"),
-      color: "bg-purple-500 hover:bg-purple-600",
       available: currentUser?.canSell || isAdmin
     },
     {
@@ -65,7 +61,6 @@ const MainMenu: React.FC = () => {
       title: t("common.search"),
       description: t("common.searchAndFilterBooks"),
       onClick: () => navigate("/search"),
-      color: "bg-indigo-500 hover:bg-indigo-600",
       available: true
     },
     {
@@ -73,7 +68,6 @@ const MainMenu: React.FC = () => {
       title: t("common.reports"),
       description: t("common.viewSalesReports"),
       onClick: () => navigate("/reports"),
-      color: "bg-teal-500 hover:bg-teal-600",
       available: true
     }
   ];
@@ -84,7 +78,6 @@ const MainMenu: React.FC = () => {
       title: t("admin.users"),
       description: t("common.userManagement"),
       onClick: () => navigate("/admin"),
-      color: "bg-red-500 hover:bg-red-600",
       available: isAdmin
     },
     {
@@ -92,7 +85,6 @@ const MainMenu: React.FC = () => {
       title: t("common.settings"),
       description: t("common.appSettings"),
       onClick: () => navigate("/settings"),
-      color: "bg-gray-500 hover:bg-gray-600",
       available: true
     }
   ];
@@ -104,23 +96,23 @@ const MainMenu: React.FC = () => {
     <div className="space-y-4">
       {/* Language Selector */}
       <Card className="shadow-sm">
-        <CardContent className="p-4">
+        <CardContent className="p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Globe className="h-5 w-5 text-temple-maroon" />
-              <span className="font-medium text-temple-maroon">{t("common.selectLanguage")}</span>
+              <Globe className="h-4 w-4 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">{t("common.selectLanguage")}</span>
             </div>
             <Select value={i18n.language} onValueChange={changeLanguage}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-24 h-8 text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="hi">हिंदी</SelectItem>
-                <SelectItem value="te">తెలుగు</SelectItem>
-                <SelectItem value="ta">தமிழ்</SelectItem>
-                <SelectItem value="kn">ಕನ್ನಡ</SelectItem>
-                <SelectItem value="mr">मराठी</SelectItem>
+                <SelectItem value="en" className="text-xs">EN</SelectItem>
+                <SelectItem value="hi" className="text-xs">हिं</SelectItem>
+                <SelectItem value="te" className="text-xs">తె</SelectItem>
+                <SelectItem value="ta" className="text-xs">த</SelectItem>
+                <SelectItem value="kn" className="text-xs">ಕ</SelectItem>
+                <SelectItem value="mr" className="text-xs">म</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -130,20 +122,20 @@ const MainMenu: React.FC = () => {
       {/* Main Actions */}
       <div className="grid grid-cols-1 gap-3">
         {visibleMenuItems.map((item, index) => (
-          <Card key={index} className="shadow-sm hover:shadow-md transition-shadow">
+          <Card key={index} className="shadow-sm hover:shadow-md transition-shadow border-gray-200">
             <CardContent className="p-0">
               <Button
                 onClick={item.onClick}
-                className={`w-full h-auto p-4 justify-start ${item.color} text-white`}
+                className="w-full h-auto p-4 justify-start bg-white hover:bg-gray-50 text-gray-800 border-0"
                 variant="ghost"
               >
                 <div className="flex items-center gap-4 w-full">
-                  <div className="bg-white/20 p-2 rounded-lg">
-                    <item.icon className="h-6 w-6" />
+                  <div className="bg-gray-100 p-2 rounded-lg">
+                    <item.icon className="h-5 w-5 text-gray-600" />
                   </div>
                   <div className="text-left flex-1">
-                    <h3 className="font-semibold text-lg">{item.title}</h3>
-                    <p className="text-sm opacity-90 mt-1">{item.description}</p>
+                    <h3 className="font-semibold text-base text-gray-800">{item.title}</h3>
+                    <p className="text-xs text-gray-600 mt-1">{item.description}</p>
                   </div>
                 </div>
               </Button>
@@ -155,25 +147,25 @@ const MainMenu: React.FC = () => {
       {/* Admin Section */}
       {visibleAdminItems.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-600 uppercase tracking-wide px-1">
+          <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide px-1">
             {t("common.administration")}
           </h3>
           <div className="grid grid-cols-1 gap-3">
             {visibleAdminItems.map((item, index) => (
-              <Card key={index} className="shadow-sm hover:shadow-md transition-shadow">
+              <Card key={index} className="shadow-sm hover:shadow-md transition-shadow border-gray-200">
                 <CardContent className="p-0">
                   <Button
                     onClick={item.onClick}
-                    className={`w-full h-auto p-4 justify-start ${item.color} text-white`}
+                    className="w-full h-auto p-4 justify-start bg-white hover:bg-gray-50 text-gray-800 border-0"
                     variant="ghost"
                   >
                     <div className="flex items-center gap-4 w-full">
-                      <div className="bg-white/20 p-2 rounded-lg">
-                        <item.icon className="h-6 w-6" />
+                      <div className="bg-gray-100 p-2 rounded-lg">
+                        <item.icon className="h-5 w-5 text-gray-600" />
                       </div>
                       <div className="text-left flex-1">
-                        <h3 className="font-semibold text-lg">{item.title}</h3>
-                        <p className="text-sm opacity-90 mt-1">{item.description}</p>
+                        <h3 className="font-semibold text-base text-gray-800">{item.title}</h3>
+                        <p className="text-xs text-gray-600 mt-1">{item.description}</p>
                       </div>
                     </div>
                   </Button>

@@ -25,6 +25,43 @@ export const useBookManager = (currentStore: string | null) => {
     }
   }, [searchParams]);
 
+  const ensureBookCodesExist = async () => {
+    if (!currentStore) return;
+
+    try {
+      // Check for books without book codes
+      const { data: booksWithoutCodes, error } = await supabase
+        .from('books')
+        .select('id')
+        .eq('stallid', currentStore)
+        .or('bookcode.is.null,bookcode.eq.""');
+
+      if (error) {
+        console.error("Error checking book codes:", error);
+        return;
+      }
+
+      // Update books without codes
+      if (booksWithoutCodes && booksWithoutCodes.length > 0) {
+        console.log(`Found ${booksWithoutCodes.length} books without codes. Updating...`);
+        
+        for (const book of booksWithoutCodes) {
+          const bookCode = `BOOK-${book.id.slice(-6).toUpperCase()}`;
+          const { error: updateError } = await supabase
+            .from('books')
+            .update({ bookcode: bookCode })
+            .eq('id', book.id);
+
+          if (updateError) {
+            console.error(`Error updating book code for ${book.id}:`, updateError);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error ensuring book codes exist:", error);
+    }
+  };
+
   const fetchBooks = async () => {
     if (!currentStore) {
       setIsLoading(false);
@@ -33,6 +70,9 @@ export const useBookManager = (currentStore: string | null) => {
 
     setIsLoading(true);
     try {
+      // First ensure all books have codes
+      await ensureBookCodesExist();
+
       const { data: supabaseBooks, error } = await supabase
         .from('books')
         .select('*')
@@ -51,7 +91,7 @@ export const useBookManager = (currentStore: string | null) => {
 
       const formattedBooks: Book[] = (supabaseBooks || []).map((book) => ({
         id: book.id,
-        bookCode: `BOOK-${book.id.slice(-6).toUpperCase()}`,
+        bookCode: book.bookcode || `BOOK-${book.id.slice(-6).toUpperCase()}`,
         name: book.name,
         author: book.author,
         category: book.category || "",
@@ -126,14 +166,16 @@ export const useBookManager = (currentStore: string | null) => {
     let filtered = books;
 
     if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(book =>
-        book.name.toLowerCase().includes(searchLower) ||
-        book.author.toLowerCase().includes(searchLower) ||
-        book.bookCode?.toLowerCase().includes(searchLower) ||
-        book.category.toLowerCase().includes(searchLower) ||
-        book.id.toLowerCase().includes(searchLower)
-      );
+      const searchLower = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(book => {
+        const nameMatch = book.name.toLowerCase().includes(searchLower);
+        const authorMatch = book.author.toLowerCase().includes(searchLower);
+        const bookCodeMatch = book.bookCode?.toLowerCase().includes(searchLower);
+        const categoryMatch = book.category.toLowerCase().includes(searchLower);
+        const idMatch = book.id.toLowerCase().includes(searchLower);
+        
+        return nameMatch || authorMatch || bookCodeMatch || categoryMatch || idMatch;
+      });
     }
 
     if (selectedCategory) {

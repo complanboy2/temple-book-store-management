@@ -22,6 +22,7 @@ interface Book {
   salePrice: number;
   quantity: number;
   imageUrl?: string;
+  bookCode?: string;
 }
 
 interface CartItem {
@@ -57,7 +58,7 @@ const SellMultipleBooksPage = () => {
     try {
       const { data, error } = await supabase
         .from('books')
-        .select('id, name, author, saleprice, quantity, imageurl')
+        .select('id, name, author, saleprice, quantity, imageurl, bookcode')
         .eq('stallid', currentStore)
         .gt('quantity', 0)
         .order('name');
@@ -70,7 +71,8 @@ const SellMultipleBooksPage = () => {
         author: book.author,
         salePrice: book.saleprice || 0,
         quantity: book.quantity || 0,
-        imageUrl: book.imageurl
+        imageUrl: book.imageurl,
+        bookCode: book.bookcode || `BOOK-${book.id.slice(-6).toUpperCase()}`
       }));
 
       setBooks(formattedBooks);
@@ -85,11 +87,14 @@ const SellMultipleBooksPage = () => {
   };
 
   const filteredBooks = books.filter(book => {
-    const searchLower = searchTerm.toLowerCase();
+    if (!searchTerm.trim()) return true;
+    
+    const searchLower = searchTerm.toLowerCase().trim();
     return (
       book.name.toLowerCase().includes(searchLower) ||
       book.author.toLowerCase().includes(searchLower) ||
-      book.id.toLowerCase().includes(searchLower)
+      book.id.toLowerCase().includes(searchLower) ||
+      (book.bookCode && book.bookCode.toLowerCase().includes(searchLower))
     );
   });
 
@@ -252,8 +257,28 @@ const SellMultipleBooksPage = () => {
     }
   };
 
+  const renderBookOption = (book: Book) => (
+    <div className="flex items-center gap-2 py-1">
+      <div className="w-8 h-10 flex-shrink-0">
+        <BookImage 
+          imageUrl={book.imageUrl} 
+          alt={book.name}
+          className="w-full h-full rounded-sm object-cover"
+          size="small"
+        />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate">{book.name}</p>
+        <p className="text-xs text-gray-600">{book.author}</p>
+        <p className="text-xs text-gray-500">
+          {book.bookCode} • ₹{book.salePrice} • {book.quantity} {t("common.available")}
+        </p>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-temple-background pb-20">
+    <div className="min-h-screen bg-gray-50 pb-20">
       <MobileHeader 
         title={t("sellMultiple.sellMultipleBooks")}
         showBackButton={true}
@@ -283,10 +308,10 @@ const SellMultipleBooksPage = () => {
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder={t("common.selectBook")} />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-60">
                   {filteredBooks.map(book => (
-                    <SelectItem key={book.id} value={book.id}>
-                      {book.name} - {book.author} (₹{book.salePrice}) [{book.quantity} {t("common.available")}]
+                    <SelectItem key={book.id} value={book.id} className="p-2">
+                      {renderBookOption(book)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -308,7 +333,7 @@ const SellMultipleBooksPage = () => {
               <div className="flex items-end">
                 <Button 
                   onClick={addToCart}
-                  className="w-full bg-temple-maroon hover:bg-temple-maroon/90"
+                  className="w-full bg-gray-700 hover:bg-gray-800"
                   disabled={!selectedBookId}
                 >
                   <Plus className="h-4 w-4 mr-1" />
