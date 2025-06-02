@@ -3,178 +3,119 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 import { 
   BookOpen, 
-  Plus, 
   ShoppingCart, 
+  Package, 
   BarChart3, 
-  Users, 
-  Settings,
-  Package,
-  Search,
-  Globe
+  TrendingUp, 
+  ShoppingBag,
+  Users
 } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/contexts/AuthContext";
 
-const MainMenu: React.FC = () => {
+const MainMenu = () => {
   const navigate = useNavigate();
-  const { currentUser, isAdmin } = useAuth();
-  const { t, i18n } = useTranslation();
-
-  const changeLanguage = (language: string) => {
-    i18n.changeLanguage(language);
-  };
+  const { t } = useTranslation();
+  const { isAdmin } = useAuth();
 
   const menuItems = [
     {
+      title: t("common.viewBooks"),
+      description: t("common.viewAllBooks"),
       icon: BookOpen,
-      title: t("common.books"),
-      description: t("common.viewManageBooks"),
-      onClick: () => navigate("/books"),
-      available: true
+      path: "/books",
+      bgColor: "bg-blue-500",
+      textColor: "text-blue-700",
+      hoverColor: "hover:bg-blue-600"
     },
     {
-      icon: Plus,
-      title: t("common.addBook"),
-      description: t("common.addNewBookToInventory"),
-      onClick: () => navigate("/books/add"),
-      available: currentUser?.canRestock || isAdmin
-    },
-    {
-      icon: ShoppingCart,
       title: t("common.sell"),
-      description: t("common.sellBooksToCustomers"),
-      onClick: () => navigate("/sell"),
-      available: currentUser?.canSell || isAdmin
+      description: t("common.sellBooks"),
+      icon: ShoppingCart,
+      path: "/sell",
+      bgColor: "bg-green-500",
+      textColor: "text-green-700",
+      hoverColor: "hover:bg-green-600"
     },
     {
-      icon: Package,
       title: t("common.sellMultiple"),
-      description: t("common.sellMultipleBooksAtOnce"),
-      onClick: () => navigate("/sell-multiple"),
-      available: currentUser?.canSell || isAdmin
+      description: t("common.sellMultipleBooks"),
+      icon: ShoppingBag,
+      path: "/sell-multiple",
+      bgColor: "bg-purple-500",
+      textColor: "text-purple-700",
+      hoverColor: "hover:bg-purple-600"
     },
     {
-      icon: Search,
-      title: t("common.search"),
-      description: t("common.searchAndFilterBooks"),
-      onClick: () => navigate("/search"),
-      available: true
+      title: t("common.addBook"),
+      description: t("common.addNewBook"),
+      icon: Package,
+      path: "/books/add",
+      bgColor: "bg-orange-500",
+      textColor: "text-orange-700",
+      hoverColor: "hover:bg-orange-600"
     },
     {
-      icon: BarChart3,
+      title: t("common.sales"),
+      description: t("common.viewSalesHistory"),
+      icon: TrendingUp,
+      path: "/sales",
+      bgColor: "bg-indigo-500",
+      textColor: "text-indigo-700",
+      hoverColor: "hover:bg-indigo-600"
+    },
+    {
       title: t("common.reports"),
-      description: t("common.viewSalesReports"),
-      onClick: () => navigate("/reports"),
-      available: true
+      description: t("common.viewReports"),
+      icon: BarChart3,
+      path: "/reports",
+      bgColor: "bg-teal-500",
+      textColor: "text-teal-700",
+      hoverColor: "hover:bg-teal-600"
     }
   ];
 
-  const adminItems = [
-    {
+  // Add admin-only items
+  if (isAdmin) {
+    menuItems.push({
+      title: t("common.admin"),
+      description: t("common.adminPanel"),
       icon: Users,
-      title: t("admin.users"),
-      description: t("common.userManagement"),
-      onClick: () => navigate("/admin"),
-      available: isAdmin
-    },
-    {
-      icon: Settings,
-      title: t("common.settings"),
-      description: t("common.appSettings"),
-      onClick: () => navigate("/settings"),
-      available: true
-    }
-  ];
-
-  const visibleMenuItems = menuItems.filter(item => item.available);
-  const visibleAdminItems = adminItems.filter(item => item.available);
+      path: "/admin",
+      bgColor: "bg-red-500",
+      textColor: "text-red-700",
+      hoverColor: "hover:bg-red-600"
+    });
+  }
 
   return (
-    <div className="space-y-4">
-      {/* Language Selector */}
-      <Card className="shadow-sm">
-        <CardContent className="p-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Globe className="h-4 w-4 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">{t("common.selectLanguage")}</span>
-            </div>
-            <Select value={i18n.language} onValueChange={changeLanguage}>
-              <SelectTrigger className="w-24 h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="en" className="text-xs">EN</SelectItem>
-                <SelectItem value="hi" className="text-xs">हिं</SelectItem>
-                <SelectItem value="te" className="text-xs">తె</SelectItem>
-                <SelectItem value="ta" className="text-xs">த</SelectItem>
-                <SelectItem value="kn" className="text-xs">ಕ</SelectItem>
-                <SelectItem value="mr" className="text-xs">म</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Main Actions */}
-      <div className="grid grid-cols-1 gap-3">
-        {visibleMenuItems.map((item, index) => (
-          <Card key={index} className="shadow-sm hover:shadow-md transition-shadow border-gray-200">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+      {menuItems.map((item) => {
+        const IconComponent = item.icon;
+        return (
+          <Card 
+            key={item.path}
+            className="overflow-hidden transition-all duration-200 hover:shadow-lg cursor-pointer"
+            onClick={() => navigate(item.path)}
+          >
             <CardContent className="p-0">
-              <Button
-                onClick={item.onClick}
-                className="w-full h-auto p-4 justify-start bg-white hover:bg-gray-50 text-gray-800 border-0"
-                variant="ghost"
-              >
-                <div className="flex items-center gap-4 w-full">
-                  <div className="bg-gray-100 p-2 rounded-lg">
-                    <item.icon className="h-5 w-5 text-gray-600" />
-                  </div>
-                  <div className="text-left flex-1">
-                    <h3 className="font-semibold text-base text-gray-800">{item.title}</h3>
-                    <p className="text-xs text-gray-600 mt-1">{item.description}</p>
-                  </div>
-                </div>
-              </Button>
+              <div className={`${item.bgColor} ${item.hoverColor} p-4 transition-colors duration-200`}>
+                <IconComponent className="h-8 w-8 text-white mb-2" />
+              </div>
+              <div className="p-3">
+                <h3 className={`font-semibold text-sm ${item.textColor} mb-1`}>
+                  {item.title}
+                </h3>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  {item.description}
+                </p>
+              </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
-
-      {/* Admin Section */}
-      {visibleAdminItems.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide px-1">
-            {t("common.administration")}
-          </h3>
-          <div className="grid grid-cols-1 gap-3">
-            {visibleAdminItems.map((item, index) => (
-              <Card key={index} className="shadow-sm hover:shadow-md transition-shadow border-gray-200">
-                <CardContent className="p-0">
-                  <Button
-                    onClick={item.onClick}
-                    className="w-full h-auto p-4 justify-start bg-white hover:bg-gray-50 text-gray-800 border-0"
-                    variant="ghost"
-                  >
-                    <div className="flex items-center gap-4 w-full">
-                      <div className="bg-gray-100 p-2 rounded-lg">
-                        <item.icon className="h-5 w-5 text-gray-600" />
-                      </div>
-                      <div className="text-left flex-1">
-                        <h3 className="font-semibold text-base text-gray-800">{item.title}</h3>
-                        <p className="text-xs text-gray-600 mt-1">{item.description}</p>
-                      </div>
-                    </div>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
+        );
+      })}
     </div>
   );
 };

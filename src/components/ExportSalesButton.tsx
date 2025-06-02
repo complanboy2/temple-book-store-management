@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import {
@@ -18,13 +17,15 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface ExportSalesButtonProps {
   sales: Sale[];
-  bookDetailsMap: Record<string, { name: string; author: string; price: number }>;
+  bookDetailsMap: Record<string, { name: string; author: string; price: number; imageUrl?: string }>;
   variant?: "download" | "print" | "both";
 }
 
 interface ExportFields {
   bookName: boolean;
   bookAuthor: boolean;
+  bookId: boolean;
+  imageUrl: boolean;
   quantity: boolean;
   amount: boolean;
   date: boolean;
@@ -42,6 +43,8 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
   const [fields, setFields] = useState<ExportFields>({
     bookName: true,
     bookAuthor: true,
+    bookId: true,
+    imageUrl: true,
     quantity: true,
     amount: true,
     date: true,
@@ -124,6 +127,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
             padding: 10px;
             text-align: left;
             border-bottom: 1px solid #ddd;
+            font-size: 12px;
           }
           th {
             background-color: #f5f5f5;
@@ -155,6 +159,15 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
             font-size: 12px;
             color: #888;
           }
+          .book-id {
+            font-family: monospace;
+            font-size: 10px;
+          }
+          .image-url {
+            word-break: break-all;
+            font-size: 10px;
+            color: #666;
+          }
         </style>
       </head>
       <body>
@@ -169,6 +182,8 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
               ${fields.date ? '<th>Date</th>' : ''}
               ${fields.bookName ? '<th>Book Title</th>' : ''}
               ${fields.bookAuthor ? '<th>Author</th>' : ''}
+              ${fields.bookId ? '<th>Book ID</th>' : ''}
+              ${fields.imageUrl ? '<th>Image URL</th>' : ''}
               ${fields.quantity ? '<th>Quantity</th>' : ''}
               ${fields.amount ? '<th>Amount</th>' : ''}
               ${fields.paymentMethod ? '<th>Payment Method</th>' : ''}
@@ -180,7 +195,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
     `;
 
     sales.forEach((sale, index) => {
-      const bookDetails = bookDetailsMap[sale.bookId] || { name: 'Unknown', author: 'Unknown', price: 0 };
+      const bookDetails = bookDetailsMap[sale.bookId] || { name: 'Unknown', author: 'Unknown', price: 0, imageUrl: '' };
       const sellerName = personnelNames[sale.personnelId] || sale.personnelId || 'Unknown';
       
       html += `
@@ -188,13 +203,15 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
           ${fields.date ? `<td>${new Date(sale.createdAt).toLocaleDateString()}</td>` : ''}
           ${fields.bookName ? `<td>${bookDetails.name}</td>` : ''}
           ${fields.bookAuthor ? `<td>${bookDetails.author}</td>` : ''}
+          ${fields.bookId ? `<td class="book-id">${sale.bookId}</td>` : ''}
+          ${fields.imageUrl ? `<td class="image-url">${bookDetails.imageUrl || 'N/A'}</td>` : ''}
           ${fields.quantity ? `<td>${sale.quantity}</td>` : ''}
           ${fields.amount ? `<td>₹${sale.totalAmount.toFixed(2)}</td>` : ''}
           ${fields.paymentMethod ? `<td>${sale.paymentMethod}</td>` : ''}
           ${fields.buyerInfo ? `<td>${sale.buyerName || 'N/A'}${sale.buyerPhone ? ` (${sale.buyerPhone})` : ''}</td>` : ''}
           ${fields.personnel ? `<td>${sellerName}</td>` : ''}
         </tr>
-        ${(index + 1) % 20 === 0 ? '<tr class="page-break"><td colspan="8"></td></tr>' : ''}
+        ${(index + 1) % 20 === 0 ? '<tr class="page-break"><td colspan="10"></td></tr>' : ''}
       `;
     });
 
@@ -317,6 +334,24 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
                 onCheckedChange={(checked) => handleFieldChange('bookAuthor', !!checked)} 
               />
               <Label htmlFor="bookAuthor">Author</Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="bookId" 
+                checked={fields.bookId} 
+                onCheckedChange={(checked) => handleFieldChange('bookId', !!checked)} 
+              />
+              <Label htmlFor="bookId">Book ID</Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="imageUrl" 
+                checked={fields.imageUrl} 
+                onCheckedChange={(checked) => handleFieldChange('imageUrl', !!checked)} 
+              />
+              <Label htmlFor="imageUrl">Image URL</Label>
             </div>
             
             <div className="flex items-center space-x-2">

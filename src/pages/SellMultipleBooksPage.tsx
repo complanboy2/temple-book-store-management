@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Trash2, Plus, ShoppingCart } from "lucide-react";
+import { Trash2, ShoppingCart } from "lucide-react";
 import MobileHeader from "@/components/MobileHeader";
 import BookImage from "@/components/BookImage";
 
@@ -33,8 +34,6 @@ interface CartItem {
 const SellMultipleBooksPage = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [selectedBookId, setSelectedBookId] = useState("");
-  const [sellQuantity, setSellQuantity] = useState(1);
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("UPI");
@@ -89,37 +88,21 @@ const SellMultipleBooksPage = () => {
     if (!searchTerm.trim()) return true;
     
     const searchLower = searchTerm.toLowerCase().trim();
-    return (
-      book.name.toLowerCase().includes(searchLower) ||
-      book.author.toLowerCase().includes(searchLower) ||
-      book.id.toLowerCase().includes(searchLower) ||
-      (book.bookCode && book.bookCode.toLowerCase().includes(searchLower))
-    );
+    const nameMatch = book.name.toLowerCase().includes(searchLower);
+    const authorMatch = book.author.toLowerCase().includes(searchLower);
+    const bookCodeMatch = book.bookCode?.toLowerCase().includes(searchLower);
+    const idMatch = book.id.toLowerCase().includes(searchLower);
+    
+    return nameMatch || authorMatch || bookCodeMatch || idMatch;
   });
 
-  const addToCart = () => {
-    const selectedBook = books.find(book => book.id === selectedBookId);
-    if (!selectedBook) {
-      toast({
-        title: t("common.error"),
-        description: t("sellMultiple.selectBook"),
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (sellQuantity > selectedBook.quantity) {
-      toast({
-        title: t("common.error"),
-        description: t("sellMultiple.insufficientStock"),
-        variant: "destructive",
-      });
-      return;
-    }
+  const addBookToCart = (bookId: string) => {
+    const selectedBook = books.find(book => book.id === bookId);
+    if (!selectedBook) return;
 
     const existingItem = cart.find(item => item.book.id === selectedBook.id);
     if (existingItem) {
-      const newQuantity = existingItem.quantity + sellQuantity;
+      const newQuantity = existingItem.quantity + 1;
       if (newQuantity > selectedBook.quantity) {
         toast({
           title: t("common.error"),
@@ -137,14 +120,16 @@ const SellMultipleBooksPage = () => {
     } else {
       const cartItem: CartItem = {
         book: selectedBook,
-        quantity: sellQuantity,
-        subtotal: sellQuantity * selectedBook.salePrice
+        quantity: 1,
+        subtotal: selectedBook.salePrice
       };
       setCart([...cart, cartItem]);
     }
 
-    setSelectedBookId("");
-    setSellQuantity(1);
+    toast({
+      title: t("common.success"),
+      description: `${selectedBook.name} ${t("sellMultiple.addedToCart")}`,
+    });
   };
 
   const removeFromCart = (bookId: string) => {
@@ -257,7 +242,10 @@ const SellMultipleBooksPage = () => {
   };
 
   const renderBookOption = (book: Book) => (
-    <div className="flex items-center gap-2 py-1">
+    <div 
+      className="flex items-center gap-2 py-1 cursor-pointer hover:bg-gray-50 rounded p-2"
+      onClick={() => addBookToCart(book.id)}
+    >
       <div className="w-8 h-10 flex-shrink-0">
         <BookImage 
           imageUrl={book.imageUrl} 
@@ -287,11 +275,11 @@ const SellMultipleBooksPage = () => {
       <main className="container mx-auto px-3 py-4">
         <Card className="mb-4">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">{t("sellMultiple.addBooksToCart")}</CardTitle>
+            <CardTitle className="text-lg">{t("sellMultiple.selectBooksToSell")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="search" className="text-sm font-medium">{t("common.searchBooks")}</Label>
+              <Label htmlFor="search" className="text-sm font-medium">{t("common.searchByCodeNameAuthor")}</Label>
               <Input
                 id="search"
                 placeholder={t("common.searchByCodeNameAuthor")}
@@ -301,45 +289,21 @@ const SellMultipleBooksPage = () => {
               />
             </div>
 
-            <div>
-              <Label htmlFor="book" className="text-sm font-medium">{t("common.selectBook")}</Label>
-              <Select value={selectedBookId} onValueChange={setSelectedBookId}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder={t("common.selectBook")} />
-                </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  {filteredBooks.map(book => (
-                    <SelectItem key={book.id} value={book.id} className="p-2">
+            {searchTerm.trim() && (
+              <div className="max-h-60 overflow-y-auto border rounded-md">
+                {filteredBooks.length > 0 ? (
+                  filteredBooks.map(book => (
+                    <div key={book.id}>
                       {renderBookOption(book)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="quantity" className="text-sm font-medium">{t("common.quantity")}</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  min="1"
-                  value={sellQuantity}
-                  onChange={(e) => setSellQuantity(parseInt(e.target.value) || 1)}
-                  className="mt-1"
-                />
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-4 text-center text-gray-500">
+                    {t("common.noBooks")}
+                  </div>
+                )}
               </div>
-              <div className="flex items-end">
-                <Button 
-                  onClick={addToCart}
-                  className="w-full bg-gray-700 hover:bg-gray-800"
-                  disabled={!selectedBookId}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  {t("sellMultiple.addToCart")}
-                </Button>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 

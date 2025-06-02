@@ -117,6 +117,11 @@ const SearchPage = () => {
         const categoryMatch = book.category.toLowerCase().includes(searchLower);
         const idMatch = book.id.toLowerCase().includes(searchLower);
         
+        // For exact barcode/book code match, prioritize exact matches
+        if (book.bookCode?.toLowerCase() === searchLower) {
+          return true;
+        }
+        
         return nameMatch || authorMatch || bookCodeMatch || categoryMatch || idMatch;
       });
     }
