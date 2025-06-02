@@ -34,6 +34,7 @@ export interface Book {
   name: string;
   author: string;
   category: string;
+  language?: string;
   printingInstitute: string;
   originalPrice: number;
   salePrice: number;

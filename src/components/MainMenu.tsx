@@ -42,7 +42,7 @@ const MainMenu: React.FC = () => {
       description: t("common.addNewBookToInventory"),
       onClick: () => navigate("/books/add"),
       color: "bg-temple-maroon hover:bg-temple-maroon/90",
-      available: currentUser?.canrestock || isAdmin
+      available: currentUser?.canRestock || isAdmin
     },
     {
       icon: ShoppingCart,
@@ -50,7 +50,7 @@ const MainMenu: React.FC = () => {
       description: t("common.sellBooksToCustomers"),
       onClick: () => navigate("/sell"),
       color: "bg-green-600 hover:bg-green-700",
-      available: currentUser?.cansell || isAdmin
+      available: currentUser?.canSell || isAdmin
     },
     {
       icon: Package,
@@ -58,7 +58,7 @@ const MainMenu: React.FC = () => {
       description: t("common.sellMultipleBooksAtOnce"),
       onClick: () => navigate("/sell-multiple"),
       color: "bg-blue-600 hover:bg-blue-700",
-      available: currentUser?.cansell || isAdmin
+      available: currentUser?.canSell || isAdmin
     },
     {
       icon: Search,
