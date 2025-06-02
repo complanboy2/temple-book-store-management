@@ -33,7 +33,7 @@ const MainMenu: React.FC = () => {
       title: t("common.books"),
       description: t("common.viewManageBooks"),
       onClick: () => navigate("/books"),
-      color: "bg-temple-saffron hover:bg-temple-saffron/90",
+      color: "bg-blue-500 hover:bg-blue-600",
       available: true
     },
     {
@@ -41,7 +41,7 @@ const MainMenu: React.FC = () => {
       title: t("common.addBook"),
       description: t("common.addNewBookToInventory"),
       onClick: () => navigate("/books/add"),
-      color: "bg-temple-maroon hover:bg-temple-maroon/90",
+      color: "bg-green-500 hover:bg-green-600",
       available: currentUser?.canRestock || isAdmin
     },
     {
@@ -49,7 +49,7 @@ const MainMenu: React.FC = () => {
       title: t("common.sell"),
       description: t("common.sellBooksToCustomers"),
       onClick: () => navigate("/sell"),
-      color: "bg-green-600 hover:bg-green-700",
+      color: "bg-orange-500 hover:bg-orange-600",
       available: currentUser?.canSell || isAdmin
     },
     {
@@ -57,7 +57,7 @@ const MainMenu: React.FC = () => {
       title: t("common.sellMultiple"),
       description: t("common.sellMultipleBooksAtOnce"),
       onClick: () => navigate("/sell-multiple"),
-      color: "bg-blue-600 hover:bg-blue-700",
+      color: "bg-purple-500 hover:bg-purple-600",
       available: currentUser?.canSell || isAdmin
     },
     {
@@ -65,7 +65,7 @@ const MainMenu: React.FC = () => {
       title: t("common.search"),
       description: t("common.searchAndFilterBooks"),
       onClick: () => navigate("/search"),
-      color: "bg-purple-600 hover:bg-purple-700",
+      color: "bg-indigo-500 hover:bg-indigo-600",
       available: true
     },
     {
@@ -73,7 +73,7 @@ const MainMenu: React.FC = () => {
       title: t("common.reports"),
       description: t("common.viewSalesReports"),
       onClick: () => navigate("/reports"),
-      color: "bg-orange-600 hover:bg-orange-700",
+      color: "bg-teal-500 hover:bg-teal-600",
       available: true
     }
   ];
@@ -84,7 +84,7 @@ const MainMenu: React.FC = () => {
       title: t("admin.users"),
       description: t("common.userManagement"),
       onClick: () => navigate("/admin"),
-      color: "bg-red-600 hover:bg-red-700",
+      color: "bg-red-500 hover:bg-red-600",
       available: isAdmin
     },
     {
@@ -92,7 +92,7 @@ const MainMenu: React.FC = () => {
       title: t("common.settings"),
       description: t("common.appSettings"),
       onClick: () => navigate("/settings"),
-      color: "bg-gray-600 hover:bg-gray-700",
+      color: "bg-gray-500 hover:bg-gray-600",
       available: true
     }
   ];

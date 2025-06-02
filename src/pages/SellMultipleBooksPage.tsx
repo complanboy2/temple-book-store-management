@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Trash2, Plus, ShoppingCart } from "lucide-react";
 import MobileHeader from "@/components/MobileHeader";
+import BookImage from "@/components/BookImage";
 
 interface Book {
   id: string;
@@ -20,6 +21,7 @@ interface Book {
   author: string;
   salePrice: number;
   quantity: number;
+  imageUrl?: string;
 }
 
 interface CartItem {
@@ -55,7 +57,7 @@ const SellMultipleBooksPage = () => {
     try {
       const { data, error } = await supabase
         .from('books')
-        .select('id, name, author, saleprice, quantity')
+        .select('id, name, author, saleprice, quantity, imageurl')
         .eq('stallid', currentStore)
         .gt('quantity', 0)
         .order('name');
@@ -67,7 +69,8 @@ const SellMultipleBooksPage = () => {
         name: book.name,
         author: book.author,
         salePrice: book.saleprice || 0,
-        quantity: book.quantity || 0
+        quantity: book.quantity || 0,
+        imageUrl: book.imageurl
       }));
 
       setBooks(formattedBooks);
@@ -81,10 +84,14 @@ const SellMultipleBooksPage = () => {
     }
   };
 
-  const filteredBooks = books.filter(book =>
-    book.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    book.author.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredBooks = books.filter(book => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      book.name.toLowerCase().includes(searchLower) ||
+      book.author.toLowerCase().includes(searchLower) ||
+      book.id.toLowerCase().includes(searchLower)
+    );
+  });
 
   const addToCart = () => {
     const selectedBook = books.find(book => book.id === selectedBookId);
@@ -193,9 +200,7 @@ const SellMultipleBooksPage = () => {
     try {
       const currentTimestamp = new Date().toISOString();
       
-      // Create sales entries and update book quantities
       for (const item of cart) {
-        // Create sale entry
         const { error: saleError } = await supabase
           .from('sales')
           .insert({
@@ -212,7 +217,6 @@ const SellMultipleBooksPage = () => {
 
         if (saleError) throw saleError;
 
-        // Update book quantity
         const { error: updateError } = await supabase
           .from('books')
           .update({
@@ -229,13 +233,11 @@ const SellMultipleBooksPage = () => {
         description: t("sellMultiple.soldSuccessfully"),
       });
 
-      // Reset form
       setCart([]);
       setBuyerName("");
       setBuyerPhone("");
       setPaymentMethod("UPI");
       
-      // Refresh books data
       fetchBooks();
 
     } catch (error) {
@@ -259,7 +261,6 @@ const SellMultipleBooksPage = () => {
       />
       
       <main className="container mx-auto px-3 py-4">
-        {/* Add Books to Cart */}
         <Card className="mb-4">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">{t("sellMultiple.addBooksToCart")}</CardTitle>
@@ -269,7 +270,7 @@ const SellMultipleBooksPage = () => {
               <Label htmlFor="search" className="text-sm font-medium">{t("common.searchBooks")}</Label>
               <Input
                 id="search"
-                placeholder={t("common.searchByNameAuthor")}
+                placeholder={t("common.searchByCodeNameAuthor")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="mt-1"
@@ -318,7 +319,6 @@ const SellMultipleBooksPage = () => {
           </CardContent>
         </Card>
 
-        {/* Cart */}
         <Card className="mb-4">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -332,7 +332,15 @@ const SellMultipleBooksPage = () => {
             ) : (
               <div className="space-y-3">
                 {cart.map((item) => (
-                  <div key={item.book.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div key={item.book.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-12 h-16 flex-shrink-0">
+                      <BookImage 
+                        imageUrl={item.book.imageUrl} 
+                        alt={item.book.name}
+                        className="w-full h-full rounded"
+                        size="small"
+                      />
+                    </div>
                     <div className="flex-1">
                       <h4 className="font-medium text-sm">{item.book.name}</h4>
                       <p className="text-xs text-gray-600">{item.book.author}</p>
@@ -369,7 +377,6 @@ const SellMultipleBooksPage = () => {
           </CardContent>
         </Card>
 
-        {/* Buyer Information */}
         {cart.length > 0 && (
           <Card className="mb-4">
             <CardHeader className="pb-3">

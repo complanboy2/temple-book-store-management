@@ -18,7 +18,6 @@ export const useBookManager = (currentStore: string | null) => {
   const { toast } = useToast();
   const { t } = useTranslation();
 
-  // Check URL params for filters
   useEffect(() => {
     const filter = searchParams.get('filter');
     if (filter === 'lowStock') {
@@ -50,12 +49,13 @@ export const useBookManager = (currentStore: string | null) => {
         return;
       }
 
-      const formattedBooks: Book[] = (supabaseBooks || []).map((book, index) => ({
+      const formattedBooks: Book[] = (supabaseBooks || []).map((book) => ({
         id: book.id,
-        bookCode: (index + 1).toString(), // Generate sequential book code
+        bookCode: `BOOK-${book.id.slice(-6).toUpperCase()}`,
         name: book.name,
         author: book.author,
         category: book.category || "",
+        language: book.language || "",
         printingInstitute: book.printinginstitute || "",
         originalPrice: book.originalprice || 0,
         salePrice: book.saleprice || 0,
@@ -68,7 +68,6 @@ export const useBookManager = (currentStore: string | null) => {
       
       setBooks(formattedBooks);
       
-      // Extract unique categories
       const uniqueCategories = [...new Set(formattedBooks.map(book => book.category).filter(Boolean))];
       setCategories(uniqueCategories);
       
@@ -99,7 +98,7 @@ export const useBookManager = (currentStore: string | null) => {
         console.error("Error deleting book:", error);
         toast({
           title: t("common.error"),
-          description: t("common.failedToDeleteBook"),
+          description: t("common.deleteBookFailed"),
           variant: "destructive",
         });
         return false;
@@ -110,30 +109,30 @@ export const useBookManager = (currentStore: string | null) => {
         description: t("common.bookDeleted"),
       });
 
-      // Refresh books after deletion
       await fetchBooks();
       return true;
     } catch (error) {
       console.error("Error deleting book:", error);
       toast({
         title: t("common.error"),
-        description: t("common.failedToDeleteBook"),
+        description: t("common.deleteBookFailed"),
         variant: "destructive",
       });
       return false;
     }
   };
 
-  // Filter books based on search term, category, and low stock filter
   useEffect(() => {
     let filtered = books;
 
     if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter(book =>
-        book.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        book.bookCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        book.category.toLowerCase().includes(searchTerm.toLowerCase())
+        book.name.toLowerCase().includes(searchLower) ||
+        book.author.toLowerCase().includes(searchLower) ||
+        book.bookCode?.toLowerCase().includes(searchLower) ||
+        book.category.toLowerCase().includes(searchLower) ||
+        book.id.toLowerCase().includes(searchLower)
       );
     }
 

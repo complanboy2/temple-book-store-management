@@ -75,17 +75,17 @@ const SearchPage = () => {
         .select('*')
         .eq('stallid', currentStore);
 
-      // Search by name, author, category, printing institute, or book ID (which includes bookcode search)
       if (searchTerm) {
-        query = query.or(`name.ilike.%${searchTerm}%,author.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%,printinginstitute.ilike.%${searchTerm}%,id.ilike.%${searchTerm}%`);
+        const searchLower = searchTerm.toLowerCase();
+        query = query.or(
+          `name.ilike.%${searchTerm}%,author.ilike.%${searchTerm}%,category.ilike.%${searchTerm}%,printinginstitute.ilike.%${searchTerm}%,id.ilike.%${searchTerm}%`
+        );
       }
 
-      // Filter by author
       if (selectedAuthor) {
         query = query.eq('author', selectedAuthor);
       }
 
-      // Filter by quantity
       if (quantityOperator && quantityValue) {
         const qtyVal = parseInt(quantityValue);
         if (quantityOperator === 'less_than') {
@@ -102,7 +102,7 @@ const SearchPage = () => {
         return;
       }
 
-      const formattedBooks: Book[] = (data || []).map((book, index) => ({
+      const formattedBooks: Book[] = (data || []).map((book) => ({
         id: book.id,
         bookCode: `BOOK-${book.id.slice(-6).toUpperCase()}`,
         name: book.name,
