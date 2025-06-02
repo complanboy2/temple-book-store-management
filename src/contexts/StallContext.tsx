@@ -5,14 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface StallContextType {
   stalls: any[];
-  stores: any[]; // Alias for stalls for backward compatibility
+  stores: any[];
   currentStore: string | null;
   setCurrentStore: (storeId: string) => void;
   isLoading: boolean;
   refreshStalls: () => Promise<void>;
   addStore: (name: string, location?: string, isDefault?: boolean) => Promise<any>;
   updateStoreDefault: (storeId: string) => Promise<void>;
-  bookStalls: any[]; // Alias for stalls for backward compatibility
+  bookStalls: any[];
   shouldShowAddStore: boolean;
 }
 
@@ -49,30 +49,35 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
 
     try {
       setIsLoading(true);
-      console.log("Fetching stalls for admin email:", currentUser.email);
+      console.log("Fetching stalls for user:", currentUser.email, "Role:", currentUser.role);
       
-      // Special handling for admin@temple.com - link them to existing data
-      if (currentUser.email === 'admin@temple.com') {
-        // First check if there are any stalls without admin_id and claim them
-        const { data: unclaimedStalls } = await supabase
-          .from("book_stalls")
-          .select("*")
-          .or("admin_id.is.null,admin_id.eq.''");
-
-        if (unclaimedStalls && unclaimedStalls.length > 0) {
-          console.log("Found unclaimed stalls, assigning to admin@temple.com");
-          await supabase
-            .from("book_stalls")
-            .update({ admin_id: currentUser.email })
-            .or("admin_id.is.null,admin_id.eq.''");
+      let query = supabase.from("book_stalls").select("*");
+      
+      // If user is admin, show their own stores
+      if (currentUser.role === "admin" || currentUser.role === "super_admin") {
+        query = query.eq("admin_id", currentUser.email);
+      } else {
+        // If user is personnel (seller), find stores created by their admin
+        const { data: userData } = await supabase
+          .from("users")
+          .select("created_by_admin")
+          .eq("email", currentUser.email)
+          .single();
+        
+        if (userData?.created_by_admin) {
+          console.log("Seller accessing stores from admin:", userData.created_by_admin);
+          query = query.eq("admin_id", userData.created_by_admin);
+        } else {
+          // Fallback for sellers without created_by_admin set
+          console.log("No admin found for seller, showing no stores");
+          setStalls([]);
+          setCurrentStore(null);
+          setIsLoading(false);
+          return;
         }
       }
-      
-      const { data, error } = await supabase
-        .from("book_stalls")
-        .select("*")
-        .eq("admin_id", currentUser.email)
-        .order('createdat', { ascending: false });
+
+      const { data, error } = await query.order('createdat', { ascending: false });
 
       if (error) {
         console.error("Error fetching stalls:", error);
@@ -94,8 +99,8 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
       } else {
         console.log("No stores found for user:", currentUser.email);
         setCurrentStore(null);
-        // Show add store prompt for admins when they have no stores
-        setShouldShowAddStore(true);
+        // Only show add store prompt for admins when they have no stores
+        setShouldShowAddStore(currentUser.role === "admin");
       }
     } catch (error) {
       console.error("Error fetching stalls:", error);
@@ -191,14 +196,14 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
     <StallContext.Provider
       value={{
         stalls,
-        stores: stalls, // Alias for backward compatibility
+        stores: stalls,
         currentStore,
         setCurrentStore,
         isLoading,
         refreshStalls,
         addStore,
         updateStoreDefault,
-        bookStalls: stalls, // Alias for backward compatibility
+        bookStalls: stalls,
         shouldShowAddStore,
       }}
     >

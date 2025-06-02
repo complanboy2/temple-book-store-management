@@ -11,7 +11,8 @@ import {
   BarChart3, 
   TrendingUp, 
   ShoppingBag,
-  Users
+  Users,
+  History
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -76,6 +77,19 @@ const MainMenu = () => {
       hoverColor: "hover:bg-teal-600"
     }
   ];
+
+  // Add sales history for non-admin users (sellers)
+  if (!isAdmin) {
+    menuItems.push({
+      title: "My Sales History",
+      description: "View and edit your sales",
+      icon: History,
+      path: "/my-sales-history",
+      bgColor: "bg-amber-500",
+      textColor: "text-amber-700",
+      hoverColor: "hover:bg-amber-600"
+    });
+  }
 
   // Add admin-only items
   if (isAdmin) {

@@ -29,6 +29,7 @@ import OrdersPage from "@/pages/OrdersPage";
 import NewOrderPage from "@/pages/NewOrderPage";
 import OrderManagementPage from "@/pages/OrderManagementPage";
 import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
+import SalesHistoryPage from "@/pages/SalesHistoryPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -215,6 +216,16 @@ const App = () => (
                   <ProtectedRoute>
                     <Layout>
                       <OrderManagementPage />
+                    </Layout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/my-sales-history" 
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <SalesHistoryPage />
                     </Layout>
                   </ProtectedRoute>
                 } 

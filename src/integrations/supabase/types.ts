@@ -322,6 +322,7 @@ export type Database = {
         Row: {
           canrestock: boolean
           cansell: boolean
+          created_by_admin: string | null
           email: string
           id: string
           instituteid: string | null
@@ -332,6 +333,7 @@ export type Database = {
         Insert: {
           canrestock?: boolean
           cansell?: boolean
+          created_by_admin?: string | null
           email: string
           id?: string
           instituteid?: string | null
@@ -342,6 +344,7 @@ export type Database = {
         Update: {
           canrestock?: boolean
           cansell?: boolean
+          created_by_admin?: string | null
           email?: string
           id?: string
           instituteid?: string | null
