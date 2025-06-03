@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStallContext } from "@/contexts/StallContext";
@@ -11,7 +10,6 @@ import { useBookManager } from "@/hooks/useBookManager";
 import BookPageHeader from "@/components/books/BookPageHeader";
 import BookListContainer from "@/components/books/BookListContainer";
 import DeleteBookDialogContainer from "@/components/books/DeleteBookDialogContainer";
-import { BookReportData } from "@/types/reportTypes";
 
 const BooksPage = () => {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
@@ -35,21 +33,6 @@ const BooksPage = () => {
     deleteBook,
     refreshBooks
   } = useBookManager(currentStore);
-  
-  // Transform books for export
-  const getExportBooks = (): BookReportData[] => {
-    return books.map(book => ({
-      id: book.id,
-      name: book.name,
-      author: book.author,
-      price: book.salePrice,
-      quantity: book.quantity,
-      category: book.category || "",
-      printingInstitute: book.printingInstitute || "",
-      imageurl: book.imageUrl,
-      quantitySold: 0
-    }));
-  };
   
   // Handle book editing - navigate to edit page with book ID
   const handleEditBook = (book: Book) => {
@@ -130,7 +113,7 @@ const BooksPage = () => {
       
       <main className="container mx-auto px-4 py-6">
         <BookPageHeader 
-          exportBooks={getExportBooks()} 
+          exportBooks={books}
           isAdmin={isAdmin}
         />
         

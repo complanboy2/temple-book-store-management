@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useAuth } from "./AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,14 +50,11 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
       setIsLoading(true);
       console.log("Fetching stalls for user:", currentUser.email, "Role:", currentUser.role);
       
-      let query = supabase.from("book_stalls").select("*");
+      let adminEmail = currentUser.email;
       
-      // If user is admin, show their own stores
-      if (currentUser.role === "admin" || currentUser.role === "super_admin") {
-        query = query.eq("admin_id", currentUser.email);
-      } else {
-        // If user is personnel (seller), find stores created by their admin
-        console.log("User is personnel, checking created_by_admin...");
+      // If user is personnel (seller), find the admin who created them
+      if (currentUser.role === "personnel" || currentUser.role === "seller") {
+        console.log("User is personnel/seller, checking created_by_admin...");
         
         // First get the user's created_by_admin value
         const { data: userData, error: userError } = await supabase
@@ -69,25 +65,23 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
         
         if (userError) {
           console.error("Error fetching user data:", userError);
-          setStalls([]);
-          setCurrentStore(null);
-          setIsLoading(false);
-          return;
-        }
-        
-        console.log("User data:", userData);
-        
-        if (userData?.created_by_admin) {
-          console.log("Seller accessing stores from admin:", userData.created_by_admin);
-          query = query.eq("admin_id", userData.created_by_admin);
+        } else if (userData?.created_by_admin) {
+          console.log("Found created_by_admin:", userData.created_by_admin);
+          adminEmail = userData.created_by_admin;
         } else {
-          // Fallback: check if user was created by admin@temple.com
-          console.log("No created_by_admin found, checking for admin@temple.com");
-          query = query.eq("admin_id", "admin@temple.com");
+          console.log("No created_by_admin found, trying fallback to admin@temple.com");
+          // Fallback: try admin@temple.com
+          adminEmail = "admin@temple.com";
         }
       }
 
-      const { data, error } = await query.order('createdat', { ascending: false });
+      console.log("Querying stalls for admin_id:", adminEmail);
+      
+      const { data, error } = await supabase
+        .from("book_stalls")
+        .select("*")
+        .eq("admin_id", adminEmail)
+        .order('createdat', { ascending: false });
 
       if (error) {
         console.error("Error fetching stalls:", error);
@@ -107,7 +101,7 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
         console.log("Set current store to:", selectedStore.id, selectedStore.name);
         setShouldShowAddStore(false);
       } else {
-        console.log("No stores found for user:", currentUser.email);
+        console.log("No stores found for admin:", adminEmail);
         setCurrentStore(null);
         // Only show add store prompt for admins when they have no stores
         setShouldShowAddStore(currentUser.role === "admin");

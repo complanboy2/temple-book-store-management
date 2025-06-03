@@ -110,24 +110,25 @@ const SearchPage = () => {
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase().trim();
       
-      // First, check for exact book code match
-      const exactBookCodeMatch = filtered.filter(book => 
+      // Check for exact book code match first - if found, return ONLY that book
+      const exactBookCodeMatch = filtered.find(book => 
         book.bookCode?.toLowerCase() === searchLower
       );
       
-      if (exactBookCodeMatch.length > 0) {
-        // If exact match found, return only that
-        filtered = exactBookCodeMatch;
+      if (exactBookCodeMatch) {
+        // Return only the exact match for book codes
+        filtered = [exactBookCodeMatch];
       } else {
-        // Otherwise, do partial matching
+        // Otherwise, do partial matching for other fields
         filtered = filtered.filter(book => {
           const nameMatch = book.name.toLowerCase().includes(searchLower);
           const authorMatch = book.author.toLowerCase().includes(searchLower);
-          const bookCodeMatch = book.bookCode?.toLowerCase().includes(searchLower);
           const categoryMatch = book.category.toLowerCase().includes(searchLower);
           const idMatch = book.id.toLowerCase().includes(searchLower);
+          // Only do partial matching for book codes if no exact match was found
+          const bookCodeMatch = book.bookCode?.toLowerCase().includes(searchLower);
           
-          return nameMatch || authorMatch || bookCodeMatch || categoryMatch || idMatch;
+          return nameMatch || authorMatch || categoryMatch || idMatch || bookCodeMatch;
         });
       }
     }

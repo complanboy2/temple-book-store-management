@@ -2,13 +2,13 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import ExportReportButton from "@/components/ExportReportButton";
-import { BookReportData } from "@/types/reportTypes";
+import ExportBookListButton from "@/components/ExportBookListButton";
+import { Book } from "@/types";
 import { Button } from "@/components/ui/button"; 
 import { Plus } from "lucide-react";
 
 interface BookPageHeaderProps {
-  exportBooks: BookReportData[];
+  exportBooks: Book[];
   isAdmin: boolean;
 }
 
@@ -25,9 +25,9 @@ const BookPageHeader: React.FC<BookPageHeaderProps> = ({ exportBooks, isAdmin })
       <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
         {/* Export Button for admins */}
         {isAdmin && (
-          <ExportReportButton
-            reportType="inventory"
-            bookData={exportBooks}
+          <ExportBookListButton
+            books={exportBooks}
+            variant="both"
           />
         )}
         
