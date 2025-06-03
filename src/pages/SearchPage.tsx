@@ -109,27 +109,54 @@ const SearchPage = () => {
 
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase().trim();
+      console.log("DEBUG: SearchPage searching for:", searchLower);
       
-      // Check for exact book code match first - if found, return ONLY that book
-      const exactBookCodeMatch = filtered.find(book => 
-        book.bookCode?.toLowerCase() === searchLower
-      );
+      // NEW LOGIC: Handle different search patterns (same as useBookManager)
+      const isNumericSearch = /^\d+$/.test(searchLower);
       
-      if (exactBookCodeMatch) {
-        // Return only the exact match for book codes
-        filtered = [exactBookCodeMatch];
-      } else {
-        // Otherwise, do partial matching for other fields
-        filtered = filtered.filter(book => {
-          const nameMatch = book.name.toLowerCase().includes(searchLower);
-          const authorMatch = book.author.toLowerCase().includes(searchLower);
-          const categoryMatch = book.category.toLowerCase().includes(searchLower);
-          const idMatch = book.id.toLowerCase().includes(searchLower);
-          // Only do partial matching for book codes if no exact match was found
-          const bookCodeMatch = book.bookCode?.toLowerCase().includes(searchLower);
-          
-          return nameMatch || authorMatch || categoryMatch || idMatch || bookCodeMatch;
+      if (isNumericSearch) {
+        // For numeric searches, look for book codes ending with the number
+        console.log("DEBUG: SearchPage numeric search detected, looking for book codes ending with:", searchLower);
+        
+        const exactEndingMatch = filtered.find(book => {
+          const bookCodeNumber = book.bookCode?.toLowerCase().split('-')[1];
+          return bookCodeNumber === searchLower;
         });
+        
+        if (exactEndingMatch) {
+          console.log("DEBUG: SearchPage found exact ending match:", exactEndingMatch.name);
+          filtered = [exactEndingMatch];
+        } else {
+          // Partial match for numbers in book codes
+          filtered = filtered.filter(book => {
+            const bookCodeNumber = book.bookCode?.toLowerCase().split('-')[1] || '';
+            return bookCodeNumber.includes(searchLower);
+          });
+          console.log("DEBUG: SearchPage partial numeric matching returned:", filtered.length, "results");
+        }
+      } else {
+        // For non-numeric searches, do exact match first, then partial
+        const exactBookCodeMatch = filtered.find(book => 
+          book.bookCode?.toLowerCase() === searchLower
+        );
+        
+        if (exactBookCodeMatch) {
+          filtered = [exactBookCodeMatch];
+          console.log("DEBUG: SearchPage exact book code match found:", exactBookCodeMatch.name);
+        } else {
+          // Otherwise, do partial matching for other fields
+          filtered = filtered.filter(book => {
+            const nameMatch = book.name.toLowerCase().includes(searchLower);
+            const authorMatch = book.author.toLowerCase().includes(searchLower);
+            const categoryMatch = book.category.toLowerCase().includes(searchLower);
+            const idMatch = book.id.toLowerCase().includes(searchLower);
+            // Only do partial matching for book codes if no exact match was found
+            const bookCodeMatch = book.bookCode?.toLowerCase().includes(searchLower);
+            
+            return nameMatch || authorMatch || categoryMatch || idMatch || bookCodeMatch;
+          });
+          console.log("DEBUG: SearchPage partial matching returned:", filtered.length, "results");
+        }
       }
     }
 
@@ -164,6 +191,16 @@ const SearchPage = () => {
   const performSearch = () => {
     // Search is already performed via useMemo
     setBooks(filteredBooks);
+  };
+
+  const handleEdit = (book: Book) => {
+    console.log("DEBUG: SearchPage edit clicked for book:", book.id, book.name);
+    navigate(`/books/edit/${book.id}`);
+  };
+
+  const handleSell = (book: Book) => {
+    console.log("DEBUG: SearchPage sell clicked for book:", book.id, book.name);
+    navigate(`/sell/${book.id}`);
   };
 
   return (
@@ -249,8 +286,8 @@ const SearchPage = () => {
         <BookList 
           books={books}
           isLoading={isLoading}
-          onEdit={(book) => navigate(`/books/edit/${book.id}`)}
-          onSell={(book) => navigate(`/sell/${book.id}`)}
+          onEdit={handleEdit}
+          onSell={handleSell}
         />
       </main>
     </div>

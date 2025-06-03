@@ -37,31 +37,17 @@ const BooksPage = () => {
   
   // Handle book editing - navigate to edit page with book ID
   const handleEditBook = (book: Book) => {
-    console.log("DEBUG: Editing book from BooksPage:", book.id, book.name);
+    console.log("DEBUG: Edit button clicked for book:", book.id, book.name);
     if (book && book.id) {
-      console.log("DEBUG: Navigating to edit page:", `/books/edit/${book.id}`);
-      navigate(`/books/edit/${book.id}`);
-    } else {
-      console.error("DEBUG: Book or book ID is missing:", book);
-      toast({
-        title: t("common.error"),
-        description: "Book information is missing",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  // Handle book selling - navigate to sell page with book ID
-  const handleSellBook = (book: Book) => {
-    console.log("DEBUG: Selling book from BooksPage:", book.id, book.name);
-    if (book && book.id) {
-      if (book.quantity > 0) {
-        console.log("DEBUG: Navigating to sell page:", `/sell/${book.id}`);
-        navigate(`/sell/${book.id}`);
-      } else {
+      console.log("DEBUG: About to navigate to edit page:", `/books/edit/${book.id}`);
+      try {
+        navigate(`/books/edit/${book.id}`);
+        console.log("DEBUG: Navigation command executed");
+      } catch (error) {
+        console.error("DEBUG: Navigation error:", error);
         toast({
           title: t("common.error"),
-          description: t("sell.outOfStock"),
+          description: "Navigation failed",
           variant: "destructive",
         });
       }
@@ -75,9 +61,43 @@ const BooksPage = () => {
     }
   };
   
+  // Handle book selling - navigate to sell page with book ID
+  const handleSellBook = (book: Book) => {
+    console.log("DEBUG: Sell button clicked for book:", book.id, book.name);
+    if (book && book.id) {
+      if (book.quantity > 0) {
+        console.log("DEBUG: About to navigate to sell page:", `/sell/${book.id}`);
+        try {
+          navigate(`/sell/${book.id}`);
+          console.log("DEBUG: Sell navigation command executed");
+        } catch (error) {
+          console.error("DEBUG: Sell navigation error:", error);
+          toast({
+            title: t("common.error"),
+            description: "Navigation failed",
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: t("common.error"),
+          description: t("sell.outOfStock"),
+          variant: "destructive",
+        });
+      }
+    } else {
+      console.error("DEBUG: Book or book ID is missing for sell:", book);
+      toast({
+        title: t("common.error"),
+        description: "Book information is missing",
+        variant: "destructive",
+      });
+    }
+  };
+  
   // Handle book deletion
   const handleBookDelete = (book: Book) => {
-    console.log("DEBUG: Deleting book from BooksPage:", book.id, book.name);
+    console.log("DEBUG: Delete button clicked for book:", book.id, book.name);
     setSelectedBook(book);
     setIsDeleteDialogOpen(true);
   };

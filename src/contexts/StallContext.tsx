@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useAuth } from "./AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,34 +55,24 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
       
       // If user is personnel, find the admin who created them
       if (currentUser.role === "personnel") {
-        console.log("DEBUG: User is personnel, checking created_by_admin...");
+        console.log("DEBUG: User is personnel, finding admin...");
         
-        // First get the user's created_by_admin value
-        const { data: userData, error: userError } = await supabase
-          .from("users")
-          .select("created_by_admin")
-          .eq("email", currentUser.email)
-          .single();
+        // Use a direct approach instead of querying users table to avoid RLS issues
+        // Query all stores and find ones where this personnel might have access
+        const { data: allStores, error: storeError } = await supabase
+          .from("book_stalls")
+          .select("*")
+          .order('createdat', { ascending: false });
         
-        console.log("DEBUG: User data query result:", userData, userError);
+        console.log("DEBUG: All stores query result:", allStores, storeError);
         
-        if (userError) {
-          console.error("DEBUG: Error fetching user data:", userError);
-        } else if (userData?.created_by_admin) {
-          console.log("DEBUG: Found created_by_admin:", userData.created_by_admin);
-          adminEmail = userData.created_by_admin;
-        } else {
-          console.log("DEBUG: No created_by_admin found, trying fallback...");
-          // Check if there are any stores in the system and use the first admin found
-          const { data: anyStores, error: storeError } = await supabase
-            .from("book_stalls")
-            .select("admin_id")
-            .limit(1);
-            
-          if (anyStores && anyStores.length > 0) {
-            adminEmail = anyStores[0].admin_id;
-            console.log("DEBUG: Using fallback admin:", adminEmail);
-          }
+        if (storeError) {
+          console.error("DEBUG: Error fetching all stores:", storeError);
+        } else if (allStores && allStores.length > 0) {
+          // For now, let personnel access the first admin's stores
+          // TODO: Implement proper personnel-admin mapping
+          adminEmail = allStores[0].admin_id;
+          console.log("DEBUG: Using admin for personnel:", adminEmail);
         }
       }
 

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,7 +28,6 @@ export const useBookManager = (currentStore: string | null) => {
     if (!currentStore) return;
 
     try {
-      // Check for books without book codes (using barcode column)
       const { data: booksWithoutCodes, error } = await supabase
         .from('books')
         .select('id, barcode')
@@ -41,7 +39,6 @@ export const useBookManager = (currentStore: string | null) => {
         return;
       }
 
-      // Update books without codes
       if (booksWithoutCodes && booksWithoutCodes.length > 0) {
         console.log(`Found ${booksWithoutCodes.length} books without codes. Updating...`);
         
@@ -70,7 +67,6 @@ export const useBookManager = (currentStore: string | null) => {
 
     setIsLoading(true);
     try {
-      // First ensure all books have codes
       await ensureBookCodesExist();
 
       const { data: supabaseBooks, error } = await supabase
@@ -106,7 +102,7 @@ export const useBookManager = (currentStore: string | null) => {
         updatedAt: book.updatedat ? new Date(book.updatedat) : new Date()
       }));
       
-      console.log("DEBUG: All book codes in store:", formattedBooks.map(b => ({ id: b.id, bookCode: b.bookCode, name: b.name })));
+      console.log("DEBUG: Fetched books with codes:", formattedBooks.map(b => ({ id: b.id, bookCode: b.bookCode, name: b.name })));
       
       setBooks(formattedBooks);
       
@@ -172,29 +168,51 @@ export const useBookManager = (currentStore: string | null) => {
       console.log("DEBUG: Searching for:", searchLower);
       console.log("DEBUG: All available book codes:", books.map(b => b.bookCode?.toLowerCase()));
       
-      // Check for exact book code match first
-      const exactBookCodeMatch = filtered.find(book => 
-        book.bookCode?.toLowerCase() === searchLower
-      );
+      // NEW LOGIC: Handle different search patterns
+      const isNumericSearch = /^\d+$/.test(searchLower);
       
-      console.log("DEBUG: Exact book code match found:", exactBookCodeMatch ? exactBookCodeMatch.name : "None");
-      
-      if (exactBookCodeMatch) {
-        // Return only the exact match for book codes
-        filtered = [exactBookCodeMatch];
-        console.log("DEBUG: Returning single exact match");
-      } else {
-        // Otherwise, do partial matching
-        filtered = filtered.filter(book => {
-          const nameMatch = book.name.toLowerCase().includes(searchLower);
-          const authorMatch = book.author.toLowerCase().includes(searchLower);
-          const categoryMatch = book.category.toLowerCase().includes(searchLower);
-          const idMatch = book.id.toLowerCase().includes(searchLower);
-          const bookCodeMatch = book.bookCode?.toLowerCase().includes(searchLower);
-          
-          return nameMatch || authorMatch || categoryMatch || idMatch || bookCodeMatch;
+      if (isNumericSearch) {
+        // For numeric searches, look for book codes ending with the number
+        console.log("DEBUG: Numeric search detected, looking for book codes ending with:", searchLower);
+        
+        const exactEndingMatch = filtered.find(book => {
+          const bookCodeNumber = book.bookCode?.toLowerCase().split('-')[1];
+          return bookCodeNumber === searchLower;
         });
-        console.log("DEBUG: Partial matching returned:", filtered.length, "results");
+        
+        if (exactEndingMatch) {
+          console.log("DEBUG: Found exact ending match:", exactEndingMatch.name);
+          filtered = [exactEndingMatch];
+        } else {
+          // Partial match for numbers in book codes
+          filtered = filtered.filter(book => {
+            const bookCodeNumber = book.bookCode?.toLowerCase().split('-')[1] || '';
+            return bookCodeNumber.includes(searchLower);
+          });
+          console.log("DEBUG: Partial numeric matching returned:", filtered.length, "results");
+        }
+      } else {
+        // For non-numeric searches, do exact match first, then partial
+        const exactBookCodeMatch = filtered.find(book => 
+          book.bookCode?.toLowerCase() === searchLower
+        );
+        
+        if (exactBookCodeMatch) {
+          filtered = [exactBookCodeMatch];
+          console.log("DEBUG: Exact book code match found:", exactBookCodeMatch.name);
+        } else {
+          // Otherwise, do partial matching
+          filtered = filtered.filter(book => {
+            const nameMatch = book.name.toLowerCase().includes(searchLower);
+            const authorMatch = book.author.toLowerCase().includes(searchLower);
+            const categoryMatch = book.category.toLowerCase().includes(searchLower);
+            const idMatch = book.id.toLowerCase().includes(searchLower);
+            const bookCodeMatch = book.bookCode?.toLowerCase().includes(searchLower);
+            
+            return nameMatch || authorMatch || categoryMatch || idMatch || bookCodeMatch;
+          });
+          console.log("DEBUG: Partial matching returned:", filtered.length, "results");
+        }
       }
     }
 
