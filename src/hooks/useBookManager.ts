@@ -106,6 +106,8 @@ export const useBookManager = (currentStore: string | null) => {
         updatedAt: book.updatedat ? new Date(book.updatedat) : new Date()
       }));
       
+      console.log("DEBUG: All book codes in store:", formattedBooks.map(b => ({ id: b.id, bookCode: b.bookCode, name: b.name })));
+      
       setBooks(formattedBooks);
       
       const uniqueCategories = [...new Set(formattedBooks.map(book => book.category).filter(Boolean))];
@@ -167,15 +169,20 @@ export const useBookManager = (currentStore: string | null) => {
 
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase().trim();
+      console.log("DEBUG: Searching for:", searchLower);
+      console.log("DEBUG: All available book codes:", books.map(b => b.bookCode?.toLowerCase()));
       
-      // Check for exact book code match first - if found, return ONLY that book
+      // Check for exact book code match first
       const exactBookCodeMatch = filtered.find(book => 
         book.bookCode?.toLowerCase() === searchLower
       );
       
+      console.log("DEBUG: Exact book code match found:", exactBookCodeMatch ? exactBookCodeMatch.name : "None");
+      
       if (exactBookCodeMatch) {
         // Return only the exact match for book codes
         filtered = [exactBookCodeMatch];
+        console.log("DEBUG: Returning single exact match");
       } else {
         // Otherwise, do partial matching
         filtered = filtered.filter(book => {
@@ -183,11 +190,11 @@ export const useBookManager = (currentStore: string | null) => {
           const authorMatch = book.author.toLowerCase().includes(searchLower);
           const categoryMatch = book.category.toLowerCase().includes(searchLower);
           const idMatch = book.id.toLowerCase().includes(searchLower);
-          // Only do partial matching for book codes if no exact match was found
           const bookCodeMatch = book.bookCode?.toLowerCase().includes(searchLower);
           
           return nameMatch || authorMatch || categoryMatch || idMatch || bookCodeMatch;
         });
+        console.log("DEBUG: Partial matching returned:", filtered.length, "results");
       }
     }
 
@@ -199,6 +206,7 @@ export const useBookManager = (currentStore: string | null) => {
       filtered = filtered.filter(book => book.quantity <= 5);
     }
 
+    console.log("DEBUG: Final filtered results:", filtered.length);
     setFilteredBooks(filtered);
   }, [books, searchTerm, selectedCategory, showLowStockOnly]);
 

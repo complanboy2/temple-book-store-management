@@ -48,13 +48,13 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
 
     try {
       setIsLoading(true);
-      console.log("Fetching stalls for user:", currentUser.email, "Role:", currentUser.role);
+      console.log("DEBUG: Fetching stalls for user:", currentUser.email, "Role:", currentUser.role);
       
       let adminEmail = currentUser.email;
       
       // If user is personnel, find the admin who created them
       if (currentUser.role === "personnel") {
-        console.log("User is personnel, checking created_by_admin...");
+        console.log("DEBUG: User is personnel, checking created_by_admin...");
         
         // First get the user's created_by_admin value
         const { data: userData, error: userError } = await supabase
@@ -63,25 +63,37 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
           .eq("email", currentUser.email)
           .single();
         
+        console.log("DEBUG: User data query result:", userData, userError);
+        
         if (userError) {
-          console.error("Error fetching user data:", userError);
+          console.error("DEBUG: Error fetching user data:", userError);
         } else if (userData?.created_by_admin) {
-          console.log("Found created_by_admin:", userData.created_by_admin);
+          console.log("DEBUG: Found created_by_admin:", userData.created_by_admin);
           adminEmail = userData.created_by_admin;
         } else {
-          console.log("No created_by_admin found, trying fallback to admin@temple.com");
-          // Fallback: try admin@temple.com
-          adminEmail = "admin@temple.com";
+          console.log("DEBUG: No created_by_admin found, trying fallback...");
+          // Check if there are any stores in the system and use the first admin found
+          const { data: anyStores, error: storeError } = await supabase
+            .from("book_stalls")
+            .select("admin_id")
+            .limit(1);
+            
+          if (anyStores && anyStores.length > 0) {
+            adminEmail = anyStores[0].admin_id;
+            console.log("DEBUG: Using fallback admin:", adminEmail);
+          }
         }
       }
 
-      console.log("Querying stalls for admin_id:", adminEmail);
+      console.log("DEBUG: Querying stalls for admin_id:", adminEmail);
       
       const { data, error } = await supabase
         .from("book_stalls")
         .select("*")
         .eq("admin_id", adminEmail)
         .order('createdat', { ascending: false });
+
+      console.log("DEBUG: Stalls query result:", data, error);
 
       if (error) {
         console.error("Error fetching stalls:", error);
@@ -90,7 +102,7 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
         return;
       }
 
-      console.log("Fetched stalls:", data);
+      console.log("DEBUG: Fetched stalls:", data);
       setStalls(data || []);
       
       // Set current store to default store if available, otherwise first store
@@ -98,10 +110,10 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
         const defaultStore = data.find(store => store.is_default);
         const selectedStore = defaultStore || data[0];
         setCurrentStore(selectedStore.id);
-        console.log("Set current store to:", selectedStore.id, selectedStore.name);
+        console.log("DEBUG: Set current store to:", selectedStore.id, selectedStore.name);
         setShouldShowAddStore(false);
       } else {
-        console.log("No stores found for admin:", adminEmail);
+        console.log("DEBUG: No stores found for admin:", adminEmail);
         setCurrentStore(null);
         // Only show add store prompt for admins when they have no stores
         setShouldShowAddStore(currentUser.role === "admin");

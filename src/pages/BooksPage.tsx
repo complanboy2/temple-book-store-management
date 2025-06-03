@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStallContext } from "@/contexts/StallContext";
@@ -36,11 +37,12 @@ const BooksPage = () => {
   
   // Handle book editing - navigate to edit page with book ID
   const handleEditBook = (book: Book) => {
-    console.log("Editing book from BooksPage:", book.id, book.name);
+    console.log("DEBUG: Editing book from BooksPage:", book.id, book.name);
     if (book && book.id) {
+      console.log("DEBUG: Navigating to edit page:", `/books/edit/${book.id}`);
       navigate(`/books/edit/${book.id}`);
     } else {
-      console.error("Book or book ID is missing:", book);
+      console.error("DEBUG: Book or book ID is missing:", book);
       toast({
         title: t("common.error"),
         description: "Book information is missing",
@@ -51,9 +53,10 @@ const BooksPage = () => {
   
   // Handle book selling - navigate to sell page with book ID
   const handleSellBook = (book: Book) => {
-    console.log("Selling book from BooksPage:", book.id, book.name);
+    console.log("DEBUG: Selling book from BooksPage:", book.id, book.name);
     if (book && book.id) {
       if (book.quantity > 0) {
+        console.log("DEBUG: Navigating to sell page:", `/sell/${book.id}`);
         navigate(`/sell/${book.id}`);
       } else {
         toast({
@@ -63,7 +66,7 @@ const BooksPage = () => {
         });
       }
     } else {
-      console.error("Book or book ID is missing:", book);
+      console.error("DEBUG: Book or book ID is missing:", book);
       toast({
         title: t("common.error"),
         description: "Book information is missing",
@@ -74,7 +77,7 @@ const BooksPage = () => {
   
   // Handle book deletion
   const handleBookDelete = (book: Book) => {
-    console.log("Deleting book from BooksPage:", book.id, book.name);
+    console.log("DEBUG: Deleting book from BooksPage:", book.id, book.name);
     setSelectedBook(book);
     setIsDeleteDialogOpen(true);
   };
