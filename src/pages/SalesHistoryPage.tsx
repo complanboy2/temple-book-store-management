@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Edit, Trash2, ArrowLeft } from "lucide-react";
+import { Calendar, Edit, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStallContext } from "@/contexts/StallContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -206,9 +206,9 @@ const SalesHistoryPage = () => {
   return (
     <div className="min-h-screen bg-temple-background">
       <MobileHeader 
-        title="Sales History"
+        title="My Sales History"
         showBackButton={true}
-        onBackClick={() => navigate("/")}
+        backTo="/"
       />
       
       <div className="mobile-container py-4 space-y-4">
