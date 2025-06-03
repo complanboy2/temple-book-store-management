@@ -52,9 +52,9 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
       
       let adminEmail = currentUser.email;
       
-      // If user is personnel (seller), find the admin who created them
-      if (currentUser.role === "personnel" || currentUser.role === "seller") {
-        console.log("User is personnel/seller, checking created_by_admin...");
+      // If user is personnel, find the admin who created them
+      if (currentUser.role === "personnel") {
+        console.log("User is personnel, checking created_by_admin...");
         
         // First get the user's created_by_admin value
         const { data: userData, error: userError } = await supabase
