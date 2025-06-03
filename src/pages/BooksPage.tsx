@@ -53,17 +53,24 @@ const BooksPage = () => {
   
   // Handle book editing - navigate to edit page with book ID
   const handleEditBook = (book: Book) => {
+    console.log("Editing book from BooksPage:", book.id, book.name);
     if (book && book.id) {
-      console.log("Editing book:", book.id, book.name);
       navigate(`/books/edit/${book.id}`);
+    } else {
+      console.error("Book or book ID is missing:", book);
+      toast({
+        title: t("common.error"),
+        description: "Book information is missing",
+        variant: "destructive",
+      });
     }
   };
   
   // Handle book selling - navigate to sell page with book ID
   const handleSellBook = (book: Book) => {
+    console.log("Selling book from BooksPage:", book.id, book.name);
     if (book && book.id) {
       if (book.quantity > 0) {
-        console.log("Selling book:", book.id, book.name);
         navigate(`/sell/${book.id}`);
       } else {
         toast({
@@ -72,11 +79,19 @@ const BooksPage = () => {
           variant: "destructive",
         });
       }
+    } else {
+      console.error("Book or book ID is missing:", book);
+      toast({
+        title: t("common.error"),
+        description: "Book information is missing",
+        variant: "destructive",
+      });
     }
   };
   
   // Handle book deletion
   const handleBookDelete = (book: Book) => {
+    console.log("Deleting book from BooksPage:", book.id, book.name);
     setSelectedBook(book);
     setIsDeleteDialogOpen(true);
   };

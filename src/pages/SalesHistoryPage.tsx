@@ -27,6 +27,7 @@ interface Sale {
   createdat: string;
   book_name?: string;
   book_author?: string;
+  personnelid: string;
 }
 
 const SalesHistoryPage = () => {
@@ -56,10 +57,15 @@ const SalesHistoryPage = () => {
   }, []);
 
   const fetchSales = async () => {
-    if (!currentUser?.email || !currentStore) return;
+    if (!currentUser?.email || !currentStore) {
+      console.log("Missing user email or store:", { email: currentUser?.email, store: currentStore });
+      return;
+    }
 
     setIsLoading(true);
     try {
+      console.log("Fetching sales for user:", currentUser.email, "in store:", currentStore);
+      
       let query = supabase
         .from('sales')
         .select(`
@@ -69,9 +75,11 @@ const SalesHistoryPage = () => {
             author
           )
         `)
-        .eq('personnelid', currentUser.email)
         .eq('stallid', currentStore)
         .order('createdat', { ascending: false });
+
+      // Filter by personnel ID (current user's email or phone)
+      query = query.or(`personnelid.eq.${currentUser.email},personnelid.eq.${currentUser.phone || 'none'}`);
 
       // Add date filters if provided
       if (fromDate) {
@@ -93,12 +101,15 @@ const SalesHistoryPage = () => {
         return;
       }
 
+      console.log("Raw sales data:", data);
+
       const salesWithBookInfo = data?.map(sale => ({
         ...sale,
         book_name: sale.books?.name || 'Unknown Book',
         book_author: sale.books?.author || 'Unknown Author'
       })) || [];
 
+      console.log("Processed sales data:", salesWithBookInfo);
       setSales(salesWithBookInfo);
     } catch (error) {
       console.error("Error fetching sales:", error);
@@ -113,7 +124,7 @@ const SalesHistoryPage = () => {
   };
 
   useEffect(() => {
-    if (fromDate && toDate) {
+    if (fromDate && toDate && currentUser?.email && currentStore) {
       fetchSales();
     }
   }, [currentUser, currentStore, fromDate, toDate]);
@@ -251,6 +262,15 @@ const SalesHistoryPage = () => {
           </CardContent>
         </Card>
 
+        {/* Debug Info */}
+        <Card className="temple-card">
+          <CardContent className="p-4">
+            <p className="text-xs text-gray-500">
+              User: {currentUser?.email} | Store: {currentStore} | Sales Count: {sales.length}
+            </p>
+          </CardContent>
+        </Card>
+
         {/* Sales List */}
         <div className="space-y-3">
           {sales.length > 0 ? (
@@ -381,6 +401,9 @@ const SalesHistoryPage = () => {
             <Card className="temple-card">
               <CardContent className="p-6 text-center">
                 <p className="text-gray-500">No sales found for the selected date range</p>
+                <p className="text-xs text-gray-400 mt-2">
+                  Make sure you have made sales and they are properly recorded with your user ID
+                </p>
               </CardContent>
             </Card>
           )}

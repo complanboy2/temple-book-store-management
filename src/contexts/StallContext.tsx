@@ -58,22 +58,32 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
         query = query.eq("admin_id", currentUser.email);
       } else {
         // If user is personnel (seller), find stores created by their admin
-        const { data: userData } = await supabase
+        console.log("User is personnel, checking created_by_admin...");
+        
+        // First get the user's created_by_admin value
+        const { data: userData, error: userError } = await supabase
           .from("users")
           .select("created_by_admin")
           .eq("email", currentUser.email)
           .single();
         
-        if (userData?.created_by_admin) {
-          console.log("Seller accessing stores from admin:", userData.created_by_admin);
-          query = query.eq("admin_id", userData.created_by_admin);
-        } else {
-          // Fallback for sellers without created_by_admin set
-          console.log("No admin found for seller, showing no stores");
+        if (userError) {
+          console.error("Error fetching user data:", userError);
           setStalls([]);
           setCurrentStore(null);
           setIsLoading(false);
           return;
+        }
+        
+        console.log("User data:", userData);
+        
+        if (userData?.created_by_admin) {
+          console.log("Seller accessing stores from admin:", userData.created_by_admin);
+          query = query.eq("admin_id", userData.created_by_admin);
+        } else {
+          // Fallback: check if user was created by admin@temple.com
+          console.log("No created_by_admin found, checking for admin@temple.com");
+          query = query.eq("admin_id", "admin@temple.com");
         }
       }
 
@@ -94,7 +104,7 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
         const defaultStore = data.find(store => store.is_default);
         const selectedStore = defaultStore || data[0];
         setCurrentStore(selectedStore.id);
-        console.log("Set current store to:", selectedStore.id);
+        console.log("Set current store to:", selectedStore.id, selectedStore.name);
         setShouldShowAddStore(false);
       } else {
         console.log("No stores found for user:", currentUser.email);
@@ -190,7 +200,7 @@ export const StallProvider: React.FC<StallProviderProps> = ({ children }) => {
       setIsLoading(false);
       setShouldShowAddStore(false);
     }
-  }, [isAuthenticated, currentUser?.email]);
+  }, [isAuthenticated, currentUser?.email, currentUser?.role]);
 
   return (
     <StallContext.Provider

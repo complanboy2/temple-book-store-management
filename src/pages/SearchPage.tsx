@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -110,20 +109,27 @@ const SearchPage = () => {
 
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase().trim();
-      filtered = filtered.filter(book => {
-        const nameMatch = book.name.toLowerCase().includes(searchLower);
-        const authorMatch = book.author.toLowerCase().includes(searchLower);
-        const bookCodeMatch = book.bookCode?.toLowerCase().includes(searchLower);
-        const categoryMatch = book.category.toLowerCase().includes(searchLower);
-        const idMatch = book.id.toLowerCase().includes(searchLower);
-        
-        // For exact barcode/book code match, prioritize exact matches
-        if (book.bookCode?.toLowerCase() === searchLower) {
-          return true;
-        }
-        
-        return nameMatch || authorMatch || bookCodeMatch || categoryMatch || idMatch;
-      });
+      
+      // First, check for exact book code match
+      const exactBookCodeMatch = filtered.filter(book => 
+        book.bookCode?.toLowerCase() === searchLower
+      );
+      
+      if (exactBookCodeMatch.length > 0) {
+        // If exact match found, return only that
+        filtered = exactBookCodeMatch;
+      } else {
+        // Otherwise, do partial matching
+        filtered = filtered.filter(book => {
+          const nameMatch = book.name.toLowerCase().includes(searchLower);
+          const authorMatch = book.author.toLowerCase().includes(searchLower);
+          const bookCodeMatch = book.bookCode?.toLowerCase().includes(searchLower);
+          const categoryMatch = book.category.toLowerCase().includes(searchLower);
+          const idMatch = book.id.toLowerCase().includes(searchLower);
+          
+          return nameMatch || authorMatch || bookCodeMatch || categoryMatch || idMatch;
+        });
+      }
     }
 
     if (selectedAuthor) {

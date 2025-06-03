@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -167,15 +166,27 @@ export const useBookManager = (currentStore: string | null) => {
 
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase().trim();
-      filtered = filtered.filter(book => {
-        const nameMatch = book.name.toLowerCase().includes(searchLower);
-        const authorMatch = book.author.toLowerCase().includes(searchLower);
-        const bookCodeMatch = book.bookCode?.toLowerCase().includes(searchLower);
-        const categoryMatch = book.category.toLowerCase().includes(searchLower);
-        const idMatch = book.id.toLowerCase().includes(searchLower);
-        
-        return nameMatch || authorMatch || bookCodeMatch || categoryMatch || idMatch;
-      });
+      
+      // First, check for exact book code match
+      const exactBookCodeMatch = filtered.filter(book => 
+        book.bookCode?.toLowerCase() === searchLower
+      );
+      
+      if (exactBookCodeMatch.length > 0) {
+        // If exact match found, return only that
+        filtered = exactBookCodeMatch;
+      } else {
+        // Otherwise, do partial matching
+        filtered = filtered.filter(book => {
+          const nameMatch = book.name.toLowerCase().includes(searchLower);
+          const authorMatch = book.author.toLowerCase().includes(searchLower);
+          const bookCodeMatch = book.bookCode?.toLowerCase().includes(searchLower);
+          const categoryMatch = book.category.toLowerCase().includes(searchLower);
+          const idMatch = book.id.toLowerCase().includes(searchLower);
+          
+          return nameMatch || authorMatch || bookCodeMatch || categoryMatch || idMatch;
+        });
+      }
     }
 
     if (selectedCategory) {
