@@ -36,7 +36,7 @@ const SellBookPage: React.FC = () => {
 
   useEffect(() => {
     if (currentUser) {
-      setSellerName(currentUser.name || "");
+      setSellerName(currentUser.name || currentUser.email || "");
     }
   }, [currentUser]);
 
@@ -173,9 +173,10 @@ const SellBookPage: React.FC = () => {
       
       console.log("Book inventory updated successfully");
       
-      // Record the sale with proper personnel ID (use email for consistency)
-      const personnelId = currentUser.email || currentUser.id;
-      console.log("Recording sale with personnelid:", personnelId);
+      // CRITICAL: Use currentUser.email as personnelid for consistent seller tracking
+      const personnelId = currentUser.email;
+      console.log("DEBUG: Recording sale with personnelid (email):", personnelId);
+      console.log("DEBUG: Recording sale with seller name:", currentUser.name);
       
       const { error: saleError } = await supabase
         .from('sales')
@@ -187,7 +188,7 @@ const SellBookPage: React.FC = () => {
           paymentmethod: paymentMethod,
           buyername: buyerName || null,
           buyerphone: buyerPhone || null,
-          personnelid: personnelId,
+          personnelid: personnelId, // Use email for consistency
           stallid: currentStore,
           synced: true,
           createdat: currentTimestamp
@@ -211,7 +212,7 @@ const SellBookPage: React.FC = () => {
         description: t("sell.saleCompleted"),
       });
       
-      // Redirect to sales history page instead of sales page
+      // Redirect to sales history page
       navigate('/sales-history');
     } catch (error) {
       console.error("Sale submission error:", error);

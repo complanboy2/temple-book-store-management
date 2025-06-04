@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ interface Sale {
   book_name?: string;
   book_author?: string;
   personnelid: string;
+  seller_name?: string;
 }
 
 const SalesHistoryPage = () => {
@@ -63,8 +65,9 @@ const SalesHistoryPage = () => {
 
     setIsLoading(true);
     try {
-      console.log("Fetching sales for user:", currentUser.email, "in store:", currentStore);
+      console.log("Fetching sales for user email:", currentUser.email, "in store:", currentStore);
       
+      // Query sales with proper joins and filtering by current user's email
       let query = supabase
         .from('sales')
         .select(`
@@ -75,12 +78,8 @@ const SalesHistoryPage = () => {
           )
         `)
         .eq('stallid', currentStore)
+        .eq('personnelid', currentUser.email) // Filter by current user's email
         .order('createdat', { ascending: false });
-
-      // Filter by personnel ID using the user's email (which should match personnelid)
-      const personnelId = currentUser.email;
-      console.log("Filtering sales by personnelid:", personnelId);
-      query = query.eq('personnelid', personnelId);
 
       // Add date filters if provided
       if (fromDate) {
@@ -104,10 +103,12 @@ const SalesHistoryPage = () => {
 
       console.log("Raw sales data:", data);
 
+      // Get seller names for all sales
       const salesWithBookInfo = data?.map(sale => ({
         ...sale,
         book_name: sale.books?.name || 'Unknown Book',
-        book_author: sale.books?.author || 'Unknown Author'
+        book_author: sale.books?.author || 'Unknown Author',
+        seller_name: currentUser.name || currentUser.email || 'Current User'
       })) || [];
 
       console.log("Processed sales data:", salesWithBookInfo);
@@ -287,7 +288,7 @@ const SalesHistoryPage = () => {
                         by {sale.book_author}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {new Date(sale.createdat).toLocaleDateString()}
+                        {new Date(sale.createdat).toLocaleDateString()} • Seller: {sale.seller_name}
                       </p>
                     </div>
                     <div className="text-right">
@@ -403,7 +404,7 @@ const SalesHistoryPage = () => {
               <CardContent className="p-6 text-center">
                 <p className="text-gray-500">No sales found for the selected date range</p>
                 <p className="text-xs text-gray-400 mt-2">
-                  Make sure you have made sales and they are properly recorded with your user ID
+                  Your sales will appear here after you complete transactions
                 </p>
               </CardContent>
             </Card>

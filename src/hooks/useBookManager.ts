@@ -167,66 +167,36 @@ export const useBookManager = (currentStore: string | null) => {
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase().trim();
       console.log("DEBUG: Searching for:", searchLower);
-      console.log("DEBUG: All available book codes:", books.map(b => b.bookCode?.toLowerCase()));
       
-      // Check for exact book code match first
-      const exactBookCodeMatch = filtered.find(book => 
-        book.bookCode?.toLowerCase() === searchLower ||
-        book.bookCode?.toLowerCase() === `book-${searchLower}`
-      );
-      
-      if (exactBookCodeMatch) {
-        console.log("DEBUG: Exact book code match found:", exactBookCodeMatch.name);
-        filtered = [exactBookCodeMatch];
-      } else {
-        // Check if it's a numeric search (for partial book code matching)
-        const isNumericSearch = /^\d+$/.test(searchLower);
+      // SIMPLIFIED SEARCH LOGIC
+      // If search term is purely numeric, search in book codes
+      if (/^\d+$/.test(searchLower)) {
+        console.log("DEBUG: Numeric search for book code ending with:", searchLower);
         
-        if (isNumericSearch) {
-          console.log("DEBUG: Numeric search detected for:", searchLower);
-          
-          // Look for book codes that end with this number (after the hyphen)
-          const numericMatches = filtered.filter(book => {
-            const bookCodeParts = book.bookCode?.toLowerCase().split('-');
-            if (bookCodeParts && bookCodeParts.length > 1) {
-              const codeNumber = bookCodeParts[1];
-              // Check if the code number ends with our search term
-              return codeNumber.endsWith(searchLower);
-            }
-            return false;
-          });
-          
-          if (numericMatches.length > 0) {
-            // If we have an exact match (code number equals search term), return only that
-            const exactNumericMatch = numericMatches.find(book => {
-              const bookCodeParts = book.bookCode?.toLowerCase().split('-');
-              return bookCodeParts && bookCodeParts[1] === searchLower;
-            });
-            
-            if (exactNumericMatch) {
-              console.log("DEBUG: Exact numeric match found:", exactNumericMatch.name);
-              filtered = [exactNumericMatch];
-            } else {
-              console.log("DEBUG: Partial numeric matches found:", numericMatches.length);
-              filtered = numericMatches;
-            }
-          } else {
-            console.log("DEBUG: No numeric matches found");
-            filtered = [];
+        // Find books where the numeric part of book code ends with search term
+        filtered = books.filter(book => {
+          const bookCodeParts = book.bookCode?.toLowerCase().split('-');
+          if (bookCodeParts && bookCodeParts.length > 1) {
+            const numericPart = bookCodeParts[1];
+            const endsWithSearch = numericPart.endsWith(searchLower);
+            console.log(`DEBUG: Book ${book.name} code ${numericPart} ends with ${searchLower}:`, endsWithSearch);
+            return endsWithSearch;
           }
-        } else {
-          // Non-numeric search - search in all fields
-          filtered = filtered.filter(book => {
-            const nameMatch = book.name.toLowerCase().includes(searchLower);
-            const authorMatch = book.author.toLowerCase().includes(searchLower);
-            const categoryMatch = book.category.toLowerCase().includes(searchLower);
-            const idMatch = book.id.toLowerCase().includes(searchLower);
-            const bookCodeMatch = book.bookCode?.toLowerCase().includes(searchLower);
-            
-            return nameMatch || authorMatch || categoryMatch || idMatch || bookCodeMatch;
-          });
-          console.log("DEBUG: Text search returned:", filtered.length, "results");
-        }
+          return false;
+        });
+        
+        console.log("DEBUG: Numeric search results:", filtered.length);
+      } else {
+        // Text search in name, author, category, etc.
+        filtered = filtered.filter(book => {
+          const nameMatch = book.name.toLowerCase().includes(searchLower);
+          const authorMatch = book.author.toLowerCase().includes(searchLower);
+          const categoryMatch = book.category.toLowerCase().includes(searchLower);
+          const bookCodeMatch = book.bookCode?.toLowerCase().includes(searchLower);
+          
+          return nameMatch || authorMatch || categoryMatch || bookCodeMatch;
+        });
+        console.log("DEBUG: Text search results:", filtered.length);
       }
     }
 

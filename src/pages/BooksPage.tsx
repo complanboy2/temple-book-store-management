@@ -35,61 +35,21 @@ const BooksPage = () => {
     refreshBooks
   } = useBookManager(currentStore);
   
-  // Handle book editing - navigate to edit page with book ID
+  // Handle book editing - use React Router navigate
   const handleEditBook = (book: Book) => {
-    console.log("DEBUG: Edit button clicked for book:", book.id, book.name);
-    if (book && book.id) {
-      console.log("DEBUG: About to navigate to edit page:", `/books/edit/${book.id}`);
-      try {
-        // Use window.location to force navigation
-        window.location.href = `/books/edit/${book.id}`;
-      } catch (error) {
-        console.error("DEBUG: Navigation error:", error);
-        toast({
-          title: t("common.error"),
-          description: "Navigation failed",
-          variant: "destructive",
-        });
-      }
-    } else {
-      console.error("DEBUG: Book or book ID is missing:", book);
-      toast({
-        title: t("common.error"),
-        description: "Book information is missing",
-        variant: "destructive",
-      });
-    }
+    console.log("DEBUG: BooksPage edit clicked for book:", book.id, book.name);
+    navigate(`/books/edit/${book.id}`);
   };
   
-  // Handle book selling - navigate to sell page with book ID
+  // Handle book selling - use React Router navigate
   const handleSellBook = (book: Book) => {
-    console.log("DEBUG: Sell button clicked for book:", book.id, book.name);
-    if (book && book.id) {
-      if (book.quantity > 0) {
-        console.log("DEBUG: About to navigate to sell page:", `/sell/${book.id}`);
-        try {
-          // Use window.location to force navigation
-          window.location.href = `/sell/${book.id}`;
-        } catch (error) {
-          console.error("DEBUG: Sell navigation error:", error);
-          toast({
-            title: t("common.error"),
-            description: "Navigation failed",
-            variant: "destructive",
-          });
-        }
-      } else {
-        toast({
-          title: t("common.error"),
-          description: t("sell.outOfStock"),
-          variant: "destructive",
-        });
-      }
+    console.log("DEBUG: BooksPage sell clicked for book:", book.id, book.name);
+    if (book.quantity > 0) {
+      navigate(`/sell/${book.id}`);
     } else {
-      console.error("DEBUG: Book or book ID is missing for sell:", book);
       toast({
         title: t("common.error"),
-        description: "Book information is missing",
+        description: t("sell.outOfStock"),
         variant: "destructive",
       });
     }
