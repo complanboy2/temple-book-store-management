@@ -41,8 +41,8 @@ const BooksPage = () => {
     if (book && book.id) {
       console.log("DEBUG: About to navigate to edit page:", `/books/edit/${book.id}`);
       try {
-        navigate(`/books/edit/${book.id}`);
-        console.log("DEBUG: Navigation command executed");
+        // Use window.location to force navigation
+        window.location.href = `/books/edit/${book.id}`;
       } catch (error) {
         console.error("DEBUG: Navigation error:", error);
         toast({
@@ -68,8 +68,8 @@ const BooksPage = () => {
       if (book.quantity > 0) {
         console.log("DEBUG: About to navigate to sell page:", `/sell/${book.id}`);
         try {
-          navigate(`/sell/${book.id}`);
-          console.log("DEBUG: Sell navigation command executed");
+          // Use window.location to force navigation
+          window.location.href = `/sell/${book.id}`;
         } catch (error) {
           console.error("DEBUG: Sell navigation error:", error);
           toast({

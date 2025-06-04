@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -168,40 +169,53 @@ export const useBookManager = (currentStore: string | null) => {
       console.log("DEBUG: Searching for:", searchLower);
       console.log("DEBUG: All available book codes:", books.map(b => b.bookCode?.toLowerCase()));
       
-      // NEW LOGIC: Handle different search patterns
-      const isNumericSearch = /^\d+$/.test(searchLower);
+      // Check for exact book code match first
+      const exactBookCodeMatch = filtered.find(book => 
+        book.bookCode?.toLowerCase() === searchLower ||
+        book.bookCode?.toLowerCase() === `book-${searchLower}`
+      );
       
-      if (isNumericSearch) {
-        // For numeric searches, look for book codes ending with the number
-        console.log("DEBUG: Numeric search detected, looking for book codes ending with:", searchLower);
-        
-        const exactEndingMatch = filtered.find(book => {
-          const bookCodeNumber = book.bookCode?.toLowerCase().split('-')[1];
-          return bookCodeNumber === searchLower;
-        });
-        
-        if (exactEndingMatch) {
-          console.log("DEBUG: Found exact ending match:", exactEndingMatch.name);
-          filtered = [exactEndingMatch];
-        } else {
-          // Partial match for numbers in book codes
-          filtered = filtered.filter(book => {
-            const bookCodeNumber = book.bookCode?.toLowerCase().split('-')[1] || '';
-            return bookCodeNumber.includes(searchLower);
-          });
-          console.log("DEBUG: Partial numeric matching returned:", filtered.length, "results");
-        }
+      if (exactBookCodeMatch) {
+        console.log("DEBUG: Exact book code match found:", exactBookCodeMatch.name);
+        filtered = [exactBookCodeMatch];
       } else {
-        // For non-numeric searches, do exact match first, then partial
-        const exactBookCodeMatch = filtered.find(book => 
-          book.bookCode?.toLowerCase() === searchLower
-        );
+        // Check if it's a numeric search (for partial book code matching)
+        const isNumericSearch = /^\d+$/.test(searchLower);
         
-        if (exactBookCodeMatch) {
-          filtered = [exactBookCodeMatch];
-          console.log("DEBUG: Exact book code match found:", exactBookCodeMatch.name);
+        if (isNumericSearch) {
+          console.log("DEBUG: Numeric search detected for:", searchLower);
+          
+          // Look for book codes that end with this number (after the hyphen)
+          const numericMatches = filtered.filter(book => {
+            const bookCodeParts = book.bookCode?.toLowerCase().split('-');
+            if (bookCodeParts && bookCodeParts.length > 1) {
+              const codeNumber = bookCodeParts[1];
+              // Check if the code number ends with our search term
+              return codeNumber.endsWith(searchLower);
+            }
+            return false;
+          });
+          
+          if (numericMatches.length > 0) {
+            // If we have an exact match (code number equals search term), return only that
+            const exactNumericMatch = numericMatches.find(book => {
+              const bookCodeParts = book.bookCode?.toLowerCase().split('-');
+              return bookCodeParts && bookCodeParts[1] === searchLower;
+            });
+            
+            if (exactNumericMatch) {
+              console.log("DEBUG: Exact numeric match found:", exactNumericMatch.name);
+              filtered = [exactNumericMatch];
+            } else {
+              console.log("DEBUG: Partial numeric matches found:", numericMatches.length);
+              filtered = numericMatches;
+            }
+          } else {
+            console.log("DEBUG: No numeric matches found");
+            filtered = [];
+          }
         } else {
-          // Otherwise, do partial matching
+          // Non-numeric search - search in all fields
           filtered = filtered.filter(book => {
             const nameMatch = book.name.toLowerCase().includes(searchLower);
             const authorMatch = book.author.toLowerCase().includes(searchLower);
@@ -211,7 +225,7 @@ export const useBookManager = (currentStore: string | null) => {
             
             return nameMatch || authorMatch || categoryMatch || idMatch || bookCodeMatch;
           });
-          console.log("DEBUG: Partial matching returned:", filtered.length, "results");
+          console.log("DEBUG: Text search returned:", filtered.length, "results");
         }
       }
     }

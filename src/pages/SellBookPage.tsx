@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -150,12 +149,15 @@ const SellBookPage: React.FC = () => {
     
     try {
       console.log("Starting sale process for book:", book.id);
+      console.log("Current user details:", currentUser);
+      
       const saleId = generateId();
       const totalAmount = book.salePrice * quantity;
       
       const saleDate = new Date();
       const currentTimestamp = saleDate.toISOString();
       
+      // Update book quantity
       const { error: updateError } = await supabase
         .from('books')
         .update({ 
@@ -171,6 +173,10 @@ const SellBookPage: React.FC = () => {
       
       console.log("Book inventory updated successfully");
       
+      // Record the sale with proper personnel ID (use email for consistency)
+      const personnelId = currentUser.email || currentUser.id;
+      console.log("Recording sale with personnelid:", personnelId);
+      
       const { error: saleError } = await supabase
         .from('sales')
         .insert({
@@ -179,9 +185,9 @@ const SellBookPage: React.FC = () => {
           quantity: quantity,
           totalamount: totalAmount,
           paymentmethod: paymentMethod,
-          buyername: buyerName,
-          buyerphone: buyerPhone,
-          personnelid: currentUser.id,
+          buyername: buyerName || null,
+          buyerphone: buyerPhone || null,
+          personnelid: personnelId,
           stallid: currentStore,
           synced: true,
           createdat: currentTimestamp
@@ -189,6 +195,7 @@ const SellBookPage: React.FC = () => {
       
       if (saleError) {
         console.error("Error creating sale:", saleError);
+        // Rollback book quantity update
         await supabase
           .from('books')
           .update({ quantity: book.quantity, updatedat: new Date().toISOString() })
@@ -197,14 +204,15 @@ const SellBookPage: React.FC = () => {
         throw new Error(t("sell.failedToRecordSale"));
       }
       
-      console.log("Sale recorded successfully");
+      console.log("Sale recorded successfully with personnelid:", personnelId);
 
       toast({
         title: t("common.success"),
         description: t("sell.saleCompleted"),
       });
       
-      navigate('/sales');
+      // Redirect to sales history page instead of sales page
+      navigate('/sales-history');
     } catch (error) {
       console.error("Sale submission error:", error);
       toast({

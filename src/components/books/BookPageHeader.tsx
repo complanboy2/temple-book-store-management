@@ -23,13 +23,11 @@ const BookPageHeader: React.FC<BookPageHeaderProps> = ({ exportBooks, isAdmin })
       </h1>
       
       <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-        {/* Export Button for admins */}
-        {isAdmin && (
-          <ExportBookListButton
-            books={exportBooks}
-            variant="both"
-          />
-        )}
+        {/* Export Button - Always show for book data export */}
+        <ExportBookListButton
+          books={exportBooks}
+          variant="both"
+        />
         
         {/* Add Book Button for admins */}
         {isAdmin && (

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -78,8 +77,10 @@ const SalesHistoryPage = () => {
         .eq('stallid', currentStore)
         .order('createdat', { ascending: false });
 
-      // Filter by personnel ID (current user's email or phone)
-      query = query.or(`personnelid.eq.${currentUser.email},personnelid.eq.${currentUser.phone || 'none'}`);
+      // Filter by personnel ID using the user's email (which should match personnelid)
+      const personnelId = currentUser.email;
+      console.log("Filtering sales by personnelid:", personnelId);
+      query = query.eq('personnelid', personnelId);
 
       // Add date filters if provided
       if (fromDate) {
