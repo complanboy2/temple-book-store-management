@@ -111,52 +111,25 @@ const SearchPage = () => {
       const searchLower = searchTerm.toLowerCase().trim();
       console.log("DEBUG: SearchPage searching for:", searchLower);
       
-      // NEW LOGIC: Handle different search patterns (same as useBookManager)
-      const isNumericSearch = /^\d+$/.test(searchLower);
-      
-      if (isNumericSearch) {
-        // For numeric searches, look for book codes ending with the number
-        console.log("DEBUG: SearchPage numeric search detected, looking for book codes ending with:", searchLower);
-        
-        const exactEndingMatch = filtered.find(book => {
-          const bookCodeNumber = book.bookCode?.toLowerCase().split('-')[1];
-          return bookCodeNumber === searchLower;
+      // FIXED: Simple exact match for book codes (same as useBookManager)
+      if (/^\d+$/.test(searchLower)) {
+        // Pure numeric search - exact match for book codes
+        console.log("DEBUG: SearchPage numeric search for exact match:", searchLower);
+        filtered = filtered.filter(book => {
+          const matches = book.bookCode === searchLower;
+          console.log(`DEBUG: Book ${book.name} code ${book.bookCode} matches ${searchLower}:`, matches);
+          return matches;
         });
-        
-        if (exactEndingMatch) {
-          console.log("DEBUG: SearchPage found exact ending match:", exactEndingMatch.name);
-          filtered = [exactEndingMatch];
-        } else {
-          // Partial match for numbers in book codes
-          filtered = filtered.filter(book => {
-            const bookCodeNumber = book.bookCode?.toLowerCase().split('-')[1] || '';
-            return bookCodeNumber.includes(searchLower);
-          });
-          console.log("DEBUG: SearchPage partial numeric matching returned:", filtered.length, "results");
-        }
       } else {
-        // For non-numeric searches, do exact match first, then partial
-        const exactBookCodeMatch = filtered.find(book => 
-          book.bookCode?.toLowerCase() === searchLower
-        );
-        
-        if (exactBookCodeMatch) {
-          filtered = [exactBookCodeMatch];
-          console.log("DEBUG: SearchPage exact book code match found:", exactBookCodeMatch.name);
-        } else {
-          // Otherwise, do partial matching for other fields
-          filtered = filtered.filter(book => {
-            const nameMatch = book.name.toLowerCase().includes(searchLower);
-            const authorMatch = book.author.toLowerCase().includes(searchLower);
-            const categoryMatch = book.category.toLowerCase().includes(searchLower);
-            const idMatch = book.id.toLowerCase().includes(searchLower);
-            // Only do partial matching for book codes if no exact match was found
-            const bookCodeMatch = book.bookCode?.toLowerCase().includes(searchLower);
-            
-            return nameMatch || authorMatch || categoryMatch || idMatch || bookCodeMatch;
-          });
-          console.log("DEBUG: SearchPage partial matching returned:", filtered.length, "results");
-        }
+        // Text search in name, author, category, id
+        filtered = filtered.filter(book => {
+          const nameMatch = book.name.toLowerCase().includes(searchLower);
+          const authorMatch = book.author.toLowerCase().includes(searchLower);
+          const categoryMatch = book.category.toLowerCase().includes(searchLower);
+          const idMatch = book.id.toLowerCase().includes(searchLower);
+          
+          return nameMatch || authorMatch || categoryMatch || idMatch;
+        });
       }
     }
 
@@ -200,7 +173,7 @@ const SearchPage = () => {
 
   const handleSell = (book: Book) => {
     console.log("DEBUG: SearchPage sell clicked for book:", book.id, book.name);
-    navigate(`/sell/${book.id}`);
+    navigate(`/books/sell/${book.id}`);
   };
 
   return (

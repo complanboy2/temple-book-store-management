@@ -132,7 +132,7 @@ const SellBookPage = () => {
         description: t("sell.saleRecorded"),
       });
 
-      // FIXED: Redirect to books page after successful sale
+      // Redirect to books page after successful sale
       console.log("DEBUG: Redirecting to books page after sale");
       navigate("/books");
       

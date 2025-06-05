@@ -29,29 +29,36 @@ export const useBookManager = (currentStore: string | null) => {
     if (!currentStore) return;
 
     try {
-      const { data: booksWithoutCodes, error } = await supabase
+      // Get all books for this store ordered by creation date
+      const { data: allBooks, error: fetchError } = await supabase
         .from('books')
-        .select('id, barcode')
+        .select('id, barcode, createdat')
         .eq('stallid', currentStore)
-        .or('barcode.is.null,barcode.eq.""');
+        .order('createdat', { ascending: true });
 
-      if (error) {
-        console.error("Error checking book codes:", error);
+      if (fetchError) {
+        console.error("Error fetching books for code assignment:", fetchError);
         return;
       }
 
-      if (booksWithoutCodes && booksWithoutCodes.length > 0) {
-        console.log(`Found ${booksWithoutCodes.length} books without codes. Updating...`);
+      if (allBooks && allBooks.length > 0) {
+        console.log(`Checking book codes for ${allBooks.length} books...`);
         
-        for (const book of booksWithoutCodes) {
-          const bookCode = `BOOK-${book.id.slice(-6).toUpperCase()}`;
-          const { error: updateError } = await supabase
-            .from('books')
-            .update({ barcode: bookCode })
-            .eq('id', book.id);
+        // Assign sequential numbers starting from 1
+        for (let i = 0; i < allBooks.length; i++) {
+          const book = allBooks[i];
+          const expectedCode = String(i + 1);
+          
+          if (book.barcode !== expectedCode) {
+            console.log(`Updating book ${book.id} code from ${book.barcode} to ${expectedCode}`);
+            const { error: updateError } = await supabase
+              .from('books')
+              .update({ barcode: expectedCode })
+              .eq('id', book.id);
 
-          if (updateError) {
-            console.error(`Error updating book code for ${book.id}:`, updateError);
+            if (updateError) {
+              console.error(`Error updating book code for ${book.id}:`, updateError);
+            }
           }
         }
       }
@@ -74,7 +81,7 @@ export const useBookManager = (currentStore: string | null) => {
         .from('books')
         .select('*')
         .eq('stallid', currentStore)
-        .order('name');
+        .order('createdat', { ascending: true });
       
       if (error) {
         console.error("Error fetching books:", error);
@@ -86,9 +93,9 @@ export const useBookManager = (currentStore: string | null) => {
         return;
       }
 
-      const formattedBooks: Book[] = (supabaseBooks || []).map((book) => ({
+      const formattedBooks: Book[] = (supabaseBooks || []).map((book, index) => ({
         id: book.id,
-        bookCode: book.barcode || `BOOK-${book.id.slice(-6).toUpperCase()}`,
+        bookCode: book.barcode || String(index + 1),
         name: book.name,
         author: book.author,
         category: book.category || "",
@@ -168,15 +175,13 @@ export const useBookManager = (currentStore: string | null) => {
       const searchLower = searchTerm.toLowerCase().trim();
       console.log("DEBUG: Searching for:", searchLower);
       
-      // FIXED: Simple numeric search for book codes
+      // FIXED: Simple exact match for book codes
       if (/^\d+$/.test(searchLower)) {
-        // Pure numeric search - match book codes ending with search term
-        console.log("DEBUG: Numeric search for:", searchLower);
+        // Pure numeric search - exact match for book codes
+        console.log("DEBUG: Numeric search for exact match:", searchLower);
         filtered = books.filter(book => {
-          // Extract numeric part from book code (everything after BOOK-)
-          const bookCodeNumeric = book.bookCode?.replace(/^BOOK-/i, '');
-          const matches = bookCodeNumeric === searchLower;
-          console.log(`DEBUG: Book ${book.name} code ${bookCodeNumeric} matches ${searchLower}:`, matches);
+          const matches = book.bookCode === searchLower;
+          console.log(`DEBUG: Book ${book.name} code ${book.bookCode} matches ${searchLower}:`, matches);
           return matches;
         });
       } else {
