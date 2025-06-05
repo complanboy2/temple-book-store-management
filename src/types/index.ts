@@ -1,4 +1,3 @@
-
 export type UserRole = "super_admin" | "admin" | "personnel";
 
 export interface User {
@@ -10,6 +9,7 @@ export interface User {
   canRestock: boolean;
   canSell: boolean;
   instituteId: string;
+  created_by_admin?: string; // Adding the missing property
 }
 
 export interface Institute {

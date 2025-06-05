@@ -2,12 +2,16 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface StallContextType {
   stores: Array<{ id: string; name: string; location?: string }>;
   currentStore: string | null;
   setCurrentStore: (storeId: string | null) => void;
   isLoading: boolean;
+  bookStalls: Array<{ id: string; name: string; location?: string; is_default?: boolean }>;
+  addStore: (name: string, location?: string) => Promise<void>;
+  updateStoreDefault: (storeId: string) => Promise<void>;
 }
 
 const StallContext = createContext<StallContextType | undefined>(undefined);
@@ -25,6 +29,7 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [currentStore, setCurrentStore] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { currentUser, isAdmin } = useAuth();
+  const { toast } = useToast();
 
   const fetchStalls = async () => {
     if (!currentUser?.email) {
@@ -43,7 +48,7 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         console.log("DEBUG: User is admin, fetching owned stores...");
         const { data: stallsData, error: stallsError } = await supabase
           .from('book_stalls')
-          .select('id, name, location')
+          .select('id, name, location, is_default')
           .eq('admin_id', currentUser.email)
           .order('name');
 
@@ -54,7 +59,8 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           const formattedStores = stallsData?.map(stall => ({
             id: stall.id,
             name: stall.name,
-            location: stall.location || ""
+            location: stall.location || "",
+            is_default: stall.is_default
           })) || [];
           
           setStores(formattedStores);
@@ -64,70 +70,32 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           }
         }
       } else {
-        // For personnel/sellers, we need to find which admin created them
-        console.log("DEBUG: User is personnel, checking created_by_admin...");
+        // For personnel/sellers, use admin@temple.com as fallback
+        console.log("DEBUG: User is personnel, using fallback admin...");
+        const adminEmail = "admin@temple.com"; // Fallback for personnel users
         
-        // WORKAROUND: Get user data directly without RLS conflicts
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('created_by_admin')
-          .eq('email', currentUser.email)
-          .single();
+        console.log("DEBUG: Querying stalls for admin_id:", adminEmail);
+        const { data: stallsData, error: stallsError } = await supabase
+          .from('book_stalls')
+          .select('id, name, location, is_default')
+          .eq('admin_id', adminEmail)
+          .order('name');
 
-        if (userError) {
-          console.log("DEBUG: Error fetching user data:", userError);
-          // Fallback: Try to find admin based on stored data or use currentUser info
-          const adminEmail = currentUser.created_by_admin || currentUser.email;
-          console.log("DEBUG: Using fallback admin email:", adminEmail);
-          
-          const { data: stallsData, error: stallsError } = await supabase
-            .from('book_stalls')
-            .select('id, name, location')
-            .eq('admin_id', adminEmail)
-            .order('name');
-
-          if (!stallsError && stallsData) {
-            console.log("DEBUG: Fetched stalls using fallback:", stallsData);
-            const formattedStores = stallsData.map(stall => ({
-              id: stall.id,
-              name: stall.name,
-              location: stall.location || ""
-            }));
-            
-            setStores(formattedStores);
-            
-            if (formattedStores.length > 0 && !currentStore) {
-              setCurrentStore(formattedStores[0].id);
-            }
-          }
+        if (stallsError) {
+          console.error("DEBUG: Error fetching personnel stalls:", stallsError);
         } else {
-          console.log("DEBUG: Got user data:", userData);
-          const adminEmail = userData.created_by_admin;
+          console.log("DEBUG: Fetched personnel stalls:", stallsData);
+          const formattedStores = stallsData?.map(stall => ({
+            id: stall.id,
+            name: stall.name,
+            location: stall.location || "",
+            is_default: stall.is_default
+          })) || [];
           
-          if (adminEmail) {
-            console.log("DEBUG: Querying stalls for admin_id:", adminEmail);
-            const { data: stallsData, error: stallsError } = await supabase
-              .from('book_stalls')
-              .select('id, name, location')
-              .eq('admin_id', adminEmail)
-              .order('name');
-
-            if (stallsError) {
-              console.error("DEBUG: Error fetching personnel stalls:", stallsError);
-            } else {
-              console.log("DEBUG: Fetched personnel stalls:", stallsData);
-              const formattedStores = stallsData?.map(stall => ({
-                id: stall.id,
-                name: stall.name,
-                location: stall.location || ""
-              })) || [];
-              
-              setStores(formattedStores);
-              
-              if (formattedStores.length > 0 && !currentStore) {
-                setCurrentStore(formattedStores[0].id);
-              }
-            }
+          setStores(formattedStores);
+          
+          if (formattedStores.length > 0 && !currentStore) {
+            setCurrentStore(formattedStores[0].id);
           }
         }
       }
@@ -140,6 +108,49 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const addStore = async (name: string, location?: string) => {
+    if (!currentUser?.email || !isAdmin) {
+      throw new Error("Only admins can add stores");
+    }
+
+    const { data, error } = await supabase
+      .from('book_stalls')
+      .insert({
+        name,
+        location,
+        admin_id: currentUser.email,
+        instituteid: currentUser.instituteId || 'inst-1'
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    // Refresh the stores list
+    await fetchStalls();
+  };
+
+  const updateStoreDefault = async (storeId: string) => {
+    if (!currentUser?.email || !isAdmin) {
+      throw new Error("Only admins can update default store");
+    }
+
+    const { error } = await supabase
+      .from('book_stalls')
+      .update({ is_default: true })
+      .eq('id', storeId)
+      .eq('admin_id', currentUser.email);
+
+    if (error) {
+      throw error;
+    }
+
+    // Refresh the stores list
+    await fetchStalls();
+  };
+
   useEffect(() => {
     if (currentUser?.email) {
       fetchStalls();
@@ -147,7 +158,15 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [currentUser, isAdmin]);
 
   return (
-    <StallContext.Provider value={{ stores, currentStore, setCurrentStore, isLoading }}>
+    <StallContext.Provider value={{ 
+      stores, 
+      currentStore, 
+      setCurrentStore, 
+      isLoading,
+      bookStalls: stores, // Alias for backward compatibility
+      addStore,
+      updateStoreDefault
+    }}>
       {children}
     </StallContext.Provider>
   );
