@@ -1,376 +1,302 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useStallContext } from "@/contexts/StallContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from "react-i18next";
+import { supabase } from "@/integrations/supabase/client";
+import { Book } from "@/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useToast } from "@/hooks/use-toast";
-import { Book } from "@/types";
-import { generateId } from "@/services/storageService";
-import { useStallContext } from "@/contexts/StallContext";
-import { useAuth } from "@/contexts/AuthContext";
 import MobileHeader from "@/components/MobileHeader";
-import { useTranslation } from "react-i18next";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { supabase } from "@/integrations/supabase/client";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 import BookImage from "@/components/BookImage";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
-const SellBookPage: React.FC = () => {
+const SellBookPage = () => {
+  const { bookId } = useParams<{ bookId: string }>();
+  const navigate = useNavigate();
+  const { currentStore } = useStallContext();
+  const { currentUser } = useAuth();
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  
   const [book, setBook] = useState<Book | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
-  const [sellerName, setSellerName] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const params = useParams();
-  const navigate = useNavigate();
-  const { currentStore } = useStallContext();
-  const { currentUser } = useAuth();
-  const { t } = useTranslation();
-  const isMobile = useIsMobile();
-  const { toast } = useToast();
-
-  useEffect(() => {
-    if (currentUser) {
-      setSellerName(currentUser.name || currentUser.email || "");
-    }
-  }, [currentUser]);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     const fetchBook = async () => {
-      const bookId = params.id;
+      if (!bookId || !currentStore) return;
       
-      // If we're on the "/sell/new" route, redirect to books page
-      if (!bookId || bookId === "new") {
-        navigate('/books');
-        setIsLoading(false);
-        return;
-      }
-
-      if (!currentStore) {
-        toast({
-          title: t("common.error"),
-          description: t("common.bookNotFound"),
-          variant: "destructive",
-        });
-        navigate('/books');
-        return;
-      }
-
-      setIsLoading(true);
       try {
-        const { data: supabaseBook, error } = await supabase
+        const { data, error } = await supabase
           .from('books')
           .select('*')
           .eq('id', bookId)
           .eq('stallid', currentStore)
           .single();
-        
-        if (error || !supabaseBook) {
-          console.error("Error fetching book:", error);
-          toast({
-            title: t("common.error"),
-            description: t("common.bookNotFound"),
-            variant: "destructive",
-          });
-          navigate('/books');
-          return;
-        }
+
+        if (error) throw error;
 
         const formattedBook: Book = {
-          id: supabaseBook.id,
-          name: supabaseBook.name,
-          author: supabaseBook.author,
-          category: supabaseBook.category || "",
-          printingInstitute: supabaseBook.printinginstitute || "",
-          originalPrice: supabaseBook.originalprice || 0,
-          salePrice: supabaseBook.saleprice || 0,
-          quantity: supabaseBook.quantity || 0,
-          stallId: supabaseBook.stallid,
-          imageUrl: supabaseBook.imageurl,
-          createdAt: supabaseBook.createdat ? new Date(supabaseBook.createdat) : new Date(),
-          updatedAt: supabaseBook.updatedat ? new Date(supabaseBook.updatedat) : new Date()
+          id: data.id,
+          bookCode: data.barcode || `BOOK-${data.id.slice(-6).toUpperCase()}`,
+          name: data.name,
+          author: data.author,
+          category: data.category || "",
+          language: data.language || "",
+          printingInstitute: data.printinginstitute || "",
+          originalPrice: data.originalprice || 0,
+          salePrice: data.saleprice || 0,
+          quantity: data.quantity || 0,
+          stallId: data.stallid,
+          imageUrl: data.imageurl,
+          createdAt: data.createdat ? new Date(data.createdat) : new Date(),
+          updatedAt: data.updatedat ? new Date(data.updatedat) : new Date()
         };
-        
+
         setBook(formattedBook);
       } catch (error) {
-        console.error("Fetch error:", error);
+        console.error("Error fetching book:", error);
         toast({
           title: t("common.error"),
-          description: t("common.failedToLoadBookDetails"),
+          description: t("common.failedToLoadBook"),
           variant: "destructive",
         });
-        navigate('/books');
+        navigate("/books");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchBook();
-  }, [params.id, currentStore, navigate, toast, t]);
+  }, [bookId, currentStore, navigate, t, toast]);
 
-  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    if (isNaN(value) || value < 1) {
-      setQuantity(1);
-    } else if (book && value > book.quantity) {
-      setQuantity(book.quantity);
-    } else {
-      setQuantity(value);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!book || !currentStore || !currentUser) {
-      toast({
-        title: t("common.error"),
-        description: t("common.missingRequiredInformation"),
-        variant: "destructive",
-      });
-      return;
-    }
+  const handleSale = async () => {
+    if (!book || !currentUser || !currentStore) return;
     
     if (quantity > book.quantity) {
       toast({
         title: t("common.error"),
-        description: t("common.notEnoughBooks"),
+        description: t("sell.insufficientStock"),
         variant: "destructive",
       });
       return;
     }
 
-    setIsSubmitting(true);
+    setIsProcessing(true);
     
     try {
-      console.log("Starting sale process for book:", book.id);
-      console.log("Current user details:", currentUser);
-      
-      const saleId = generateId();
       const totalAmount = book.salePrice * quantity;
       
-      const saleDate = new Date();
-      const currentTimestamp = saleDate.toISOString();
+      console.log("DEBUG: Recording sale with seller:", currentUser.email);
       
-      // Update book quantity
-      const { error: updateError } = await supabase
-        .from('books')
-        .update({ 
-          quantity: book.quantity - quantity, 
-          updatedat: currentTimestamp
-        })
-        .eq('id', book.id);
-        
-      if (updateError) {
-        console.error("Error updating book quantity:", updateError);
-        throw new Error(t("sell.failedToUpdateInventory"));
-      }
-      
-      console.log("Book inventory updated successfully");
-      
-      // CRITICAL: Use currentUser.email as personnelid for consistent seller tracking
-      const personnelId = currentUser.email;
-      console.log("DEBUG: Recording sale with personnelid (email):", personnelId);
-      console.log("DEBUG: Recording sale with seller name:", currentUser.name);
-      
+      // Record the sale with proper seller information
       const { error: saleError } = await supabase
         .from('sales')
         .insert({
-          id: saleId,
           bookid: book.id,
           quantity: quantity,
           totalamount: totalAmount,
           paymentmethod: paymentMethod,
           buyername: buyerName || null,
           buyerphone: buyerPhone || null,
-          personnelid: personnelId, // Use email for consistency
+          personnelid: currentUser.email, // Use email as personnelid
           stallid: currentStore,
-          synced: true,
-          createdat: currentTimestamp
+          synced: false
         });
-      
-      if (saleError) {
-        console.error("Error creating sale:", saleError);
-        // Rollback book quantity update
-        await supabase
-          .from('books')
-          .update({ quantity: book.quantity, updatedat: new Date().toISOString() })
-          .eq('id', book.id);
-          
-        throw new Error(t("sell.failedToRecordSale"));
-      }
-      
-      console.log("Sale recorded successfully with personnelid:", personnelId);
+
+      if (saleError) throw saleError;
+
+      // Update book quantity
+      const { error: updateError } = await supabase
+        .from('books')
+        .update({ 
+          quantity: book.quantity - quantity,
+          updatedat: new Date().toISOString()
+        })
+        .eq('id', book.id);
+
+      if (updateError) throw updateError;
 
       toast({
         title: t("common.success"),
-        description: t("sell.saleCompleted"),
+        description: t("sell.saleRecorded"),
       });
+
+      // FIXED: Redirect to sales history after successful sale
+      console.log("DEBUG: Redirecting to sales history after sale");
+      navigate("/sales-history");
       
-      // Redirect to sales history page
-      navigate('/sales-history');
     } catch (error) {
-      console.error("Sale submission error:", error);
+      console.error("Error recording sale:", error);
       toast({
         title: t("common.error"),
-        description: error instanceof Error ? error.message : t("sell.failedToCompleteSale"),
+        description: t("sell.saleRecordingFailed"),
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setIsProcessing(false);
     }
   };
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-temple-background">
-        <p>{t("common.loading")}...</p>
+      <div className="min-h-screen bg-temple-background">
+        <MobileHeader 
+          title={t("common.sellBook")}
+          showBackButton={true}
+          backTo="/books"
+        />
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
       </div>
     );
   }
 
   if (!book) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-temple-background">
-        <p>{t("common.bookNotFound")}</p>
-        <Button className="mt-4" onClick={() => navigate('/books')}>
-          {t("common.backToBooks")}
-        </Button>
+      <div className="min-h-screen bg-temple-background">
+        <MobileHeader 
+          title={t("common.sellBook")}
+          showBackButton={true}
+          backTo="/books"
+        />
+        <div className="container mx-auto px-4 py-6">
+          <p className="text-center text-muted-foreground">{t("common.bookNotFound")}</p>
+        </div>
       </div>
     );
   }
 
+  const totalAmount = book.salePrice * quantity;
+
   return (
     <div className="min-h-screen bg-temple-background pb-20">
       <MobileHeader 
-        title={t("sell.title")}
+        title={t("common.sellBook")}
         showBackButton={true}
         backTo="/books"
       />
       
-      <main className="container mx-auto px-2 py-4 pb-20">
-        {!isMobile && (
-          <h1 className="text-2xl font-bold text-temple-maroon mb-4">{t("sell.title")}</h1>
-        )}
-        
-        <Card className="temple-card">
-          <CardHeader>
-            <CardTitle className="text-lg text-temple-maroon">{book?.name}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4">
-              {book?.imageUrl && (
-                <div className="max-w-sm mx-auto mb-4">
-                  <BookImage
-                    imageUrl={book.imageUrl}
-                    alt={book.name}
-                    className="rounded-lg w-full h-48 object-cover"
-                  />
-                </div>
-              )}
-              
-              <div className="flex flex-col md:flex-row justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{t("common.author")}: {book?.author}</p>
-                  {book?.category && (
-                    <p className="text-sm text-muted-foreground">{t("common.category")}: {book?.category}</p>
-                  )}
-                  <p className="text-sm text-muted-foreground">{t("common.availableQuantity")}: {book?.quantity}</p>
-                </div>
-                <div>
-                  <p className="font-medium text-lg text-temple-saffron">₹{book?.salePrice}</p>
-                </div>
+      <main className="container mx-auto px-4 py-6 space-y-6">
+        {/* Book Details Card */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex gap-4">
+              <div className="w-20 h-28 flex-shrink-0">
+                <BookImage
+                  imageUrl={book.imageUrl}
+                  alt={`${book.name} cover`}
+                  size="small"
+                  className="w-full h-full"
+                />
               </div>
               
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid gap-2">
-                  <Label htmlFor="sellerName">{t("sell.sellerName")}</Label>
-                  <Input
-                    id="sellerName"
-                    value={sellerName}
-                    readOnly
-                    className="bg-gray-50"
-                  />
+              <div className="flex-1">
+                <h2 className="text-xl font-bold mb-2">{book.name}</h2>
+                <p className="text-muted-foreground mb-1">{book.author}</p>
+                <p className="text-sm text-muted-foreground mb-2">{book.category}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-semibold text-green-600">₹{book.salePrice}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {t("common.available")}: {book.quantity}
+                  </span>
                 </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="quantity">{t("common.quantity")}</Label>
-                  <Input
-                    id="quantity"
-                    type="number"
-                    value={quantity}
-                    onChange={handleQuantityChange}
-                    min={1}
-                    max={book?.quantity}
-                    className="max-w-xs"
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label>{t("sell.paymentMethod")}</Label>
-                  <RadioGroup
-                    value={paymentMethod}
-                    onValueChange={setPaymentMethod}
-                    className="flex flex-wrap gap-4"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="cash" id="cash" />
-                      <Label htmlFor="cash">{t("sell.cash")}</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="upi" id="upi" />
-                      <Label htmlFor="upi">{t("sell.upi")}</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="card" id="card" />
-                      <Label htmlFor="card">{t("sell.card")}</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="buyerName">{t("sell.buyerName")} ({t("common.optional")})</Label>
-                  <Input
-                    id="buyerName"
-                    value={buyerName}
-                    onChange={(e) => setBuyerName(e.target.value)}
-                    className="max-w-md"
-                    placeholder="Enter buyer's name"
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="buyerPhone">{t("sell.buyerPhone")} ({t("common.optional")})</Label>
-                  <Input
-                    id="buyerPhone"
-                    value={buyerPhone}
-                    onChange={(e) => setBuyerPhone(e.target.value)}
-                    className="max-w-md"
-                    placeholder="Enter buyer's phone number"
-                  />
-                </div>
-                
-                <div className="border-t pt-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <p className="font-medium">{t("common.total")}</p>
-                    <p className="font-bold text-xl text-temple-maroon">₹{book ? (book.salePrice * quantity).toFixed(2) : '0.00'}</p>
-                  </div>
-                  
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    disabled={isSubmitting || !book || book.quantity === 0}
-                  >
-                    {isSubmitting ? `${t("common.processing")}...` : t("sell.completeSale")}
-                  </Button>
-                </div>
-              </form>
+              </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Sale Details Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("sell.saleDetails")}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="quantity">{t("common.quantity")}</Label>
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                max={book.quantity}
+                value={quantity}
+                onChange={(e) => setQuantity(Math.max(1, Math.min(book.quantity, parseInt(e.target.value) || 1)))}
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label>{t("sell.paymentMethod")}</Label>
+              <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="mt-2">
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="cash" id="cash" />
+                  <Label htmlFor="cash">{t("sell.cash")}</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="upi" id="upi" />
+                  <Label htmlFor="upi">{t("sell.upi")}</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="card" id="card" />
+                  <Label htmlFor="card">{t("sell.card")}</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div>
+              <Label htmlFor="buyerName">{t("sell.buyerName")} ({t("common.optional")})</Label>
+              <Input
+                id="buyerName"
+                value={buyerName}
+                onChange={(e) => setBuyerName(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="buyerPhone">{t("sell.buyerPhone")} ({t("common.optional")})</Label>
+              <Input
+                id="buyerPhone"
+                type="tel"
+                value={buyerPhone}
+                onChange={(e) => setBuyerPhone(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="flex justify-between items-center text-lg font-semibold">
+                <span>{t("sell.total")}</span>
+                <span className="text-green-600">₹{totalAmount.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <Button 
+              onClick={handleSale}
+              disabled={isProcessing || book.quantity === 0}
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-3"
+              size="lg"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t("sell.processing")}
+                </>
+              ) : (
+                t("sell.completeSale")
+              )}
+            </Button>
           </CardContent>
         </Card>
       </main>

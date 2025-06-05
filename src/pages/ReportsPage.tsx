@@ -86,21 +86,26 @@ const ReportsPage = () => {
         setBookDetails(bookMap);
       }
 
-      // Fetch personnel details
-      const personnelIds = [...new Set(salesData?.map(sale => sale.personnelid))];
-      if (personnelIds.length > 0) {
+      // FIXED: Fetch personnel details by email (since personnelid is email)
+      const personnelEmails = [...new Set(salesData?.map(sale => sale.personnelid))];
+      if (personnelEmails.length > 0) {
+        console.log("DEBUG: Fetching personnel details for emails:", personnelEmails);
+        
         const { data: personnelData } = await supabase
           .from('users')
-          .select('id, name')
-          .in('id', personnelIds);
+          .select('email, name')
+          .in('email', personnelEmails);
+
+        console.log("DEBUG: Personnel data fetched:", personnelData);
 
         const personnelMap: PersonnelDetails = {};
         personnelData?.forEach(person => {
-          personnelMap[person.id] = {
+          personnelMap[person.email] = {
             name: person.name
           };
         });
         setPersonnelDetails(personnelMap);
+        console.log("DEBUG: Personnel details map:", personnelMap);
       }
 
     } catch (error) {
@@ -236,22 +241,27 @@ const ReportsPage = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {sales.map((sale) => (
-                      <tr key={sale.id} className="border-b hover:bg-gray-50">
-                        <td className="p-3">
-                          <div>
-                            <div className="font-medium text-sm">{bookDetails[sale.bookid]?.name || t("common.unknownBook")}</div>
-                            <div className="text-xs text-gray-500">{bookDetails[sale.bookid]?.author}</div>
-                          </div>
-                        </td>
-                        <td className="p-3">
-                          <div className="text-sm">{personnelDetails[sale.personnelid]?.name || t("common.unknown")}</div>
-                        </td>
-                        <td className="p-3 font-medium">{sale.quantity}</td>
-                        <td className="p-3 font-medium text-green-600">₹{sale.totalamount.toFixed(2)}</td>
-                        <td className="p-3 text-sm">{new Date(sale.createdat).toLocaleDateString()}</td>
-                      </tr>
-                    ))}
+                    {sales.map((sale) => {
+                      const sellerName = personnelDetails[sale.personnelid]?.name;
+                      console.log(`DEBUG: Sale ${sale.id} seller ${sale.personnelid} -> ${sellerName}`);
+                      
+                      return (
+                        <tr key={sale.id} className="border-b hover:bg-gray-50">
+                          <td className="p-3">
+                            <div>
+                              <div className="font-medium text-sm">{bookDetails[sale.bookid]?.name || t("common.unknownBook")}</div>
+                              <div className="text-xs text-gray-500">{bookDetails[sale.bookid]?.author}</div>
+                            </div>
+                          </td>
+                          <td className="p-3">
+                            <div className="text-sm">{sellerName || sale.personnelid}</div>
+                          </td>
+                          <td className="p-3 font-medium">{sale.quantity}</td>
+                          <td className="p-3 font-medium text-green-600">₹{sale.totalamount.toFixed(2)}</td>
+                          <td className="p-3 text-sm">{new Date(sale.createdat).toLocaleDateString()}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

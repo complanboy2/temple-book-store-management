@@ -35,13 +35,13 @@ const BooksPage = () => {
     refreshBooks
   } = useBookManager(currentStore);
   
-  // Handle book editing - use React Router navigate
+  // FIXED: Handle book editing with proper navigation
   const handleEditBook = (book: Book) => {
     console.log("DEBUG: BooksPage edit clicked for book:", book.id, book.name);
     navigate(`/books/edit/${book.id}`);
   };
   
-  // Handle book selling - use React Router navigate
+  // FIXED: Handle book selling with proper navigation
   const handleSellBook = (book: Book) => {
     console.log("DEBUG: BooksPage sell clicked for book:", book.id, book.name);
     if (book.quantity > 0) {

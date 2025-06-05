@@ -168,36 +168,29 @@ export const useBookManager = (currentStore: string | null) => {
       const searchLower = searchTerm.toLowerCase().trim();
       console.log("DEBUG: Searching for:", searchLower);
       
-      // SIMPLIFIED SEARCH LOGIC
-      // If search term is purely numeric, search in book codes
+      // FIXED SEARCH LOGIC - Simple and reliable
       if (/^\d+$/.test(searchLower)) {
-        console.log("DEBUG: Numeric search for book code ending with:", searchLower);
-        
-        // Find books where the numeric part of book code ends with search term
+        // Numeric search - search in book codes
+        console.log("DEBUG: Numeric search for:", searchLower);
         filtered = books.filter(book => {
-          const bookCodeParts = book.bookCode?.toLowerCase().split('-');
-          if (bookCodeParts && bookCodeParts.length > 1) {
-            const numericPart = bookCodeParts[1];
-            const endsWithSearch = numericPart.endsWith(searchLower);
-            console.log(`DEBUG: Book ${book.name} code ${numericPart} ends with ${searchLower}:`, endsWithSearch);
-            return endsWithSearch;
-          }
-          return false;
+          // Extract numeric part from book code (everything after BOOK-)
+          const bookCodeNumeric = book.bookCode?.replace(/^BOOK-/i, '').toLowerCase();
+          const searchMatch = bookCodeNumeric?.includes(searchLower);
+          console.log(`DEBUG: Book ${book.name} code ${bookCodeNumeric} contains ${searchLower}:`, searchMatch);
+          return searchMatch;
         });
-        
-        console.log("DEBUG: Numeric search results:", filtered.length);
       } else {
-        // Text search in name, author, category, etc.
+        // Text search in name, author, category
         filtered = filtered.filter(book => {
           const nameMatch = book.name.toLowerCase().includes(searchLower);
           const authorMatch = book.author.toLowerCase().includes(searchLower);
           const categoryMatch = book.category.toLowerCase().includes(searchLower);
-          const bookCodeMatch = book.bookCode?.toLowerCase().includes(searchLower);
           
-          return nameMatch || authorMatch || categoryMatch || bookCodeMatch;
+          return nameMatch || authorMatch || categoryMatch;
         });
-        console.log("DEBUG: Text search results:", filtered.length);
       }
+      
+      console.log("DEBUG: Search results:", filtered.length);
     }
 
     if (selectedCategory) {
