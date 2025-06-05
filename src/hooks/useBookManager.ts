@@ -168,16 +168,16 @@ export const useBookManager = (currentStore: string | null) => {
       const searchLower = searchTerm.toLowerCase().trim();
       console.log("DEBUG: Searching for:", searchLower);
       
-      // FIXED SEARCH LOGIC - Simple and reliable
+      // FIXED: Simple numeric search for book codes
       if (/^\d+$/.test(searchLower)) {
-        // Numeric search - search in book codes
+        // Pure numeric search - match book codes ending with search term
         console.log("DEBUG: Numeric search for:", searchLower);
         filtered = books.filter(book => {
           // Extract numeric part from book code (everything after BOOK-)
-          const bookCodeNumeric = book.bookCode?.replace(/^BOOK-/i, '').toLowerCase();
-          const searchMatch = bookCodeNumeric?.includes(searchLower);
-          console.log(`DEBUG: Book ${book.name} code ${bookCodeNumeric} contains ${searchLower}:`, searchMatch);
-          return searchMatch;
+          const bookCodeNumeric = book.bookCode?.replace(/^BOOK-/i, '');
+          const matches = bookCodeNumeric === searchLower;
+          console.log(`DEBUG: Book ${book.name} code ${bookCodeNumeric} matches ${searchLower}:`, matches);
+          return matches;
         });
       } else {
         // Text search in name, author, category

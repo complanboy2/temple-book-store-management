@@ -29,7 +29,7 @@ const BookPageHeader: React.FC<BookPageHeaderProps> = ({ exportBooks, isAdmin })
           variant="both"
         />
         
-        {/* Add Book Button for admins */}
+        {/* Add Book Button - ONLY for admins */}
         {isAdmin && (
           <Button 
             onClick={() => navigate("/books/add")}

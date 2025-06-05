@@ -35,17 +35,17 @@ const BooksPage = () => {
     refreshBooks
   } = useBookManager(currentStore);
   
-  // FIXED: Handle book editing with proper navigation
+  // FIXED: Handle book editing with proper navigation to edit page
   const handleEditBook = (book: Book) => {
     console.log("DEBUG: BooksPage edit clicked for book:", book.id, book.name);
     navigate(`/books/edit/${book.id}`);
   };
   
-  // FIXED: Handle book selling with proper navigation
+  // FIXED: Handle book selling with proper navigation to sell page
   const handleSellBook = (book: Book) => {
     console.log("DEBUG: BooksPage sell clicked for book:", book.id, book.name);
     if (book.quantity > 0) {
-      navigate(`/sell/${book.id}`);
+      navigate(`/books/sell/${book.id}`);
     } else {
       toast({
         title: t("common.error"),

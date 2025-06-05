@@ -109,7 +109,7 @@ const SellBookPage = () => {
           paymentmethod: paymentMethod,
           buyername: buyerName || null,
           buyerphone: buyerPhone || null,
-          personnelid: currentUser.email, // Use email as personnelid
+          personnelid: currentUser.email,
           stallid: currentStore,
           synced: false
         });
@@ -132,9 +132,9 @@ const SellBookPage = () => {
         description: t("sell.saleRecorded"),
       });
 
-      // FIXED: Redirect to sales history after successful sale
-      console.log("DEBUG: Redirecting to sales history after sale");
-      navigate("/sales-history");
+      // FIXED: Redirect to books page after successful sale
+      console.log("DEBUG: Redirecting to books page after sale");
+      navigate("/books");
       
     } catch (error) {
       console.error("Error recording sale:", error);
