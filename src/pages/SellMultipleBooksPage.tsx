@@ -1,418 +1,380 @@
 
 import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 import { useStallContext } from "@/contexts/StallContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Trash2, ShoppingCart } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Book } from "@/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
 import MobileHeader from "@/components/MobileHeader";
-import BookImage from "@/components/BookImage";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, Plus, Minus, Trash2 } from "lucide-react";
 
-interface Book {
-  id: string;
-  name: string;
-  author: string;
-  salePrice: number;
-  quantity: number;
-  imageUrl?: string;
-  bookCode?: string;
-}
-
-interface CartItem {
+interface SaleItem {
   book: Book;
   quantity: number;
-  subtotal: number;
 }
 
 const SellMultipleBooksPage = () => {
-  const [books, setBooks] = useState<Book[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [buyerName, setBuyerName] = useState("");
-  const [buyerPhone, setBuyerPhone] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("UPI");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const { toast } = useToast();
+  const navigate = useNavigate();
   const { currentStore } = useStallContext();
   const { currentUser } = useAuth();
-  const navigate = useNavigate();
   const { t } = useTranslation();
+  const { toast } = useToast();
+  
+  const [books, setBooks] = useState<Book[]>([]);
+  const [saleItems, setSaleItems] = useState<SaleItem[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [buyerName, setBuyerName] = useState("");
+  const [buyerPhone, setBuyerPhone] = useState("");
+  const [notes, setNotes] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    fetchBooks();
-  }, [currentStore]);
+    const fetchBooks = async () => {
+      if (!currentStore) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('books')
+          .select('*')
+          .eq('stallid', currentStore)
+          .gt('quantity', 0)
+          .order('name');
 
-  const fetchBooks = async () => {
-    if (!currentStore) return;
+        if (error) throw error;
 
-    try {
-      const { data, error } = await supabase
-        .from('books')
-        .select('id, name, author, saleprice, quantity, imageurl, barcode')
-        .eq('stallid', currentStore)
-        .gt('quantity', 0)
-        .order('name');
+        const formattedBooks: Book[] = (data || []).map((book, index) => ({
+          id: book.id,
+          bookCode: book.barcode || String(index + 1),
+          name: book.name,
+          author: book.author,
+          category: book.category || "",
+          language: book.language || "",
+          printingInstitute: book.printinginstitute || "",
+          originalPrice: book.originalprice || 0,
+          salePrice: book.saleprice || 0,
+          quantity: book.quantity || 0,
+          stallId: book.stallid,
+          imageUrl: book.imageurl,
+          createdAt: book.createdat ? new Date(book.createdat) : new Date(),
+          updatedAt: book.updatedat ? new Date(book.updatedat) : new Date()
+        }));
 
-      if (error) throw error;
-
-      const formattedBooks: Book[] = (data || []).map(book => ({
-        id: book.id,
-        name: book.name,
-        author: book.author,
-        salePrice: book.saleprice || 0,
-        quantity: book.quantity || 0,
-        imageUrl: book.imageurl,
-        bookCode: book.barcode || `BOOK-${book.id.slice(-6).toUpperCase()}`
-      }));
-
-      setBooks(formattedBooks);
-    } catch (error) {
-      console.error("Error fetching books:", error);
-      toast({
-        title: t("common.error"),
-        description: t("common.failedToLoadBooks"),
-        variant: "destructive",
-      });
-    }
-  };
-
-  const filteredBooks = books.filter(book => {
-    if (!searchTerm.trim()) return true;
-    
-    const searchLower = searchTerm.toLowerCase().trim();
-    const nameMatch = book.name.toLowerCase().includes(searchLower);
-    const authorMatch = book.author.toLowerCase().includes(searchLower);
-    const bookCodeMatch = book.bookCode?.toLowerCase().includes(searchLower);
-    const idMatch = book.id.toLowerCase().includes(searchLower);
-    
-    return nameMatch || authorMatch || bookCodeMatch || idMatch;
-  });
-
-  const addBookToCart = (bookId: string) => {
-    const selectedBook = books.find(book => book.id === bookId);
-    if (!selectedBook) return;
-
-    const existingItem = cart.find(item => item.book.id === selectedBook.id);
-    if (existingItem) {
-      const newQuantity = existingItem.quantity + 1;
-      if (newQuantity > selectedBook.quantity) {
+        setBooks(formattedBooks);
+      } catch (error) {
+        console.error("Error fetching books:", error);
         toast({
           title: t("common.error"),
-          description: t("sellMultiple.exceedsStock"),
+          description: t("common.failedToLoadBooks"),
           variant: "destructive",
         });
-        return;
+      } finally {
+        setIsLoading(false);
       }
-      
-      setCart(cart.map(item =>
-        item.book.id === selectedBook.id
-          ? { ...item, quantity: newQuantity, subtotal: newQuantity * selectedBook.salePrice }
-          : item
-      ));
+    };
+
+    fetchBooks();
+  }, [currentStore, t, toast]);
+
+  const addBookToSale = (book: Book) => {
+    const existingItem = saleItems.find(item => item.book.id === book.id);
+    if (existingItem) {
+      if (existingItem.quantity < book.quantity) {
+        setSaleItems(prev => 
+          prev.map(item => 
+            item.book.id === book.id 
+              ? { ...item, quantity: item.quantity + 1 }
+              : item
+          )
+        );
+      } else {
+        toast({
+          title: t("common.error"),
+          description: t("sell.insufficientStock"),
+          variant: "destructive",
+        });
+      }
     } else {
-      const cartItem: CartItem = {
-        book: selectedBook,
-        quantity: 1,
-        subtotal: selectedBook.salePrice
-      };
-      setCart([...cart, cartItem]);
+      setSaleItems(prev => [...prev, { book, quantity: 1 }]);
     }
-
-    toast({
-      title: t("common.success"),
-      description: `${selectedBook.name} ${t("sellMultiple.addedToCart")}`,
-    });
-  };
-
-  const removeFromCart = (bookId: string) => {
-    setCart(cart.filter(item => item.book.id !== bookId));
   };
 
   const updateQuantity = (bookId: string, newQuantity: number) => {
-    const item = cart.find(item => item.book.id === bookId);
-    if (!item) return;
-
-    if (newQuantity > item.book.quantity) {
-      toast({
-        title: t("common.error"),
-        description: t("sellMultiple.exceedsStock"),
-        variant: "destructive",
-      });
-      return;
-    }
+    const book = books.find(b => b.id === bookId);
+    if (!book) return;
 
     if (newQuantity <= 0) {
-      removeFromCart(bookId);
+      removeBookFromSale(bookId);
       return;
     }
 
-    setCart(cart.map(cartItem =>
-      cartItem.book.id === bookId
-        ? { ...cartItem, quantity: newQuantity, subtotal: newQuantity * cartItem.book.salePrice }
-        : cartItem
-    ));
-  };
-
-  const getTotalAmount = () => {
-    return cart.reduce((total, item) => total + item.subtotal, 0);
-  };
-
-  const handleSell = async () => {
-    if (cart.length === 0) {
+    if (newQuantity > book.quantity) {
       toast({
         title: t("common.error"),
-        description: t("sellMultiple.addBooksToCart"),
+        description: t("sell.insufficientStock"),
         variant: "destructive",
       });
       return;
     }
 
-    if (!currentStore || !currentUser) {
-      toast({
-        title: t("common.error"),
-        description: t("common.missingRequiredInformation"),
-        variant: "destructive",
-      });
-      return;
-    }
+    setSaleItems(prev => 
+      prev.map(item => 
+        item.book.id === bookId 
+          ? { ...item, quantity: newQuantity }
+          : item
+      )
+    );
+  };
 
-    setIsSubmitting(true);
+  const removeBookFromSale = (bookId: string) => {
+    setSaleItems(prev => prev.filter(item => item.book.id !== bookId));
+  };
 
+  const handleMultipleSale = async () => {
+    if (!currentUser || !currentStore || saleItems.length === 0) return;
+
+    setIsProcessing(true);
+    
     try {
-      const currentTimestamp = new Date().toISOString();
-      
-      for (const item of cart) {
+      // Process each sale item
+      for (const item of saleItems) {
+        const totalAmount = item.book.salePrice * item.quantity;
+        
+        // Record the sale
         const { error: saleError } = await supabase
           .from('sales')
           .insert({
             bookid: item.book.id,
             quantity: item.quantity,
-            totalamount: item.subtotal,
+            totalamount: totalAmount,
             paymentmethod: paymentMethod,
-            buyername: buyerName.trim() || null,
-            buyerphone: buyerPhone.trim() || null,
-            personnelid: currentUser.id,
+            buyername: buyerName || null,
+            buyerphone: buyerPhone || null,
+            personnelid: currentUser.email,
             stallid: currentStore,
-            createdat: currentTimestamp
+            synced: false
           });
 
         if (saleError) throw saleError;
 
+        // Update book quantity
         const { error: updateError } = await supabase
           .from('books')
-          .update({
+          .update({ 
             quantity: item.book.quantity - item.quantity,
-            updatedat: currentTimestamp
+            updatedat: new Date().toISOString()
           })
           .eq('id', item.book.id);
 
         if (updateError) throw updateError;
       }
 
+      const totalAmount = saleItems.reduce((sum, item) => sum + (item.book.salePrice * item.quantity), 0);
+      
       toast({
         title: t("common.success"),
-        description: t("sellMultiple.soldSuccessfully"),
+        description: `${t("sell.multiSaleRecorded")} - Total: ₹${totalAmount.toFixed(2)}`,
       });
 
-      setCart([]);
-      setBuyerName("");
-      setBuyerPhone("");
-      setPaymentMethod("UPI");
+      // Redirect to books page after successful sale
+      console.log("DEBUG: Multiple sale complete, redirecting to /books");
+      navigate("/books");
       
-      fetchBooks();
-
     } catch (error) {
-      console.error("Error selling books:", error);
+      console.error("Error recording multiple sale:", error);
       toast({
         title: t("common.error"),
-        description: t("sellMultiple.errorSelling"),
+        description: t("sell.saleRecordingFailed"),
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setIsProcessing(false);
     }
   };
 
-  const renderBookOption = (book: Book) => (
-    <div 
-      className="flex items-center gap-2 py-1 cursor-pointer hover:bg-gray-50 rounded p-2"
-      onClick={() => addBookToCart(book.id)}
-    >
-      <div className="w-8 h-10 flex-shrink-0">
-        <BookImage 
-          imageUrl={book.imageUrl} 
-          alt={book.name}
-          className="w-full h-full rounded-sm object-cover"
-          size="small"
+  const totalAmount = saleItems.reduce((sum, item) => sum + (item.book.salePrice * item.quantity), 0);
+  const totalItems = saleItems.reduce((sum, item) => sum + item.quantity, 0);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-temple-background">
+        <MobileHeader 
+          title={t("sell.sellMultipleBooks")}
+          showBackButton={true}
+          backTo="/books"
         />
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{book.name}</p>
-        <p className="text-xs text-gray-600">{book.author}</p>
-        <p className="text-xs text-gray-500">
-          {book.bookCode} • ₹{book.salePrice} • {book.quantity} {t("common.available")}
-        </p>
-      </div>
-    </div>
-  );
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-temple-background pb-20">
       <MobileHeader 
-        title={t("sellMultiple.sellMultipleBooks")}
+        title={t("sell.sellMultipleBooks")}
         showBackButton={true}
-        backTo="/"
+        backTo="/books"
       />
       
-      <main className="container mx-auto px-3 py-4">
-        <Card className="mb-4">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">{t("sellMultiple.selectBooksToSell")}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="search" className="text-sm font-medium">{t("common.searchByCodeNameAuthor")}</Label>
-              <Input
-                id="search"
-                placeholder={t("common.searchByCodeNameAuthor")}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-
-            {searchTerm.trim() && (
-              <div className="max-h-60 overflow-y-auto border rounded-md">
-                {filteredBooks.length > 0 ? (
-                  filteredBooks.map(book => (
-                    <div key={book.id}>
-                      {renderBookOption(book)}
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-4 text-center text-gray-500">
-                    {t("common.noBooks")}
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="mb-4">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <ShoppingCart className="h-5 w-5" />
-              {t("sellMultiple.cart")} ({cart.length})
-            </CardTitle>
+      <main className="container mx-auto px-4 py-6 space-y-6">
+        {/* Available Books */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("sell.availableBooks")}</CardTitle>
           </CardHeader>
           <CardContent>
-            {cart.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">{t("sellMultiple.cartEmpty")}</p>
-            ) : (
-              <div className="space-y-3">
-                {cart.map((item) => (
-                  <div key={item.book.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="w-12 h-16 flex-shrink-0">
-                      <BookImage 
-                        imageUrl={item.book.imageUrl} 
-                        alt={item.book.name}
-                        className="w-full h-full rounded"
-                        size="small"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-sm">{item.book.name}</h4>
-                      <p className="text-xs text-gray-600">{item.book.author}</p>
-                      <p className="text-sm font-medium text-green-600">₹{item.subtotal.toFixed(2)}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        min="1"
-                        value={item.quantity}
-                        onChange={(e) => updateQuantity(item.book.id, parseInt(e.target.value) || 1)}
-                        className="w-16 h-8 text-sm"
-                      />
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => removeFromCart(item.book.id)}
-                        className="h-8 w-8"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
+            <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto">
+              {books.map(book => (
+                <div key={book.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <h4 className="font-medium">{book.name}</h4>
+                    <p className="text-sm text-muted-foreground">{book.author}</p>
+                    <p className="text-sm">₹{book.salePrice} | {t("common.available")}: {book.quantity}</p>
                   </div>
-                ))}
-                
-                <div className="border-t pt-3">
-                  <div className="flex justify-between items-center text-lg font-bold">
-                    <span>{t("common.total")}:</span>
-                    <span className="text-green-600">₹{getTotalAmount().toFixed(2)}</span>
-                  </div>
+                  <Button
+                    onClick={() => addBookToSale(book)}
+                    size="sm"
+                    disabled={book.quantity === 0}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
-              </div>
-            )}
+              ))}
+            </div>
           </CardContent>
         </Card>
 
-        {cart.length > 0 && (
-          <Card className="mb-4">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">{t("sellMultiple.buyerInformation")}</CardTitle>
+        {/* Sale Items */}
+        {saleItems.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("sell.selectedBooks")}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {saleItems.map(item => (
+                <div key={item.book.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <h4 className="font-medium">{item.book.name}</h4>
+                    <p className="text-sm text-muted-foreground">₹{item.book.salePrice} each</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => updateQuantity(item.book.id, item.quantity - 1)}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="w-8 text-center">{item.quantity}</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => updateQuantity(item.book.id, item.quantity + 1)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => removeBookFromSale(item.book.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">{t("sell.total")} ({totalItems} items)</span>
+                  <span className="text-lg font-bold text-green-600">₹{totalAmount.toFixed(2)}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Sale Details */}
+        {saleItems.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("sell.saleDetails")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="buyerName" className="text-sm font-medium">{t("common.buyerName")} ({t("common.optional")})</Label>
+                <Label>{t("sell.paymentMethod")}</Label>
+                <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="mt-2">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="cash" id="cash" />
+                    <Label htmlFor="cash">{t("sell.cash")}</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="upi" id="upi" />
+                    <Label htmlFor="upi">{t("sell.upi")}</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="card" id="card" />
+                    <Label htmlFor="card">{t("sell.card")}</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <div>
+                <Label htmlFor="buyerName">{t("sell.buyerName")} ({t("common.optional")})</Label>
                 <Input
                   id="buyerName"
                   value={buyerName}
                   onChange={(e) => setBuyerName(e.target.value)}
-                  placeholder={t("common.enterBuyerName")}
                   className="mt-1"
                 />
               </div>
 
               <div>
-                <Label htmlFor="buyerPhone" className="text-sm font-medium">{t("common.buyerPhone")} ({t("common.optional")})</Label>
+                <Label htmlFor="buyerPhone">{t("sell.buyerPhone")} ({t("common.optional")})</Label>
                 <Input
                   id="buyerPhone"
+                  type="tel"
                   value={buyerPhone}
                   onChange={(e) => setBuyerPhone(e.target.value)}
-                  placeholder={t("common.enterBuyerPhone")}
                   className="mt-1"
                 />
               </div>
 
               <div>
-                <Label htmlFor="paymentMethod" className="text-sm font-medium">{t("common.paymentMethod")}</Label>
-                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="UPI">UPI</SelectItem>
-                    <SelectItem value="Cash">{t("common.cash")}</SelectItem>
-                    <SelectItem value="Card">{t("common.card")}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="notes">{t("common.notes")} ({t("common.optional")})</Label>
+                <Textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="mt-1"
+                  rows={3}
+                />
               </div>
 
               <Button 
-                onClick={handleSell}
-                className="w-full bg-green-600 hover:bg-green-700 h-12"
-                disabled={isSubmitting || cart.length === 0}
+                onClick={handleMultipleSale}
+                disabled={isProcessing || saleItems.length === 0}
+                className="w-full bg-green-600 hover:bg-green-700 text-white py-3"
+                size="lg"
               >
-                {isSubmitting ? t("common.processing") : `${t("sellMultiple.sellAll")} - ₹${getTotalAmount().toFixed(2)}`}
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t("sell.processing")}
+                  </>
+                ) : (
+                  t("sell.completeSale")
+                )}
               </Button>
             </CardContent>
           </Card>

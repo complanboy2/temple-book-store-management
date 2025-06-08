@@ -86,22 +86,26 @@ const ReportsPage = () => {
         setBookDetails(bookMap);
       }
 
-      // FIXED: Fetch personnel details by email (since personnelid is email)
+      // Fetch personnel details by email (since personnelid is email)
       const personnelEmails = [...new Set(salesData?.map(sale => sale.personnelid))];
       if (personnelEmails.length > 0) {
         console.log("DEBUG: Fetching personnel details for emails:", personnelEmails);
         
-        const { data: personnelData } = await supabase
+        const { data: personnelData, error: personnelError } = await supabase
           .from('users')
           .select('email, name')
           .in('email', personnelEmails);
+
+        if (personnelError) {
+          console.error("Error fetching personnel data:", personnelError);
+        }
 
         console.log("DEBUG: Personnel data fetched:", personnelData);
 
         const personnelMap: PersonnelDetails = {};
         personnelData?.forEach(person => {
           personnelMap[person.email] = {
-            name: person.name
+            name: person.name || person.email
           };
         });
         setPersonnelDetails(personnelMap);
