@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStallContext } from "@/contexts/StallContext";
@@ -240,7 +239,7 @@ const SellMultipleBooksPage = () => {
         <MobileHeader 
           title={t("sell.sellMultipleBooks")}
           showBackButton={true}
-          backTo="/books"
+          backTo="/"
         />
         <div className="flex items-center justify-center py-16">
           <Loader2 className="h-8 w-8 animate-spin" />
@@ -254,7 +253,7 @@ const SellMultipleBooksPage = () => {
       <MobileHeader 
         title={t("sell.sellMultipleBooks")}
         showBackButton={true}
-        backTo="/books"
+        backTo="/"
       />
       
       <main className="container mx-auto px-4 py-6 space-y-6">
@@ -290,7 +289,7 @@ const SellMultipleBooksPage = () => {
                       imageUrl={book.imageUrl}
                       alt={`${book.name} cover`}
                       size="small"
-                      className="w-full h-full"
+                      className="w-full h-full object-cover rounded"
                     />
                   </div>
                   <div className="flex-1">
@@ -333,7 +332,7 @@ const SellMultipleBooksPage = () => {
                       imageUrl={item.book.imageUrl}
                       alt={`${item.book.name} cover`}
                       size="small"
-                      className="w-full h-full"
+                      className="w-full h-full object-cover rounded"
                     />
                   </div>
                   <div className="flex-1">

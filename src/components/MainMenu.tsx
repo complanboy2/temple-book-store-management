@@ -35,7 +35,7 @@ const MainMenu = () => {
       title: t("common.sell"),
       description: t("common.sellBooks"),
       icon: ShoppingCart,
-      path: "/sell",
+      path: "/books",
       bgColor: "bg-green-500",
       textColor: "text-green-700",
       hoverColor: "hover:bg-green-600"
@@ -50,15 +50,6 @@ const MainMenu = () => {
       hoverColor: "hover:bg-purple-600"
     },
     {
-      title: t("common.addBook"),
-      description: t("common.addNewBook"),
-      icon: Package,
-      path: "/books/add",
-      bgColor: "bg-orange-500",
-      textColor: "text-orange-700",
-      hoverColor: "hover:bg-orange-600"
-    },
-    {
       title: t("common.sales"),
       description: t("common.viewSalesHistory"),
       icon: TrendingUp,
@@ -66,20 +57,42 @@ const MainMenu = () => {
       bgColor: "bg-indigo-500",
       textColor: "text-indigo-700",
       hoverColor: "hover:bg-indigo-600"
-    },
-    {
-      title: t("common.reports"),
-      description: t("common.viewReports"),
-      icon: BarChart3,
-      path: "/reports",
-      bgColor: "bg-teal-500",
-      textColor: "text-teal-700",
-      hoverColor: "hover:bg-teal-600"
     }
   ];
 
-  // Add sales history for non-admin users (sellers)
-  if (!isAdmin) {
+  // Add admin-only items
+  if (isAdmin) {
+    menuItems.push(
+      {
+        title: t("common.addBook"),
+        description: t("common.addNewBook"),
+        icon: Package,
+        path: "/books/add",
+        bgColor: "bg-orange-500",
+        textColor: "text-orange-700",
+        hoverColor: "hover:bg-orange-600"
+      },
+      {
+        title: t("common.reports"),
+        description: t("common.viewReports"),
+        icon: BarChart3,
+        path: "/reports",
+        bgColor: "bg-teal-500",
+        textColor: "text-teal-700",
+        hoverColor: "hover:bg-teal-600"
+      },
+      {
+        title: t("common.admin"),
+        description: t("common.adminPanel"),
+        icon: Users,
+        path: "/admin",
+        bgColor: "bg-red-500",
+        textColor: "text-red-700",
+        hoverColor: "hover:bg-red-600"
+      }
+    );
+  } else {
+    // Add seller-specific items
     menuItems.push({
       title: "My Sales History",
       description: "View and edit your sales",
@@ -88,19 +101,6 @@ const MainMenu = () => {
       bgColor: "bg-amber-500",
       textColor: "text-amber-700",
       hoverColor: "hover:bg-amber-600"
-    });
-  }
-
-  // Add admin-only items
-  if (isAdmin) {
-    menuItems.push({
-      title: t("common.admin"),
-      description: t("common.adminPanel"),
-      icon: Users,
-      path: "/admin",
-      bgColor: "bg-red-500",
-      textColor: "text-red-700",
-      hoverColor: "hover:bg-red-600"
     });
   }
 

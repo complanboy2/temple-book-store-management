@@ -50,9 +50,13 @@ function App() {
                 <Route path="/books/add" element={<AddBookPage />} />
                 <Route path="/books/edit/:bookId" element={<EditBookPage />} />
                 <Route path="/books/sell/:bookId" element={<SellBookPage />} />
+                <Route path="/sell/:bookId" element={<SellBookPage />} />
+                <Route path="/sell" element={<BooksPage />} />
                 <Route path="/books/sell-multiple" element={<SellMultipleBooksPage />} />
+                <Route path="/sell-multiple" element={<SellMultipleBooksPage />} />
                 <Route path="/sales" element={<SalesPage />} />
                 <Route path="/sales/history" element={<SalesHistoryPage />} />
+                <Route path="/my-sales-history" element={<SalesHistoryPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
                 <Route path="/orders" element={<OrdersPage />} />
                 <Route path="/orders/new" element={<NewOrderPage />} />

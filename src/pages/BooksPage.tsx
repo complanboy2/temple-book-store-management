@@ -35,13 +35,21 @@ const BooksPage = () => {
     refreshBooks
   } = useBookManager(currentStore);
   
-  // Handle book editing with proper navigation to edit page
+  // Handle book editing with proper admin check
   const handleEditBook = (book: Book) => {
     console.log("DEBUG: BooksPage edit clicked for book:", book.id, book.name);
+    if (!isAdmin) {
+      toast({
+        title: t("common.error"),
+        description: "Only administrators can edit books",
+        variant: "destructive",
+      });
+      return;
+    }
     navigate(`/books/edit/${book.id}`);
   };
   
-  // Handle book selling with proper navigation to sell page
+  // Handle book selling 
   const handleSellBook = (book: Book) => {
     console.log("DEBUG: BooksPage sell clicked for book:", book.id, book.name);
     if (book.quantity > 0) {
@@ -55,9 +63,17 @@ const BooksPage = () => {
     }
   };
   
-  // Handle book deletion
+  // Handle book deletion with proper admin check
   const handleBookDelete = (book: Book) => {
     console.log("DEBUG: Delete button clicked for book:", book.id, book.name);
+    if (!isAdmin) {
+      toast({
+        title: t("common.error"),
+        description: "Only administrators can delete books",
+        variant: "destructive",
+      });
+      return;
+    }
     setSelectedBook(book);
     setIsDeleteDialogOpen(true);
   };
@@ -117,12 +133,14 @@ const BooksPage = () => {
         />
       </main>
       
-      <DeleteBookDialogContainer
-        isOpen={isDeleteDialogOpen}
-        selectedBook={selectedBook}
-        onClose={() => setIsDeleteDialogOpen(false)}
-        onDelete={handleDeleteConfirm}
-      />
+      {isAdmin && (
+        <DeleteBookDialogContainer
+          isOpen={isDeleteDialogOpen}
+          selectedBook={selectedBook}
+          onClose={() => setIsDeleteDialogOpen(false)}
+          onDelete={handleDeleteConfirm}
+        />
+      )}
     </div>
   );
 };
