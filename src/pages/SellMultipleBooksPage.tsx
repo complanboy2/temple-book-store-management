@@ -14,7 +14,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import MobileHeader from "@/components/MobileHeader";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Minus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Minus, Trash2, Search } from "lucide-react";
+import BookImage from "@/components/BookImage";
 
 interface SaleItem {
   book: Book;
@@ -29,6 +30,8 @@ const SellMultipleBooksPage = () => {
   const { toast } = useToast();
   
   const [books, setBooks] = useState<Book[]>([]);
+  const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [saleItems, setSaleItems] = useState<SaleItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [buyerName, setBuyerName] = useState("");
@@ -69,6 +72,7 @@ const SellMultipleBooksPage = () => {
         }));
 
         setBooks(formattedBooks);
+        setFilteredBooks(formattedBooks);
       } catch (error) {
         console.error("Error fetching books:", error);
         toast({
@@ -83,6 +87,33 @@ const SellMultipleBooksPage = () => {
 
     fetchBooks();
   }, [currentStore, t, toast]);
+
+  // Filter books based on search term
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredBooks(books);
+      return;
+    }
+
+    const searchLower = searchTerm.toLowerCase().trim();
+    let filtered = books;
+
+    // Check if search term is a number (book code search)
+    if (/^\d+$/.test(searchLower)) {
+      filtered = books.filter(book => book.bookCode === searchLower);
+    } else {
+      // Text search in name, author, category
+      filtered = books.filter(book => {
+        const nameMatch = book.name.toLowerCase().includes(searchLower);
+        const authorMatch = book.author.toLowerCase().includes(searchLower);
+        const categoryMatch = book.category.toLowerCase().includes(searchLower);
+        
+        return nameMatch || authorMatch || categoryMatch;
+      });
+    }
+
+    setFilteredBooks(filtered);
+  }, [books, searchTerm]);
 
   const addBookToSale = (book: Book) => {
     const existingItem = saleItems.find(item => item.book.id === book.id);
@@ -227,6 +258,24 @@ const SellMultipleBooksPage = () => {
       />
       
       <main className="container mx-auto px-4 py-6 space-y-6">
+        {/* Search for Books */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5" />
+              {t("common.searchBooks")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Input
+              placeholder={t("common.searchByCodeNameAuthor")}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full"
+            />
+          </CardContent>
+        </Card>
+
         {/* Available Books */}
         <Card>
           <CardHeader>
@@ -234,12 +283,23 @@ const SellMultipleBooksPage = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto">
-              {books.map(book => (
-                <div key={book.id} className="flex items-center justify-between p-3 border rounded-lg">
+              {filteredBooks.map(book => (
+                <div key={book.id} className="flex items-center gap-3 p-3 border rounded-lg">
+                  <div className="w-12 h-16 flex-shrink-0">
+                    <BookImage
+                      imageUrl={book.imageUrl}
+                      alt={`${book.name} cover`}
+                      size="small"
+                      className="w-full h-full"
+                    />
+                  </div>
                   <div className="flex-1">
                     <h4 className="font-medium">{book.name}</h4>
                     <p className="text-sm text-muted-foreground">{book.author}</p>
-                    <p className="text-sm">₹{book.salePrice} | {t("common.available")}: {book.quantity}</p>
+                    <p className="text-sm">
+                      <span className="font-medium">Code: {book.bookCode}</span> | 
+                      ₹{book.salePrice} | {t("common.available")}: {book.quantity}
+                    </p>
                   </div>
                   <Button
                     onClick={() => addBookToSale(book)}
@@ -250,6 +310,11 @@ const SellMultipleBooksPage = () => {
                   </Button>
                 </div>
               ))}
+              {filteredBooks.length === 0 && (
+                <div className="text-center py-4 text-muted-foreground">
+                  {searchTerm ? t("common.noSearchResults") : t("common.noBooks")}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -262,10 +327,20 @@ const SellMultipleBooksPage = () => {
             </CardHeader>
             <CardContent className="space-y-3">
               {saleItems.map(item => (
-                <div key={item.book.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div key={item.book.id} className="flex items-center gap-3 p-3 border rounded-lg">
+                  <div className="w-12 h-16 flex-shrink-0">
+                    <BookImage
+                      imageUrl={item.book.imageUrl}
+                      alt={`${item.book.name} cover`}
+                      size="small"
+                      className="w-full h-full"
+                    />
+                  </div>
                   <div className="flex-1">
                     <h4 className="font-medium">{item.book.name}</h4>
-                    <p className="text-sm text-muted-foreground">₹{item.book.salePrice} each</p>
+                    <p className="text-sm text-muted-foreground">
+                      Code: {item.book.bookCode} | ₹{item.book.salePrice} each
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
