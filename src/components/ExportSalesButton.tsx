@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import {
@@ -56,16 +57,25 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
   const { toast } = useToast();
   const { currentStore } = useStallContext();
 
+  // Auto-close toast function
+  const showToast = (title: string, description: string, variant: "default" | "destructive" = "default") => {
+    toast({
+      title,
+      description,
+      variant,
+      duration: 5000, // Auto-close after 5 seconds
+    });
+  };
+
   useEffect(() => {
     const fetchPersonnelData = async () => {
       if (!currentStore) return;
       
       try {
-        // Instead of querying stall_personnel which doesn't exist in the schema,
-        // query the users table which contains the personnel information
+        // Query the users table to get personnel information
         const { data, error } = await supabase
           .from('users')
-          .select('id, name')
+          .select('email, name')
           .eq('instituteid', currentStore);
           
         if (error) throw error;
@@ -73,7 +83,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
         const nameMap: Record<string, string> = {};
         if (data) {
           data.forEach(person => {
-            nameMap[person.id] = person.name;
+            nameMap[person.email] = person.name;
           });
         }
         
@@ -248,11 +258,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
         // This allows the user to see the preview
       }, 500);
     } else {
-      toast({
-        title: "Error",
-        description: "Could not open print window. Please check your popup settings.",
-        variant: "destructive",
-      });
+      showToast("Error", "Could not open print window. Please check your popup settings.", "destructive");
     }
     
     setOpen(false);
@@ -284,10 +290,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
     
     setOpen(false);
     
-    toast({
-      title: "Success",
-      description: "Sales history downloaded successfully",
-    });
+    showToast("Success", "Sales history downloaded successfully");
   };
 
   return (

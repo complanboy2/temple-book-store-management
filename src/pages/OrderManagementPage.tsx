@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
@@ -75,6 +76,16 @@ const OrderManagementPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { t } = useTranslation();
+
+  // Auto-close toast function
+  const showToast = (title: string, description: string, variant: "default" | "destructive" = "default") => {
+    toast({
+      title,
+      description,
+      variant,
+      duration: 5000, // Auto-close after 5 seconds
+    });
+  };
   
   useEffect(() => {
     if (!currentUser || !currentUser.canRestock) {  // Fixed: canRestock instead of canrestock
@@ -102,11 +113,7 @@ const OrderManagementPage = () => {
 
         if (booksError) {
           console.error("Error fetching books:", booksError);
-          toast({
-            title: "Error",
-            description: "Failed to load books",
-            variant: "destructive",
-          });
+          showToast("Error", "Failed to load books", "destructive");
           return;
         }
 
@@ -136,17 +143,13 @@ const OrderManagementPage = () => {
         setIsLoading(false);
       } catch (error) {
         console.error("Error fetching data:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load data",
-          variant: "destructive",
-        });
+        showToast("Error", "Failed to load data", "destructive");
         setIsLoading(false);
       }
     };
 
     fetchData();
-  }, [currentStore, currentUser, navigate, toast, t]);
+  }, [currentStore, currentUser, navigate, t]);
 
   const handleAddItemField = () => {
     setOrderItems([...orderItems, { bookId: "", quantity: 1 }]);
@@ -179,30 +182,18 @@ const OrderManagementPage = () => {
     e.preventDefault();
 
     if (!currentStore || !currentUser) {
-      toast({
-        title: "Error",
-        description: "Missing store or user information",
-        variant: "destructive",
-      });
+      showToast("Error", "Missing store or user information", "destructive");
       return;
     }
 
     // Validate form
     if (!customerName) {
-      toast({
-        title: "Missing Information",
-        description: "Customer name is required",
-        variant: "destructive",
-      });
+      showToast("Missing Information", "Customer name is required", "destructive");
       return;
     }
 
     if (orderItems.length === 0 || !orderItems.every(item => item.bookId && item.quantity > 0)) {
-      toast({
-        title: "Invalid Order Items",
-        description: "Please select books and quantities for all items",
-        variant: "destructive",
-      });
+      showToast("Invalid Order Items", "Please select books and quantities for all items", "destructive");
       return;
     }
 
@@ -210,11 +201,7 @@ const OrderManagementPage = () => {
     for (const item of orderItems) {
       const book = books.find(b => b.id === item.bookId);
       if (!book || book.quantity < item.quantity) {
-        toast({
-          title: "Insufficient Stock",
-          description: `Not enough copies of "${book?.name || 'Unknown book'}" available`,
-          variant: "destructive",
-        });
+        showToast("Insufficient Stock", `Not enough copies of "${book?.name || 'Unknown book'}" available`, "destructive");
         return;
       }
     }
@@ -272,10 +259,7 @@ const OrderManagementPage = () => {
         }
       }
 
-      toast({
-        title: "Success",
-        description: "Order processed successfully",
-      });
+      showToast("Success", "Order processed successfully");
 
       // Reset form
       setCustomerName("");
@@ -315,11 +299,7 @@ const OrderManagementPage = () => {
       }
     } catch (error) {
       console.error("Order submission error:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to process order",
-        variant: "destructive",
-      });
+      showToast("Error", error instanceof Error ? error.message : "Failed to process order", "destructive");
     } finally {
       setIsSubmitting(false);
     }

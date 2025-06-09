@@ -42,11 +42,21 @@ const SalesHistoryPage = () => {
   const [editBuyerName, setEditBuyerName] = useState("");
   const [editBuyerPhone, setEditBuyerPhone] = useState("");
   
-  const { currentUser } = useAuth();
+  const { currentUser, isAdmin } = useAuth();
   const { currentStore } = useStallContext();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Auto-close toast function
+  const showToast = (title: string, description: string, variant: "default" | "destructive" = "default") => {
+    toast({
+      title,
+      description,
+      variant,
+      duration: 5000, // Auto-close after 5 seconds
+    });
+  };
 
   // Set default date range (last 30 days)
   useEffect(() => {
@@ -65,9 +75,9 @@ const SalesHistoryPage = () => {
 
     setIsLoading(true);
     try {
-      console.log("Fetching sales for user email:", currentUser.email, "in store:", currentStore);
+      console.log("Fetching sales for user email:", currentUser.email, "in store:", currentStore, "isAdmin:", isAdmin);
       
-      // Query sales with proper joins and filtering by current user's email
+      // Query sales with proper joins - Admin sees all, personnel sees only their own
       let query = supabase
         .from('sales')
         .select(`
@@ -78,8 +88,12 @@ const SalesHistoryPage = () => {
           )
         `)
         .eq('stallid', currentStore)
-        .eq('personnelid', currentUser.email) // Filter by current user's email
         .order('createdat', { ascending: false });
+
+      // If not admin, filter by current user's email
+      if (!isAdmin) {
+        query = query.eq('personnelid', currentUser.email);
+      }
 
       // Add date filters if provided
       if (fromDate) {
@@ -93,33 +107,45 @@ const SalesHistoryPage = () => {
 
       if (error) {
         console.error("Error fetching sales:", error);
-        toast({
-          title: t("common.error"),
-          description: "Failed to fetch sales history",
-          variant: "destructive",
-        });
+        showToast(t("common.error"), "Failed to fetch sales history", "destructive");
         return;
       }
 
       console.log("Raw sales data:", data);
 
       // Get seller names for all sales
+      const personnelIds = [...new Set(data?.map(sale => sale.personnelid) || [])];
+      const personnelNamesMap: Record<string, string> = {};
+      
+      if (personnelIds.length > 0) {
+        try {
+          const { data: usersData, error: usersError } = await supabase
+            .from('users')
+            .select('id, name, email')
+            .in('email', personnelIds);
+            
+          if (!usersError && usersData) {
+            usersData.forEach(user => {
+              personnelNamesMap[user.email] = user.name;
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching user names:", error);
+        }
+      }
+
       const salesWithBookInfo = data?.map(sale => ({
         ...sale,
         book_name: sale.books?.name || 'Unknown Book',
         book_author: sale.books?.author || 'Unknown Author',
-        seller_name: currentUser.name || currentUser.email || 'Current User'
+        seller_name: personnelNamesMap[sale.personnelid] || sale.personnelid || 'Unknown User'
       })) || [];
 
       console.log("Processed sales data:", salesWithBookInfo);
       setSales(salesWithBookInfo);
     } catch (error) {
       console.error("Error fetching sales:", error);
-      toast({
-        title: t("common.error"),
-        description: "Failed to fetch sales history",
-        variant: "destructive",
-      });
+      showToast(t("common.error"), "Failed to fetch sales history", "destructive");
     } finally {
       setIsLoading(false);
     }
@@ -129,7 +155,7 @@ const SalesHistoryPage = () => {
     if (fromDate && toDate && currentUser?.email && currentStore) {
       fetchSales();
     }
-  }, [currentUser, currentStore, fromDate, toDate]);
+  }, [currentUser, currentStore, fromDate, toDate, isAdmin]);
 
   const handleEditSale = (sale: Sale) => {
     setEditingSale(sale);
@@ -156,33 +182,21 @@ const SalesHistoryPage = () => {
 
       if (error) {
         console.error("Error updating sale:", error);
-        toast({
-          title: t("common.error"),
-          description: "Failed to update sale",
-          variant: "destructive",
-        });
+        showToast(t("common.error"), "Failed to update sale", "destructive");
         return;
       }
 
-      toast({
-        title: t("common.success"),
-        description: "Sale updated successfully",
-      });
-
+      showToast(t("common.success"), "Sale updated successfully");
       setEditingSale(null);
       fetchSales();
     } catch (error) {
       console.error("Error updating sale:", error);
-      toast({
-        title: t("common.error"),
-        description: "Failed to update sale",
-        variant: "destructive",
-      });
+      showToast(t("common.error"), "Failed to update sale", "destructive");
     }
   };
 
   const handleDeleteSale = async (saleId: string) => {
-    if (!confirm("Are you sure you want to delete this sale?")) return;
+    if (!confirm("Are you sure you want to delete this sale? The book stock will be automatically restored.")) return;
 
     try {
       const { error } = await supabase
@@ -192,34 +206,22 @@ const SalesHistoryPage = () => {
 
       if (error) {
         console.error("Error deleting sale:", error);
-        toast({
-          title: t("common.error"),
-          description: "Failed to delete sale",
-          variant: "destructive",
-        });
+        showToast(t("common.error"), "Failed to delete sale", "destructive");
         return;
       }
 
-      toast({
-        title: t("common.success"),
-        description: "Sale deleted successfully",
-      });
-
+      showToast(t("common.success"), "Sale deleted successfully and stock restored");
       fetchSales();
     } catch (error) {
       console.error("Error deleting sale:", error);
-      toast({
-        title: t("common.error"),
-        description: "Failed to delete sale",
-        variant: "destructive",
-      });
+      showToast(t("common.error"), "Failed to delete sale", "destructive");
     }
   };
 
   return (
     <div className="min-h-screen bg-temple-background">
       <MobileHeader 
-        title="My Sales History"
+        title={isAdmin ? "All Sales History" : "My Sales History"}
         showBackButton={true}
         backTo="/"
       />
@@ -268,7 +270,7 @@ const SalesHistoryPage = () => {
         <Card className="temple-card">
           <CardContent className="p-4">
             <p className="text-xs text-gray-500">
-              User: {currentUser?.email} | Store: {currentStore} | Sales Count: {sales.length}
+              User: {currentUser?.email} | Store: {currentStore} | Sales Count: {sales.length} | Role: {isAdmin ? 'Admin' : 'Personnel'}
             </p>
           </CardContent>
         </Card>
@@ -315,85 +317,90 @@ const SalesHistoryPage = () => {
                       {sale.paymentmethod}
                     </Badge>
                     <div className="flex gap-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
+                      {/* Show edit/delete buttons if admin or if it's user's own sale */}
+                      {(isAdmin || sale.personnelid === currentUser?.email) && (
+                        <>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEditSale(sale)}
+                                className="px-2 h-8"
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Edit Sale</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div>
+                                  <Label htmlFor="editQuantity">Quantity</Label>
+                                  <Input
+                                    id="editQuantity"
+                                    type="number"
+                                    value={editQuantity}
+                                    onChange={(e) => setEditQuantity(parseInt(e.target.value) || 0)}
+                                    min="1"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="editPaymentMethod">Payment Method</Label>
+                                  <Select value={editPaymentMethod} onValueChange={setEditPaymentMethod}>
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="cash">Cash</SelectItem>
+                                      <SelectItem value="card">Card</SelectItem>
+                                      <SelectItem value="upi">UPI</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div>
+                                  <Label htmlFor="editBuyerName">Buyer Name (Optional)</Label>
+                                  <Input
+                                    id="editBuyerName"
+                                    value={editBuyerName}
+                                    onChange={(e) => setEditBuyerName(e.target.value)}
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="editBuyerPhone">Buyer Phone (Optional)</Label>
+                                  <Input
+                                    id="editBuyerPhone"
+                                    value={editBuyerPhone}
+                                    onChange={(e) => setEditBuyerPhone(e.target.value)}
+                                  />
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button onClick={handleUpdateSale} className="flex-1">
+                                    Update Sale
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    onClick={() => setEditingSale(null)}
+                                    className="flex-1"
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                          
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleEditSale(sale)}
-                            className="px-2 h-8"
+                            onClick={() => handleDeleteSale(sale.id)}
+                            className="px-2 text-destructive hover:text-destructive h-8"
                           >
-                            <Edit className="h-3 w-3" />
+                            <Trash2 className="h-3 w-3" />
                           </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Edit Sale</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <Label htmlFor="editQuantity">Quantity</Label>
-                              <Input
-                                id="editQuantity"
-                                type="number"
-                                value={editQuantity}
-                                onChange={(e) => setEditQuantity(parseInt(e.target.value) || 0)}
-                                min="1"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="editPaymentMethod">Payment Method</Label>
-                              <Select value={editPaymentMethod} onValueChange={setEditPaymentMethod}>
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="cash">Cash</SelectItem>
-                                  <SelectItem value="card">Card</SelectItem>
-                                  <SelectItem value="upi">UPI</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <Label htmlFor="editBuyerName">Buyer Name (Optional)</Label>
-                              <Input
-                                id="editBuyerName"
-                                value={editBuyerName}
-                                onChange={(e) => setEditBuyerName(e.target.value)}
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="editBuyerPhone">Buyer Phone (Optional)</Label>
-                              <Input
-                                id="editBuyerPhone"
-                                value={editBuyerPhone}
-                                onChange={(e) => setEditBuyerPhone(e.target.value)}
-                              />
-                            </div>
-                            <div className="flex gap-2">
-                              <Button onClick={handleUpdateSale} className="flex-1">
-                                Update Sale
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                onClick={() => setEditingSale(null)}
-                                className="flex-1"
-                              >
-                                Cancel
-                              </Button>
-                            </div>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                      
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDeleteSale(sale.id)}
-                        className="px-2 text-destructive hover:text-destructive h-8"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -402,9 +409,11 @@ const SalesHistoryPage = () => {
           ) : (
             <Card className="temple-card">
               <CardContent className="p-6 text-center">
-                <p className="text-gray-500">No sales found for the selected date range</p>
+                <p className="text-gray-500">
+                  {isAdmin ? "No sales found for the selected date range" : "No sales found for the selected date range"}
+                </p>
                 <p className="text-xs text-gray-400 mt-2">
-                  Your sales will appear here after you complete transactions
+                  {isAdmin ? "All sales from all users will appear here" : "Your sales will appear here after you complete transactions"}
                 </p>
               </CardContent>
             </Card>
