@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Edit, Trash2 } from "lucide-react";
+import { Calendar, Edit, Trash2, Filter } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStallContext } from "@/contexts/StallContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import MobileHeader from "@/components/MobileHeader";
+import BookImage from "@/components/BookImage";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -27,14 +28,19 @@ interface Sale {
   createdat: string;
   book_name?: string;
   book_author?: string;
+  book_imageurl?: string;
   personnelid: string;
   seller_name?: string;
 }
 
 const SalesHistoryPage = () => {
   const [sales, setSales] = useState<Sale[]>([]);
+  const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [selectedSeller, setSelectedSeller] = useState("");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
+  const [availableSellers, setAvailableSellers] = useState<{id: string, name: string}[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [editQuantity, setEditQuantity] = useState(0);
@@ -54,7 +60,7 @@ const SalesHistoryPage = () => {
       title,
       description,
       variant,
-      duration: 5000, // Auto-close after 5 seconds
+      duration: 5000,
     });
   };
 
@@ -66,6 +72,21 @@ const SalesHistoryPage = () => {
     setToDate(today.toISOString().split('T')[0]);
     setFromDate(thirtyDaysAgo.toISOString().split('T')[0]);
   }, []);
+
+  // Filter sales based on selected filters
+  useEffect(() => {
+    let filtered = [...sales];
+    
+    if (selectedSeller) {
+      filtered = filtered.filter(sale => sale.personnelid === selectedSeller);
+    }
+    
+    if (selectedPaymentMethod) {
+      filtered = filtered.filter(sale => sale.paymentmethod === selectedPaymentMethod);
+    }
+    
+    setFilteredSales(filtered);
+  }, [sales, selectedSeller, selectedPaymentMethod]);
 
   const fetchSales = async () => {
     if (!currentUser?.email || !currentStore) {
@@ -84,7 +105,8 @@ const SalesHistoryPage = () => {
           *,
           books (
             name,
-            author
+            author,
+            imageurl
           )
         `)
         .eq('stallid', currentStore)
@@ -113,9 +135,10 @@ const SalesHistoryPage = () => {
 
       console.log("Raw sales data:", data);
 
-      // Get seller names for all sales
+      // Get seller names and build seller list for filter
       const personnelIds = [...new Set(data?.map(sale => sale.personnelid) || [])];
       const personnelNamesMap: Record<string, string> = {};
+      const sellersForFilter: {id: string, name: string}[] = [];
       
       if (personnelIds.length > 0) {
         try {
@@ -127,6 +150,7 @@ const SalesHistoryPage = () => {
           if (!usersError && usersData) {
             usersData.forEach(user => {
               personnelNamesMap[user.email] = user.name;
+              sellersForFilter.push({ id: user.email, name: user.name });
             });
           }
         } catch (error) {
@@ -134,10 +158,13 @@ const SalesHistoryPage = () => {
         }
       }
 
+      setAvailableSellers(sellersForFilter);
+
       const salesWithBookInfo = data?.map(sale => ({
         ...sale,
         book_name: sale.books?.name || 'Unknown Book',
         book_author: sale.books?.author || 'Unknown Author',
+        book_imageurl: sale.books?.imageurl || '',
         seller_name: personnelNamesMap[sale.personnelid] || sale.personnelid || 'Unknown User'
       })) || [];
 
@@ -218,6 +245,11 @@ const SalesHistoryPage = () => {
     }
   };
 
+  const clearFilters = () => {
+    setSelectedSeller("");
+    setSelectedPaymentMethod("");
+  };
+
   return (
     <div className="min-h-screen bg-temple-background">
       <MobileHeader 
@@ -266,141 +298,214 @@ const SalesHistoryPage = () => {
           </CardContent>
         </Card>
 
+        {/* Additional Filters */}
+        <Card className="temple-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold text-temple-maroon flex items-center gap-2">
+              <Filter className="h-5 w-5 text-temple-gold" />
+              Additional Filters
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-1 gap-3">
+              {isAdmin && (
+                <div>
+                  <Label htmlFor="sellerFilter">Filter by Seller</Label>
+                  <Select value={selectedSeller} onValueChange={setSelectedSeller}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Sellers" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Sellers</SelectItem>
+                      {availableSellers.map(seller => (
+                        <SelectItem key={seller.id} value={seller.id}>
+                          {seller.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
+              <div>
+                <Label htmlFor="paymentFilter">Filter by Payment Method</Label>
+                <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Payment Methods" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Payment Methods</SelectItem>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="card">Card</SelectItem>
+                    <SelectItem value="upi">UPI</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            {(selectedSeller || selectedPaymentMethod) && (
+              <Button 
+                onClick={clearFilters}
+                variant="outline"
+                className="w-full"
+              >
+                Clear Filters
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Debug Info */}
         <Card className="temple-card">
           <CardContent className="p-4">
             <p className="text-xs text-gray-500">
-              User: {currentUser?.email} | Store: {currentStore} | Sales Count: {sales.length} | Role: {isAdmin ? 'Admin' : 'Personnel'}
+              User: {currentUser?.email} | Store: {currentStore} | Sales Count: {filteredSales.length} | Role: {isAdmin ? 'Admin' : 'Personnel'}
+              {(selectedSeller || selectedPaymentMethod) && ' | Filtered'}
             </p>
           </CardContent>
         </Card>
 
         {/* Sales List */}
         <div className="space-y-3">
-          {sales.length > 0 ? (
-            sales.map((sale) => (
+          {filteredSales.length > 0 ? (
+            filteredSales.map((sale) => (
               <Card key={sale.id} className="temple-card">
                 <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-3">
+                  <div className="flex gap-3 mb-3">
+                    {/* Book Thumbnail */}
+                    <div className="flex-shrink-0">
+                      <BookImage 
+                        imageUrl={sale.book_imageurl} 
+                        alt={sale.book_name}
+                        size="small"
+                        className="w-16 h-20 rounded-md border border-gray-200"
+                      />
+                    </div>
+                    
+                    {/* Sale Details */}
                     <div className="flex-1">
-                      <h3 className="font-semibold text-sm text-temple-maroon">
-                        {sale.book_name}
-                      </h3>
-                      <p className="text-xs text-gray-600 mb-1">
-                        by {sale.book_author}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(sale.createdat).toLocaleDateString()} • Seller: {sale.seller_name}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-temple-maroon">
-                        ₹{sale.totalamount}
-                      </p>
-                      <Badge variant="secondary" className="text-xs">
-                        Qty: {sale.quantity}
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  {sale.buyername && (
-                    <div className="mb-3">
-                      <p className="text-xs text-gray-600">
-                        Buyer: {sale.buyername}
-                        {sale.buyerphone && ` • ${sale.buyerphone}`}
-                      </p>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center justify-between">
-                    <Badge variant="outline" className="text-xs">
-                      {sale.paymentmethod}
-                    </Badge>
-                    <div className="flex gap-2">
-                      {/* Show edit/delete buttons if admin or if it's user's own sale */}
-                      {(isAdmin || sale.personnelid === currentUser?.email) && (
-                        <>
-                          <Dialog>
-                            <DialogTrigger asChild>
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-sm text-temple-maroon">
+                            {sale.book_name}
+                          </h3>
+                          <p className="text-xs text-gray-600 mb-1">
+                            by {sale.book_author}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(sale.createdat).toLocaleDateString()} • Seller: {sale.seller_name}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-temple-maroon">
+                            ₹{sale.totalamount}
+                          </p>
+                          <Badge variant="secondary" className="text-xs">
+                            Qty: {sale.quantity}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      {sale.buyername && (
+                        <div className="mb-2">
+                          <p className="text-xs text-gray-600">
+                            Buyer: {sale.buyername}
+                            {sale.buyerphone && ` • ${sale.buyerphone}`}
+                          </p>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="text-xs">
+                          {sale.paymentmethod}
+                        </Badge>
+                        <div className="flex gap-2">
+                          {/* Show edit/delete buttons if admin or if it's user's own sale */}
+                          {(isAdmin || sale.personnelid === currentUser?.email) && (
+                            <>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleEditSale(sale)}
+                                    className="px-2 h-8"
+                                  >
+                                    <Edit className="h-3 w-3" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Edit Sale</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <div>
+                                      <Label htmlFor="editQuantity">Quantity</Label>
+                                      <Input
+                                        id="editQuantity"
+                                        type="number"
+                                        value={editQuantity}
+                                        onChange={(e) => setEditQuantity(parseInt(e.target.value) || 0)}
+                                        min="1"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label htmlFor="editPaymentMethod">Payment Method</Label>
+                                      <Select value={editPaymentMethod} onValueChange={setEditPaymentMethod}>
+                                        <SelectTrigger>
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="cash">Cash</SelectItem>
+                                          <SelectItem value="card">Card</SelectItem>
+                                          <SelectItem value="upi">UPI</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <div>
+                                      <Label htmlFor="editBuyerName">Buyer Name (Optional)</Label>
+                                      <Input
+                                        id="editBuyerName"
+                                        value={editBuyerName}
+                                        onChange={(e) => setEditBuyerName(e.target.value)}
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label htmlFor="editBuyerPhone">Buyer Phone (Optional)</Label>
+                                      <Input
+                                        id="editBuyerPhone"
+                                        value={editBuyerPhone}
+                                        onChange={(e) => setEditBuyerPhone(e.target.value)}
+                                      />
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button onClick={handleUpdateSale} className="flex-1">
+                                        Update Sale
+                                      </Button>
+                                      <Button 
+                                        variant="outline" 
+                                        onClick={() => setEditingSale(null)}
+                                        className="flex-1"
+                                      >
+                                        Cancel
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                              
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleEditSale(sale)}
-                                className="px-2 h-8"
+                                onClick={() => handleDeleteSale(sale.id)}
+                                className="px-2 text-destructive hover:text-destructive h-8"
                               >
-                                <Edit className="h-3 w-3" />
+                                <Trash2 className="h-3 w-3" />
                               </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Edit Sale</DialogTitle>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <div>
-                                  <Label htmlFor="editQuantity">Quantity</Label>
-                                  <Input
-                                    id="editQuantity"
-                                    type="number"
-                                    value={editQuantity}
-                                    onChange={(e) => setEditQuantity(parseInt(e.target.value) || 0)}
-                                    min="1"
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor="editPaymentMethod">Payment Method</Label>
-                                  <Select value={editPaymentMethod} onValueChange={setEditPaymentMethod}>
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="cash">Cash</SelectItem>
-                                      <SelectItem value="card">Card</SelectItem>
-                                      <SelectItem value="upi">UPI</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div>
-                                  <Label htmlFor="editBuyerName">Buyer Name (Optional)</Label>
-                                  <Input
-                                    id="editBuyerName"
-                                    value={editBuyerName}
-                                    onChange={(e) => setEditBuyerName(e.target.value)}
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor="editBuyerPhone">Buyer Phone (Optional)</Label>
-                                  <Input
-                                    id="editBuyerPhone"
-                                    value={editBuyerPhone}
-                                    onChange={(e) => setEditBuyerPhone(e.target.value)}
-                                  />
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button onClick={handleUpdateSale} className="flex-1">
-                                    Update Sale
-                                  </Button>
-                                  <Button 
-                                    variant="outline" 
-                                    onClick={() => setEditingSale(null)}
-                                    className="flex-1"
-                                  >
-                                    Cancel
-                                  </Button>
-                                </div>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                          
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDeleteSale(sale.id)}
-                            className="px-2 text-destructive hover:text-destructive h-8"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </>
-                      )}
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -410,7 +515,10 @@ const SalesHistoryPage = () => {
             <Card className="temple-card">
               <CardContent className="p-6 text-center">
                 <p className="text-gray-500">
-                  {isAdmin ? "No sales found for the selected date range" : "No sales found for the selected date range"}
+                  {(selectedSeller || selectedPaymentMethod) 
+                    ? "No sales found matching the selected filters" 
+                    : (isAdmin ? "No sales found for the selected date range" : "No sales found for the selected date range")
+                  }
                 </p>
                 <p className="text-xs text-gray-400 mt-2">
                   {isAdmin ? "All sales from all users will appear here" : "Your sales will appear here after you complete transactions"}

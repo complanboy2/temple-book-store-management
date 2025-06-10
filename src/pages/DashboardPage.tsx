@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { Plus, BookOpen, TrendingUp, Package, LogOut } from "lucide-react";
 import MobileHeader from "@/components/MobileHeader";
 import LowStockNotification from "@/components/LowStockNotification";
+import BookImage from "@/components/BookImage";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface Book {
@@ -24,12 +25,13 @@ interface Sale {
   totalamount: number;
   createdat: string;
   buyername?: string;
+  book_name?: string;
+  book_imageurl?: string;
 }
 
 const DashboardPage = () => {
   const [lowStockBooks, setLowStockBooks] = useState<Book[]>([]);
   const [recentSales, setRecentSales] = useState<Sale[]>([]);
-  const [bookDetailsMap, setBookDetailsMap] = useState<{[key: string]: {name: string}}>({});
   const { currentStore } = useStallContext();
   const { logout } = useAuth();
   const { t } = useTranslation();
@@ -54,10 +56,16 @@ const DashboardPage = () => {
           setLowStockBooks(lowStockData || []);
         }
 
-        // Fetch recent sales (last 10)
+        // Fetch recent sales (last 10) with book details
         const { data: salesData, error: salesError } = await supabase
           .from('sales')
-          .select('*')
+          .select(`
+            *,
+            books (
+              name,
+              imageurl
+            )
+          `)
           .eq('stallid', currentStore)
           .order('createdat', { ascending: false })
           .limit(10);
@@ -65,23 +73,12 @@ const DashboardPage = () => {
         if (salesError) {
           console.error("Error fetching recent sales:", salesError);
         } else {
-          setRecentSales(salesData || []);
-        }
-
-        // Fetch book details for sales
-        const { data: booksData, error: booksError } = await supabase
-          .from('books')
-          .select('id, name')
-          .eq('stallid', currentStore);
-
-        if (booksError) {
-          console.error("Error fetching books:", booksError);
-        } else {
-          const bookMap = {};
-          booksData?.forEach(book => {
-            bookMap[book.id] = { name: book.name };
-          });
-          setBookDetailsMap(bookMap);
+          const salesWithBookInfo = salesData?.map(sale => ({
+            ...sale,
+            book_name: sale.books?.name || 'Unknown Book',
+            book_imageurl: sale.books?.imageurl || ''
+          })) || [];
+          setRecentSales(salesWithBookInfo);
         }
       } catch (error) {
         console.error("Unexpected error:", error);
@@ -172,7 +169,7 @@ const DashboardPage = () => {
           </CardContent>
         </Card>
 
-        {/* Recent Sales */}
+        {/* Recent Sales with Thumbnails */}
         <Card className="temple-card">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold text-temple-maroon">
@@ -183,18 +180,36 @@ const DashboardPage = () => {
             {recentSales.length > 0 ? (
               <div className="space-y-3">
                 {recentSales.slice(0, 5).map((sale) => (
-                  <div key={sale.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                  <div key={sale.id} className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-b-0">
+                    {/* Book Thumbnail */}
+                    <div className="flex-shrink-0">
+                      <BookImage 
+                        imageUrl={sale.book_imageurl} 
+                        alt={sale.book_name}
+                        size="small"
+                        className="w-12 h-16 rounded border border-gray-200"
+                      />
+                    </div>
+                    
+                    {/* Sale Details */}
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900 truncate">
-                        {bookDetailsMap[sale.bookid]?.name || t("common.unknownBook")}
+                        {sale.book_name}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {sale.buyername || t("common.unknownBook")} • {sale.quantity} {t("common.sold")}
+                        {sale.buyername || "Walk-in Customer"} • {sale.quantity} {t("common.sold")}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(sale.createdat).toLocaleDateString()}
                       </p>
                     </div>
-                    <p className="text-sm font-semibold text-temple-maroon">
-                      ₹{sale.totalamount}
-                    </p>
+                    
+                    {/* Amount */}
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-temple-maroon">
+                        ₹{sale.totalamount}
+                      </p>
+                    </div>
                   </div>
                 ))}
                 {recentSales.length > 5 && (
