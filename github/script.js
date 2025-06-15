@@ -126,7 +126,6 @@ function displayBooks() {
                 ${book.category ? `<p class="text-xs text-gray-500 mb-2">${book.category}</p>` : ''}
                 <div class="flex justify-between items-center mb-3">
                     <span class="text-lg font-bold text-orange-600">₹${book.saleprice}</span>
-                    <span class="text-sm text-gray-500">Stock: ${book.quantity}</span>
                 </div>
                 <button onclick="addToCart('${book.id}')" 
                         ${book.quantity <= 0 ? 'disabled' : ''}
@@ -225,11 +224,18 @@ function updateCartModal() {
     checkoutBtn.disabled = false;
 
     cartItems.innerHTML = cart.map(item => `
-        <div class="flex items-center justify-between py-3 border-b">
-            <div class="flex-1">
-                <h4 class="font-medium">${item.name}</h4>
-                <p class="text-sm text-gray-600">by ${item.author}</p>
-                <p class="text-sm text-orange-600">₹${item.price} each</p>
+        <div class="flex items-center justify-between py-3 border-b gap-3">
+            <div class="w-12 h-16 flex-shrink-0 rounded overflow-hidden bg-gray-100 flex items-center justify-center">
+                <img 
+                    src="${item.imageurl || 'https://via.placeholder.com/100x133?text=No+Image'}"
+                    alt="${item.name}"
+                    class="w-full h-full object-cover"
+                    onerror="this.src='https://via.placeholder.com/100x133?text=No+Image'">
+            </div>
+            <div class="flex-1 min-w-0 pl-3">
+                <h4 class="font-medium line-clamp-1 mb-0.5">${item.name}</h4>
+                <p class="text-sm text-gray-600 mb-0.5">by ${item.author}</p>
+                <p class="text-sm text-orange-600 mb-0.5">₹${item.price} each</p>
             </div>
             <div class="flex items-center gap-2">
                 <button onclick="updateCartQuantity('${item.id}', ${item.quantity - 1})" 
@@ -312,17 +318,19 @@ async function generatePDFAndOpenWhatsApp(orderData) {
         // Draw book thumbnail image if it exists
         if (item.imageurl) {
             try {
-                // Convert possible relative links to absolute
-                const imgUrl = item.imageurl.startsWith("http")
-                    ? item.imageurl
-                    : window.location.origin + "/" + item.imageurl;
+                // Prefer relative path and fall back, if necessary
+                let imgUrl = item.imageurl;
+                if (!/^https?:\/\//.test(imgUrl)) {
+                    // try to fix relative path edge cases for /github/images and dev
+                    imgUrl = window.location.origin + "/" + imgUrl.replace(/^\/+/, "");
+                }
                 const imgData = await fetch(imgUrl)
-                  .then(res => res.blob())
-                  .then(blob => new Promise((resolve) => {
-                      const reader = new FileReader();
-                      reader.onload = () => resolve(reader.result);
-                      reader.readAsDataURL(blob);
-                  }));
+                    .then(res => res.blob())
+                    .then(blob => new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.readAsDataURL(blob);
+                    }));
                 // Draw image (50x65)
                 doc.addImage(imgData, 'JPEG', 20, yPosition - 4, 20, 26, undefined, 'FAST');
             } catch(e) {
