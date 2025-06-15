@@ -301,9 +301,10 @@ async function generatePDFAndOpenWhatsApp(orderData) {
     // Saffron: #F97316
     doc.setFillColor(249, 115, 22); // Saffron
     doc.rect(0, 0, 210, 28, 'F'); // Top colored band (A4 width)
-    // Add Baba image to PDF (left side, circular)
+    // Add Baba image from NBBStore/images/nbaba_header.jpg
     try {
-        const imgUrl = window.location.origin + "/lovable-uploads/0a0d9c2d-aa69-4479-a9f0-68dd8212603f.png";
+        // The relevant URL for GitHub Pages:
+        const imgUrl = window.location.origin + "/NBBStore/images/nbaba_header.jpg";
         const resp = await fetch(imgUrl);
         const blob = await resp.blob();
         const dataUrl = await new Promise((resolve, reject) => {
@@ -313,7 +314,7 @@ async function generatePDFAndOpenWhatsApp(orderData) {
             reader.readAsDataURL(blob);
         });
         // Circle clip isn't natively supported, but shrink and border 'feel' circular
-        doc.addImage(dataUrl, 'PNG', 12, 5.5, 17, 17, undefined, 'FAST');
+        doc.addImage(dataUrl, 'JPEG', 12, 5.5, 17, 17, undefined, 'FAST');
         // Outer border (simulate circle)
         doc.setDrawColor(234, 179, 8); // Golden border
         doc.setLineWidth(1.5);
