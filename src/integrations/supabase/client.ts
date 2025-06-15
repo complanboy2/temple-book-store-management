@@ -1,9 +1,10 @@
+
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from './types'
 
-// Store Supabase credentials using undefined or environment (for production)
-const SUPABASE_URL = ""; // <-- Set this securely from environment/secrets
-const SUPABASE_ANON_KEY = ""; // <-- Set this securely from environment/secrets
+// Use project credentials for the running app (do not erase here!)
+const SUPABASE_URL = "https://pijhrmuamnwdgucfnycl.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpamhybXVhbW53ZGd1Y2ZueWNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNDk1NTAsImV4cCI6MjA2MDgyNTU1MH0.qf5P5eWDSLRmFKxIwtqBygxNAvIFtqGxJN3J4nX7ocE";
 
 /**
  * Checks if Supabase is accessible
@@ -38,3 +39,4 @@ export const supabase = createClient<Database>(
     },
   }
 )
+
