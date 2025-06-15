@@ -74,57 +74,44 @@ const SalesHistoryPage = () => {
 
       if (salesError) throw salesError;
 
-      // Get personnel IDs from sales
+      // Create a simple personnel name map based on email patterns
+      const personnelMap: Record<string, string> = {};
+      
+      // Extract unique personnel IDs and try to create readable names
       const personnelIds = [...new Set(salesData?.map(sale => sale.personnelid).filter(Boolean))];
       
-      // Fetch personnel details using email addresses instead of IDs
-      console.log('DEBUG: Fetching personnel details for IDs:', personnelIds);
-      let personnelData: any[] = [];
-      
-      if (personnelIds.length > 0) {
-        // Try to fetch users by ID first, then by email as fallback
-        const { data: usersById, error: usersByIdError } = await supabase
-          .from('users')
-          .select('id, name, email')
-          .in('id', personnelIds);
-
-        if (usersByIdError) {
-          console.warn('Error fetching personnel by ID:', usersByIdError);
-          
-          // Fallback: try to fetch by email if IDs are actually emails
-          const emailLikeIds = personnelIds.filter(id => typeof id === 'string' && id.includes('@'));
-          if (emailLikeIds.length > 0) {
-            const { data: usersByEmail, error: usersByEmailError } = await supabase
-              .from('users')
-              .select('id, name, email')
-              .in('email', emailLikeIds);
-
-            if (usersByEmailError) {
-              console.error('Error fetching personnel by email:', usersByEmailError);
-            } else {
-              personnelData = usersByEmail || [];
-              console.log('DEBUG: Personnel data fetched by email:', personnelData);
-            }
+      personnelIds.forEach(id => {
+        if (typeof id === 'string') {
+          if (id.includes('@')) {
+            // If it's an email, extract name part
+            const namePart = id.split('@')[0];
+            personnelMap[id] = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+          } else if (id.includes('admin')) {
+            personnelMap[id] = 'Admin';
+          } else {
+            // For other IDs, create a shortened version
+            personnelMap[id] = `User-${id.substring(0, 8)}`;
           }
-        } else {
-          personnelData = usersById || [];
-          console.log('DEBUG: Personnel data fetched by ID:', personnelData);
         }
-      }
+      });
+
+      console.log('DEBUG: Personnel map created:', personnelMap);
 
       // Combine sales with personnel and book information
       const salesWithDetails = salesData?.map(sale => ({
         ...sale,
-        personnel_name: personnelData.find(p => p.id === sale.personnelid || p.email === sale.personnelid)?.name || 'Unknown',
+        personnel_name: personnelMap[sale.personnelid] || 'Unknown User',
         book_name: sale.books?.name || 'Unknown Book',
         book_author: sale.books?.author || 'Unknown Author',
         book_imageurl: sale.books?.imageurl || ''
       })) || [];
 
+      console.log('DEBUG: Sales with details:', salesWithDetails.slice(0, 3));
+
       setSales(salesWithDetails);
       
       // Extract unique sellers and payment methods
-      const uniqueSellers = [...new Set(salesWithDetails.map(sale => sale.personnel_name).filter(name => name && name !== 'Unknown'))];
+      const uniqueSellers = [...new Set(salesWithDetails.map(sale => sale.personnel_name).filter(name => name && name !== 'Unknown User'))];
       const uniquePaymentMethods = [...new Set(salesWithDetails.map(sale => sale.paymentmethod).filter(Boolean))];
       
       setSellers(uniqueSellers);

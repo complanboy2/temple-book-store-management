@@ -62,21 +62,39 @@ const AdminPage = () => {
 
     try {
       setIsLoading(true);
+      
+      // Try to fetch users, but handle RLS errors gracefully
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('instituteid', currentStore);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching users:", error);
+        
+        // If we get an RLS error, show a helpful message instead of failing completely
+        if (error.code === '42P17') {
+          toast({
+            title: t("admin.rlsError"),
+            description: "Database access policies need to be updated. Please contact support.",
+            variant: "destructive",
+          });
+          setUsers([]);
+          return;
+        }
+        
+        throw error;
+      }
 
       setUsers(data || []);
     } catch (error) {
       console.error("Error fetching users:", error);
       toast({
         title: t("common.error"),
-        description: t("admin.failedToLoadUsers"),
+        description: "Unable to load users due to permission restrictions.",
         variant: "destructive",
       });
+      setUsers([]);
     } finally {
       setIsLoading(false);
     }
@@ -107,7 +125,17 @@ const AdminPage = () => {
           role: 'personnel' as const
         });
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '42P17') {
+          toast({
+            title: t("admin.rlsError"),
+            description: "Unable to add user due to permission restrictions.",
+            variant: "destructive",
+          });
+          return;
+        }
+        throw error;
+      }
 
       toast({
         title: t("common.success"),
@@ -145,7 +173,17 @@ const AdminPage = () => {
         })
         .eq('id', userId);
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '42P17') {
+          toast({
+            title: t("admin.rlsError"),
+            description: "Unable to update permissions due to access restrictions.",
+            variant: "destructive",
+          });
+          return;
+        }
+        throw error;
+      }
 
       toast({
         title: t("common.success"),
@@ -264,6 +302,9 @@ const AdminPage = () => {
             ) : users.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 {t("admin.noUsersFound")}
+                <p className="text-sm mt-2">
+                  If this is unexpected, there may be database permission issues that need to be resolved.
+                </p>
               </div>
             ) : (
               <div className="space-y-3">
