@@ -175,13 +175,13 @@ export const useBookManager = (currentStore: string | null) => {
       const searchLower = searchTerm.toLowerCase().trim();
       console.log("DEBUG: Searching for:", searchLower);
       
-      // FIXED: Simple exact match for book codes
+      // FIXED: Exact match for book codes (numeric search)
       if (/^\d+$/.test(searchLower)) {
         // Pure numeric search - exact match for book codes
-        console.log("DEBUG: Numeric search for exact match:", searchLower);
+        console.log("DEBUG: Numeric search for exact book code match:", searchLower);
         filtered = books.filter(book => {
           const matches = book.bookCode === searchLower;
-          console.log(`DEBUG: Book ${book.name} code ${book.bookCode} matches ${searchLower}:`, matches);
+          console.log(`DEBUG: Book ${book.name} code "${book.bookCode}" matches "${searchLower}":`, matches);
           return matches;
         });
       } else {
@@ -198,7 +198,8 @@ export const useBookManager = (currentStore: string | null) => {
       console.log("DEBUG: Search results:", filtered.length);
     }
 
-    if (selectedCategory) {
+    // FIXED: Handle empty selectedCategory properly
+    if (selectedCategory && selectedCategory.trim() !== "") {
       filtered = filtered.filter(book => book.category === selectedCategory);
     }
 

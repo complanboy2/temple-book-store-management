@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStallContext } from "@/contexts/StallContext";
+import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Search, BarChart3, Users, CreditCard } from "lucide-react";
@@ -37,6 +39,7 @@ const SalesHistoryPage = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const { currentStore } = useStallContext();
+  const { toast } = useToast();
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -74,28 +77,45 @@ const SalesHistoryPage = () => {
       // Get personnel IDs from sales
       const personnelIds = [...new Set(salesData?.map(sale => sale.personnelid).filter(Boolean))];
       
-      // Fetch personnel details
+      // Fetch personnel details using email addresses instead of IDs
       console.log('DEBUG: Fetching personnel details for IDs:', personnelIds);
       let personnelData: any[] = [];
       
       if (personnelIds.length > 0) {
-        const { data: users, error: usersError } = await supabase
+        // Try to fetch users by ID first, then by email as fallback
+        const { data: usersById, error: usersByIdError } = await supabase
           .from('users')
           .select('id, name, email')
           .in('id', personnelIds);
 
-        if (usersError) {
-          console.error('Error fetching personnel data:', usersError);
+        if (usersByIdError) {
+          console.warn('Error fetching personnel by ID:', usersByIdError);
+          
+          // Fallback: try to fetch by email if IDs are actually emails
+          const emailLikeIds = personnelIds.filter(id => typeof id === 'string' && id.includes('@'));
+          if (emailLikeIds.length > 0) {
+            const { data: usersByEmail, error: usersByEmailError } = await supabase
+              .from('users')
+              .select('id, name, email')
+              .in('email', emailLikeIds);
+
+            if (usersByEmailError) {
+              console.error('Error fetching personnel by email:', usersByEmailError);
+            } else {
+              personnelData = usersByEmail || [];
+              console.log('DEBUG: Personnel data fetched by email:', personnelData);
+            }
+          }
         } else {
-          personnelData = users || [];
-          console.log('DEBUG: Personnel data fetched:', personnelData);
+          personnelData = usersById || [];
+          console.log('DEBUG: Personnel data fetched by ID:', personnelData);
         }
       }
 
       // Combine sales with personnel and book information
       const salesWithDetails = salesData?.map(sale => ({
         ...sale,
-        personnel_name: personnelData.find(p => p.id === sale.personnelid)?.name || 'Unknown',
+        personnel_name: personnelData.find(p => p.id === sale.personnelid || p.email === sale.personnelid)?.name || 'Unknown',
         book_name: sale.books?.name || 'Unknown Book',
         book_author: sale.books?.author || 'Unknown Author',
         book_imageurl: sale.books?.imageurl || ''
@@ -104,7 +124,7 @@ const SalesHistoryPage = () => {
       setSales(salesWithDetails);
       
       // Extract unique sellers and payment methods
-      const uniqueSellers = [...new Set(salesWithDetails.map(sale => sale.personnel_name).filter(Boolean))];
+      const uniqueSellers = [...new Set(salesWithDetails.map(sale => sale.personnel_name).filter(name => name && name !== 'Unknown'))];
       const uniquePaymentMethods = [...new Set(salesWithDetails.map(sale => sale.paymentmethod).filter(Boolean))];
       
       setSellers(uniqueSellers);

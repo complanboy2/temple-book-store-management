@@ -92,15 +92,23 @@ const BooksPage = () => {
     // Apply search filter
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(book =>
-        book.name.toLowerCase().includes(searchLower) ||
-        book.author.toLowerCase().includes(searchLower) ||
-        book.category?.toLowerCase().includes(searchLower) ||
-        book.barcode?.toLowerCase().includes(searchLower)
-      );
+      
+      // FIXED: Exact match for book codes (numeric search)
+      if (/^\d+$/.test(searchLower)) {
+        // Pure numeric search - exact match for book codes
+        filtered = books.filter(book => book.barcode === searchLower);
+      } else {
+        // Text search in name, author, category, barcode
+        filtered = filtered.filter(book =>
+          book.name.toLowerCase().includes(searchLower) ||
+          book.author.toLowerCase().includes(searchLower) ||
+          book.category?.toLowerCase().includes(searchLower) ||
+          book.barcode?.toLowerCase().includes(searchLower)
+        );
+      }
     }
 
-    // Apply category filter - fix the "all" category issue
+    // FIXED: Apply category filter - handle "all" category properly
     if (selectedCategory && selectedCategory !== "all") {
       filtered = filtered.filter(book => book.category === selectedCategory);
     }

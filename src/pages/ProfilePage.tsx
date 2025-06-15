@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
@@ -30,8 +31,9 @@ type ProfileValues = z.infer<typeof profileSchema>;
 const ProfilePage = () => {
   const { currentUser, updateUserProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState(localStorage.getItem('i18nextLng') || 'en');
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   
   const form = useForm<ProfileValues>({
@@ -42,6 +44,15 @@ const ProfilePage = () => {
       phone: currentUser?.phone || "",
     },
   });
+
+  const languages = [
+    { code: 'en', name: 'English' },
+    { code: 'hi', name: 'हिंदी (Hindi)' },
+    { code: 'kn', name: 'ಕನ್ನಡ (Kannada)' },
+    { code: 'mr', name: 'मराठी (Marathi)' },
+    { code: 'ta', name: 'தமிழ் (Tamil)' },
+    { code: 'te', name: 'తెలుగు (Telugu)' }
+  ];
   
   const onSubmit = async (values: ProfileValues) => {
     if (!currentUser) return;
@@ -73,6 +84,16 @@ const ProfilePage = () => {
       setIsLoading(false);
     }
   };
+
+  const handleLanguageChange = (languageCode: string) => {
+    setSelectedLanguage(languageCode);
+    i18n.changeLanguage(languageCode);
+    localStorage.setItem('i18nextLng', languageCode);
+    toast({
+      title: t("common.success"),
+      description: t("profile.languageChanged"),
+    });
+  };
   
   if (!currentUser) {
     return (
@@ -91,7 +112,7 @@ const ProfilePage = () => {
       />
       
       <main className="container mx-auto px-4 py-6">
-        <Card className="temple-card">
+        <Card className="temple-card mb-4">
           <CardHeader>
             <CardTitle className="text-lg text-temple-maroon">{t("profile.myProfile")}</CardTitle>
           </CardHeader>
@@ -160,6 +181,32 @@ const ProfilePage = () => {
                 </div>
               </form>
             </Form>
+          </CardContent>
+        </Card>
+
+        {/* Language Selection Section */}
+        <Card className="temple-card">
+          <CardHeader>
+            <CardTitle className="text-lg text-temple-maroon">{t("profile.languageSettings")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium">{t("profile.selectLanguage")}</Label>
+                <Select value={selectedLanguage} onValueChange={handleLanguageChange}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder={t("profile.chooseLanguage")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {languages.map((language) => (
+                      <SelectItem key={language.code} value={language.code}>
+                        {language.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </main>
