@@ -316,16 +316,46 @@ async function generatePDFAndOpenWhatsApp(orderData) {
     doc.text(`Address: ${orderData.customerAddress}`, 20, 60);
     doc.text(`Order Date: ${orderData.orderDate}`, 20, 70);
 
-    // Add items
+    // Add items header
     doc.text('Order Items:', 20, 90);
     let yPosition = 100;
-    
-    orderData.items.forEach((item, index) => {
-        doc.text(`${index + 1}. ${item.name}`, 20, yPosition);
-        doc.text(`   Author: ${item.author}`, 20, yPosition + 10);
-        doc.text(`   Quantity: ${item.quantity} x ₹${item.price} = ₹${(item.quantity * item.price).toFixed(2)}`, 20, yPosition + 20);
-        yPosition += 35;
-    });
+    const rowHeight = 40;
+
+    // Add each item, with book thumbnail if available
+    for (const [index, item] of orderData.items.entries()) {
+        // Draw book thumbnail image if it exists
+        if (item.imageurl) {
+            try {
+                // Convert possible relative links to absolute
+                const imgUrl = item.imageurl.startsWith("http")
+                    ? item.imageurl
+                    : window.location.origin + "/" + item.imageurl;
+                const imgData = await fetch(imgUrl)
+                  .then(res => res.blob())
+                  .then(blob => new Promise((resolve) => {
+                      const reader = new FileReader();
+                      reader.onload = () => resolve(reader.result);
+                      reader.readAsDataURL(blob);
+                  }));
+                // Draw image (50x65)
+                doc.addImage(imgData, 'JPEG', 20, yPosition - 4, 20, 26, undefined, 'FAST');
+            } catch(e) {
+                // Ignore errors, show no image
+                console.warn('Failed to load book thumbnail', e);
+            }
+        }
+
+        doc.text(`${index + 1}. ${item.name}`, 44, yPosition);
+        doc.text(`Author: ${item.author}`, 44, yPosition + 10);
+        doc.text(`Quantity: ${item.quantity} x ₹${item.price} = ₹${(item.quantity * item.price).toFixed(2)}`, 44, yPosition + 20);
+
+        yPosition += rowHeight;
+        // Page break if needed
+        if (yPosition > 250) {
+            doc.addPage();
+            yPosition = 20;
+        }
+    }
 
     // Add total
     doc.setFontSize(14);
