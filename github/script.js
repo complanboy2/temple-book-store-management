@@ -414,8 +414,7 @@ async function generatePDFAndOpenWhatsApp(orderData) {
         doc.setFontSize(14.5);
         doc.setTextColor(44,44,44);
         const bookNameX = colX.book + imgWidth + 3;
-        // Only show index for book name, not for rate/qty/amount!
-        doc.text(`${idx+1}. ${item.name}`, bookNameX, y + 5.9);
+        doc.text(item.name, bookNameX, y + 5.9);
 
         // Author under name, slightly bigger
         doc.setFont('helvetica', 'normal');
@@ -423,10 +422,10 @@ async function generatePDFAndOpenWhatsApp(orderData) {
         doc.setTextColor(100, 80, 55);
         doc.text(`by ${item.author}`, bookNameX, y + 11.6);
 
-        // Qty, Rate, Amount - normal font, bigger size, black; *NO prefix 1* (remove any prefix, just values!)
+        // Qty, Rate, Amount - normal font, bigger size, black
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(12.5);
-        doc.setTextColor(0,0,0); // solid black
+        doc.setTextColor(0,0,0);
         doc.text(`${item.quantity}`, colX.qty, y + 11.2, { align: 'center' });
         doc.text(`₹${item.price}`, colX.rate, y + 11.2, { align: 'center' });
         doc.text(`₹${(item.quantity * item.price).toFixed(2)}`, colX.amt, y + 11.2, { align: 'center' });
@@ -434,7 +433,7 @@ async function generatePDFAndOpenWhatsApp(orderData) {
         y += imgHeight + 3; // vertical gap for next book
     }
 
-    // --- Total: larger, left --- (NO prefix, just the value)
+    // --- Total: larger, left ---
     y += 3;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(13.5);
