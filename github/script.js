@@ -1,4 +1,3 @@
-
 // Global variables
 let books = [];
 let cart = [];
@@ -172,7 +171,8 @@ function addToCart(bookId) {
             author: book.author,
             price: book.saleprice,
             quantity: 1,
-            maxQuantity: book.quantity
+            maxQuantity: book.quantity,
+            imageurl: book.imageurl // Ensure this property is included
         });
     }
 
