@@ -1,89 +1,102 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useStallContext } from "@/contexts/StallContext";
-import { useAuth } from "@/contexts/AuthContext";
-import { useTranslation } from "react-i18next";
-import { supabase } from "@/integrations/supabase/client";
-import { Book } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useStallContext } from "@/contexts/StallContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
+import { ShoppingCart, Package, CreditCard } from "lucide-react";
 import MobileHeader from "@/components/MobileHeader";
 import BookImage from "@/components/BookImage";
-import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+
+interface Book {
+  id: string;
+  name: string;
+  author: string;
+  category: string;
+  saleprice: number;
+  quantity: number;
+  imageurl?: string;
+}
 
 const SellBookPage = () => {
   const { bookId } = useParams<{ bookId: string }>();
-  const navigate = useNavigate();
-  const { currentStore } = useStallContext();
-  const { currentUser } = useAuth();
-  const { t } = useTranslation();
-  const { toast } = useToast();
-  
   const [book, setBook] = useState<Book | null>(null);
-  const [quantity, setQuantity] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [quantity, setQuantity] = useState("");
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("cash");
   const [isLoading, setIsLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isSelling, setIsSelling] = useState(false);
+
+  const { currentStore } = useStallContext();
+  const { currentUser } = useAuth();
+  const { toast } = useToast();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchBook = async () => {
-      if (!bookId || !currentStore) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('books')
-          .select('*')
-          .eq('id', bookId)
-          .eq('stallid', currentStore)
-          .single();
+    if (bookId && currentStore) {
+      fetchBook();
+    }
+  }, [bookId, currentStore]);
 
-        if (error) throw error;
+  const fetchBook = async () => {
+    if (!bookId || !currentStore) return;
 
-        const formattedBook: Book = {
-          id: data.id,
-          bookCode: data.barcode || `BOOK-${data.id.slice(-6).toUpperCase()}`,
-          name: data.name,
-          author: data.author,
-          category: data.category || "",
-          language: data.language || "",
-          printingInstitute: data.printinginstitute || "",
-          originalPrice: data.originalprice || 0,
-          salePrice: data.saleprice || 0,
-          quantity: data.quantity || 0,
-          stallId: data.stallid,
-          imageUrl: data.imageurl,
-          createdAt: data.createdat ? new Date(data.createdat) : new Date(),
-          updatedAt: data.updatedat ? new Date(data.updatedat) : new Date()
-        };
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('books')
+        .select('*')
+        .eq('id', bookId)
+        .eq('stallid', currentStore)
+        .single();
 
-        setBook(formattedBook);
-      } catch (error) {
-        console.error("Error fetching book:", error);
-        toast({
-          title: t("common.error"),
-          description: t("common.failedToLoadBook"),
-          variant: "destructive",
-        });
-        navigate("/books");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      if (error) throw error;
+      setBook(data);
+    } catch (error) {
+      console.error("Error fetching book:", error);
+      toast({
+        title: t("common.error"),
+        description: t("books.bookNotFound"),
+        variant: "destructive",
+      });
+      navigate("/books");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    fetchBook();
-  }, [bookId, currentStore, navigate, t, toast]);
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Only allow positive integers
+    if (value === "" || (/^\d+$/.test(value) && parseInt(value) >= 0)) {
+      setQuantity(value);
+    }
+  };
 
-  const handleSale = async () => {
+  const handleSell = async () => {
     if (!book || !currentUser || !currentStore) return;
+
+    const sellQuantity = parseInt(quantity);
     
-    if (quantity > book.quantity) {
+    if (!sellQuantity || sellQuantity <= 0) {
+      toast({
+        title: t("common.error"),
+        description: t("sell.invalidQuantity"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (sellQuantity > book.quantity) {
       toast({
         title: t("common.error"),
         description: t("sell.insufficientStock"),
@@ -92,26 +105,24 @@ const SellBookPage = () => {
       return;
     }
 
-    setIsProcessing(true);
-    
     try {
-      const totalAmount = book.salePrice * quantity;
-      
-      console.log("DEBUG: Recording sale with seller:", currentUser.email);
-      
-      // Record the sale with proper seller information
+      setIsSelling(true);
+
+      // Calculate total amount
+      const totalAmount = sellQuantity * book.saleprice;
+
+      // Create sale record
       const { error: saleError } = await supabase
         .from('sales')
         .insert({
           bookid: book.id,
-          quantity: quantity,
+          quantity: sellQuantity,
           totalamount: totalAmount,
           paymentmethod: paymentMethod,
           buyername: buyerName || null,
           buyerphone: buyerPhone || null,
-          personnelid: currentUser.email,
+          personnelid: currentUser.id,
           stallid: currentStore,
-          synced: false
         });
 
       if (saleError) throw saleError;
@@ -119,8 +130,8 @@ const SellBookPage = () => {
       // Update book quantity
       const { error: updateError } = await supabase
         .from('books')
-        .update({ 
-          quantity: book.quantity - quantity,
+        .update({
+          quantity: book.quantity - sellQuantity,
           updatedat: new Date().toISOString()
         })
         .eq('id', book.id);
@@ -129,13 +140,14 @@ const SellBookPage = () => {
 
       toast({
         title: t("common.success"),
-        description: t("sell.saleRecorded"),
+        description: t("sell.saleRecorded", { 
+          quantity: sellQuantity, 
+          book: book.name,
+          amount: totalAmount 
+        }),
       });
 
-      // Redirect to books page after successful sale
-      console.log("DEBUG: Redirecting to books page after sale");
       navigate("/books");
-      
     } catch (error) {
       console.error("Error recording sale:", error);
       toast({
@@ -144,20 +156,16 @@ const SellBookPage = () => {
         variant: "destructive",
       });
     } finally {
-      setIsProcessing(false);
+      setIsSelling(false);
     }
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-temple-background">
-        <MobileHeader 
-          title={t("common.sellBook")}
-          showBackButton={true}
-          backTo="/books"
-        />
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen bg-temple-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-temple-maroon mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">{t("common.loading")}</p>
         </div>
       </div>
     );
@@ -165,136 +173,191 @@ const SellBookPage = () => {
 
   if (!book) {
     return (
-      <div className="min-h-screen bg-temple-background">
-        <MobileHeader 
-          title={t("common.sellBook")}
-          showBackButton={true}
-          backTo="/books"
-        />
-        <div className="container mx-auto px-4 py-6">
-          <p className="text-center text-muted-foreground">{t("common.bookNotFound")}</p>
-        </div>
+      <div className="min-h-screen bg-temple-background flex items-center justify-center">
+        <Card className="max-w-md mx-auto">
+          <CardContent className="text-center p-6">
+            <h2 className="text-xl font-bold text-red-600 mb-2">{t("books.bookNotFound")}</h2>
+            <Button onClick={() => navigate("/books")}>{t("common.goBack")}</Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  const totalAmount = book.salePrice * quantity;
+  const totalAmount = quantity ? parseInt(quantity) * book.saleprice : 0;
 
   return (
     <div className="min-h-screen bg-temple-background pb-20">
       <MobileHeader 
-        title={t("common.sellBook")}
+        title={t("sell.sellBook")}
         showBackButton={true}
         backTo="/books"
       />
       
-      <main className="container mx-auto px-4 py-6 space-y-6">
-        {/* Book Details Card */}
-        <Card>
-          <CardContent className="p-6">
+      <main className="container mx-auto px-3 py-4">
+        {/* Book Information */}
+        <Card className="mb-4">
+          <CardContent className="p-4">
             <div className="flex gap-4">
               <div className="w-20 h-28 flex-shrink-0">
-                <BookImage
-                  imageUrl={book.imageUrl}
-                  alt={`${book.name} cover`}
-                  size="small"
-                  className="w-full h-full"
+                <BookImage 
+                  imageUrl={book.imageurl} 
+                  alt={book.name}
+                  size="medium"
+                  className="w-full h-full object-cover rounded"
                 />
               </div>
               
               <div className="flex-1">
-                <h2 className="text-xl font-bold mb-2">{book.name}</h2>
-                <p className="text-muted-foreground mb-1">{book.author}</p>
-                <p className="text-sm text-muted-foreground mb-2">{book.category}</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-lg font-semibold text-green-600">₹{book.salePrice}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {t("common.available")}: {book.quantity}
-                  </span>
+                <h2 className="text-lg font-bold text-temple-maroon mb-1">
+                  {book.name}
+                </h2>
+                <p className="text-sm text-gray-600 mb-1">
+                  {t("common.by")} {book.author}
+                </p>
+                <p className="text-sm text-gray-500 mb-2">
+                  {book.category}
+                </p>
+                <div className="flex justify-between items-center">
+                  <div className="text-xl font-bold text-temple-maroon">
+                    ₹{book.saleprice}
+                  </div>
+                  <div className={`text-sm font-medium ${
+                    book.quantity <= 5 ? 'text-red-600' : 
+                    book.quantity <= 10 ? 'text-orange-600' : 'text-green-600'
+                  }`}>
+                    <Package className="inline h-4 w-4 mr-1" />
+                    {book.quantity} {t("common.available")}
+                  </div>
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Sale Details Card */}
+        {/* Sale Form */}
         <Card>
-          <CardHeader>
-            <CardTitle>{t("sell.saleDetails")}</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <ShoppingCart className="h-5 w-5" />
+              {t("sell.saleDetails")}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Quantity Input */}
             <div>
-              <Label htmlFor="quantity">{t("common.quantity")}</Label>
+              <Label htmlFor="quantity" className="text-sm font-medium">
+                {t("common.quantity")} *
+              </Label>
               <Input
                 id="quantity"
-                type="number"
-                min="1"
-                max={book.quantity}
+                type="text"
                 value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, Math.min(book.quantity, parseInt(e.target.value) || 1)))}
+                onChange={handleQuantityChange}
+                placeholder="1"
                 className="mt-1"
+                max={book.quantity}
               />
+              <p className="text-xs text-gray-500 mt-1">
+                {t("sell.maxQuantity", { max: book.quantity })}
+              </p>
             </div>
 
-            <div>
-              <Label>{t("sell.paymentMethod")}</Label>
-              <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="mt-2">
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="cash" id="cash" />
-                  <Label htmlFor="cash">{t("sell.cash")}</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="upi" id="upi" />
-                  <Label htmlFor="upi">{t("sell.upi")}</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="card" id="card" />
-                  <Label htmlFor="card">{t("sell.card")}</Label>
-                </div>
-              </RadioGroup>
-            </div>
+            {/* Buyer Information */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-gray-700">
+                {t("sell.buyerInformation")} ({t("common.optional")})
+              </h3>
+              
+              <div>
+                <Label htmlFor="buyerName" className="text-sm">
+                  {t("common.name")}
+                </Label>
+                <Input
+                  id="buyerName"
+                  value={buyerName}
+                  onChange={(e) => setBuyerName(e.target.value)}
+                  placeholder={t("sell.buyerNamePlaceholder")}
+                  className="mt-1"
+                />
+              </div>
 
-            <div>
-              <Label htmlFor="buyerName">{t("sell.buyerName")} ({t("common.optional")})</Label>
-              <Input
-                id="buyerName"
-                value={buyerName}
-                onChange={(e) => setBuyerName(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="buyerPhone">{t("sell.buyerPhone")} ({t("common.optional")})</Label>
-              <Input
-                id="buyerPhone"
-                type="tel"
-                value={buyerPhone}
-                onChange={(e) => setBuyerPhone(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex justify-between items-center text-lg font-semibold">
-                <span>{t("sell.total")}</span>
-                <span className="text-green-600">₹{totalAmount.toFixed(2)}</span>
+              <div>
+                <Label htmlFor="buyerPhone" className="text-sm">
+                  {t("common.phone")}
+                </Label>
+                <Input
+                  id="buyerPhone"
+                  value={buyerPhone}
+                  onChange={(e) => setBuyerPhone(e.target.value)}
+                  placeholder={t("sell.buyerPhonePlaceholder")}
+                  className="mt-1"
+                />
               </div>
             </div>
 
+            {/* Payment Method */}
+            <div>
+              <Label className="text-sm font-medium">
+                {t("sell.paymentMethod")} *
+              </Label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      {t("sell.cash")}
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="upi">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      {t("sell.upi")}
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="card">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      {t("sell.card")}
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Total Amount */}
+            {totalAmount > 0 && (
+              <div className="bg-temple-background p-3 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">
+                    {t("sell.totalAmount")}:
+                  </span>
+                  <span className="text-xl font-bold text-temple-maroon">
+                    ₹{totalAmount}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Sell Button */}
             <Button 
-              onClick={handleSale}
-              disabled={isProcessing || book.quantity === 0}
-              className="w-full bg-green-600 hover:bg-green-700 text-white py-3"
-              size="lg"
+              onClick={handleSell}
+              disabled={!quantity || parseInt(quantity) <= 0 || isSelling}
+              className="w-full bg-temple-maroon hover:bg-temple-maroon/90 text-white"
             >
-              {isProcessing ? (
+              {isSelling ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                   {t("sell.processing")}
                 </>
               ) : (
-                t("sell.completeSale")
+                <>
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  {t("sell.completeSale")}
+                </>
               )}
             </Button>
           </CardContent>

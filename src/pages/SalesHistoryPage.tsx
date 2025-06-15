@@ -1,21 +1,15 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Calendar, Edit, Trash2, Filter } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStallContext } from "@/contexts/StallContext";
-import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import { Search, BarChart3, Users, CreditCard } from "lucide-react";
 import MobileHeader from "@/components/MobileHeader";
 import BookImage from "@/components/BookImage";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Sale {
   id: string;
@@ -24,82 +18,45 @@ interface Sale {
   totalamount: number;
   paymentmethod: string;
   buyername?: string;
-  buyerphone?: string;
+  personnelid: string;
   createdat: string;
   book_name?: string;
   book_author?: string;
   book_imageurl?: string;
-  personnelid: string;
-  seller_name?: string;
+  personnel_name?: string;
 }
 
 const SalesHistoryPage = () => {
   const [sales, setSales] = useState<Sale[]>([]);
   const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
-  const [selectedSeller, setSelectedSeller] = useState("");
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
-  const [availableSellers, setAvailableSellers] = useState<{id: string, name: string}[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [editingSale, setEditingSale] = useState<Sale | null>(null);
-  const [editQuantity, setEditQuantity] = useState(0);
-  const [editPaymentMethod, setEditPaymentMethod] = useState("");
-  const [editBuyerName, setEditBuyerName] = useState("");
-  const [editBuyerPhone, setEditBuyerPhone] = useState("");
-  
-  const { currentUser, isAdmin } = useAuth();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedSeller, setSelectedSeller] = useState("all");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("all");
+  const [sellers, setSellers] = useState<string[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const { currentStore } = useStallContext();
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { toast } = useToast();
 
-  // Auto-close toast function
-  const showToast = (title: string, description: string, variant: "default" | "destructive" = "default") => {
-    toast({
-      title,
-      description,
-      variant,
-      duration: 5000,
-    });
-  };
-
-  // Set default date range (last 30 days)
   useEffect(() => {
-    const today = new Date();
-    const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-    
-    setToDate(today.toISOString().split('T')[0]);
-    setFromDate(thirtyDaysAgo.toISOString().split('T')[0]);
-  }, []);
+    if (currentStore) {
+      fetchSalesHistory();
+    }
+  }, [currentStore]);
 
-  // Filter sales based on selected filters
   useEffect(() => {
-    let filtered = [...sales];
-    
-    if (selectedSeller) {
-      filtered = filtered.filter(sale => sale.personnelid === selectedSeller);
-    }
-    
-    if (selectedPaymentMethod) {
-      filtered = filtered.filter(sale => sale.paymentmethod === selectedPaymentMethod);
-    }
-    
-    setFilteredSales(filtered);
-  }, [sales, selectedSeller, selectedPaymentMethod]);
+    applyFilters();
+  }, [sales, searchTerm, selectedSeller, selectedPaymentMethod]);
 
-  const fetchSales = async () => {
-    if (!currentUser?.email || !currentStore) {
-      console.log("Missing user email or store:", { email: currentUser?.email, store: currentStore });
-      return;
-    }
+  const fetchSalesHistory = async () => {
+    if (!currentStore) return;
 
-    setIsLoading(true);
     try {
-      console.log("Fetching sales for user email:", currentUser.email, "in store:", currentStore, "isAdmin:", isAdmin);
+      setIsLoading(true);
       
-      // Query sales with proper joins - Admin sees all, personnel sees only their own
-      let query = supabase
+      // Fetch sales with book details
+      const { data: salesData, error: salesError } = await supabase
         .from('sales')
         .select(`
           *,
@@ -112,422 +69,248 @@ const SalesHistoryPage = () => {
         .eq('stallid', currentStore)
         .order('createdat', { ascending: false });
 
-      // If not admin, filter by current user's email
-      if (!isAdmin) {
-        query = query.eq('personnelid', currentUser.email);
-      }
+      if (salesError) throw salesError;
 
-      // Add date filters if provided
-      if (fromDate) {
-        query = query.gte('createdat', fromDate + 'T00:00:00');
-      }
-      if (toDate) {
-        query = query.lte('createdat', toDate + 'T23:59:59');
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error("Error fetching sales:", error);
-        showToast(t("common.error"), "Failed to fetch sales history", "destructive");
-        return;
-      }
-
-      console.log("Raw sales data:", data);
-
-      // Get seller names and build seller list for filter
-      const personnelIds = [...new Set(data?.map(sale => sale.personnelid) || [])];
-      const personnelNamesMap: Record<string, string> = {};
-      const sellersForFilter: {id: string, name: string}[] = [];
+      // Get personnel IDs from sales
+      const personnelIds = [...new Set(salesData?.map(sale => sale.personnelid).filter(Boolean))];
+      
+      // Fetch personnel details
+      console.log('DEBUG: Fetching personnel details for IDs:', personnelIds);
+      let personnelData: any[] = [];
       
       if (personnelIds.length > 0) {
-        try {
-          const { data: usersData, error: usersError } = await supabase
-            .from('users')
-            .select('id, name, email')
-            .in('email', personnelIds);
-            
-          if (!usersError && usersData) {
-            usersData.forEach(user => {
-              personnelNamesMap[user.email] = user.name;
-              sellersForFilter.push({ id: user.email, name: user.name });
-            });
-          }
-        } catch (error) {
-          console.error("Error fetching user names:", error);
+        const { data: users, error: usersError } = await supabase
+          .from('users')
+          .select('id, name, email')
+          .in('id', personnelIds);
+
+        if (usersError) {
+          console.error('Error fetching personnel data:', usersError);
+        } else {
+          personnelData = users || [];
+          console.log('DEBUG: Personnel data fetched:', personnelData);
         }
       }
 
-      setAvailableSellers(sellersForFilter);
-
-      const salesWithBookInfo = data?.map(sale => ({
+      // Combine sales with personnel and book information
+      const salesWithDetails = salesData?.map(sale => ({
         ...sale,
+        personnel_name: personnelData.find(p => p.id === sale.personnelid)?.name || 'Unknown',
         book_name: sale.books?.name || 'Unknown Book',
         book_author: sale.books?.author || 'Unknown Author',
-        book_imageurl: sale.books?.imageurl || '',
-        seller_name: personnelNamesMap[sale.personnelid] || sale.personnelid || 'Unknown User'
+        book_imageurl: sale.books?.imageurl || ''
       })) || [];
 
-      console.log("Processed sales data:", salesWithBookInfo);
-      setSales(salesWithBookInfo);
+      setSales(salesWithDetails);
+      
+      // Extract unique sellers and payment methods
+      const uniqueSellers = [...new Set(salesWithDetails.map(sale => sale.personnel_name).filter(Boolean))];
+      const uniquePaymentMethods = [...new Set(salesWithDetails.map(sale => sale.paymentmethod).filter(Boolean))];
+      
+      setSellers(uniqueSellers);
+      setPaymentMethods(uniquePaymentMethods);
+      
     } catch (error) {
-      console.error("Error fetching sales:", error);
-      showToast(t("common.error"), "Failed to fetch sales history", "destructive");
+      console.error("Error fetching sales history:", error);
+      toast({
+        title: t("common.error"),
+        description: t("sales.failedToLoadHistory"),
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (fromDate && toDate && currentUser?.email && currentStore) {
-      fetchSales();
-    }
-  }, [currentUser, currentStore, fromDate, toDate, isAdmin]);
+  const applyFilters = () => {
+    let filtered = sales;
 
-  const handleEditSale = (sale: Sale) => {
-    setEditingSale(sale);
-    setEditQuantity(sale.quantity);
-    setEditPaymentMethod(sale.paymentmethod);
-    setEditBuyerName(sale.buyername || "");
-    setEditBuyerPhone(sale.buyerphone || "");
+    // Apply search filter
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(sale =>
+        sale.book_name?.toLowerCase().includes(searchLower) ||
+        sale.book_author?.toLowerCase().includes(searchLower) ||
+        sale.buyername?.toLowerCase().includes(searchLower) ||
+        sale.personnel_name?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Apply seller filter - fix the "all" filter issue
+    if (selectedSeller && selectedSeller !== "all") {
+      filtered = filtered.filter(sale => sale.personnel_name === selectedSeller);
+    }
+
+    // Apply payment method filter - fix the "all" filter issue
+    if (selectedPaymentMethod && selectedPaymentMethod !== "all") {
+      filtered = filtered.filter(sale => sale.paymentmethod === selectedPaymentMethod);
+    }
+
+    setFilteredSales(filtered);
   };
 
-  const handleUpdateSale = async () => {
-    if (!editingSale) return;
-
-    try {
-      const { error } = await supabase
-        .from('sales')
-        .update({
-          quantity: editQuantity,
-          totalamount: editQuantity * (editingSale.totalamount / editingSale.quantity),
-          paymentmethod: editPaymentMethod,
-          buyername: editBuyerName || null,
-          buyerphone: editBuyerPhone || null,
-        })
-        .eq('id', editingSale.id);
-
-      if (error) {
-        console.error("Error updating sale:", error);
-        showToast(t("common.error"), "Failed to update sale", "destructive");
-        return;
-      }
-
-      showToast(t("common.success"), "Sale updated successfully");
-      setEditingSale(null);
-      fetchSales();
-    } catch (error) {
-      console.error("Error updating sale:", error);
-      showToast(t("common.error"), "Failed to update sale", "destructive");
-    }
+  const handleSellerChange = (value: string) => {
+    setSelectedSeller(value);
   };
 
-  const handleDeleteSale = async (saleId: string) => {
-    if (!confirm("Are you sure you want to delete this sale? The book stock will be automatically restored.")) return;
-
-    try {
-      const { error } = await supabase
-        .from('sales')
-        .delete()
-        .eq('id', saleId);
-
-      if (error) {
-        console.error("Error deleting sale:", error);
-        showToast(t("common.error"), "Failed to delete sale", "destructive");
-        return;
-      }
-
-      showToast(t("common.success"), "Sale deleted successfully and stock restored");
-      fetchSales();
-    } catch (error) {
-      console.error("Error deleting sale:", error);
-      showToast(t("common.error"), "Failed to delete sale", "destructive");
-    }
-  };
-
-  const clearFilters = () => {
-    setSelectedSeller("");
-    setSelectedPaymentMethod("");
+  const handlePaymentMethodChange = (value: string) => {
+    setSelectedPaymentMethod(value);
   };
 
   return (
-    <div className="min-h-screen bg-temple-background">
+    <div className="min-h-screen bg-temple-background pb-20">
       <MobileHeader 
-        title={isAdmin ? "All Sales History" : "My Sales History"}
+        title={t("sales.salesHistory")}
         showBackButton={true}
         backTo="/"
       />
       
-      <div className="mobile-container py-4 space-y-4">
-        {/* Date Filter */}
-        <Card className="temple-card">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold text-temple-maroon flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-temple-gold" />
-              Date Range
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="fromDate">From Date</Label>
-                <Input
-                  id="fromDate"
-                  type="date"
-                  value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="toDate">To Date</Label>
-                <Input
-                  id="toDate"
-                  type="date"
-                  value={toDate}
-                  onChange={(e) => setToDate(e.target.value)}
-                />
-              </div>
+      <main className="container mx-auto px-3 py-4">
+        {/* Search and Filter Section */}
+        <Card className="mb-4">
+          <CardContent className="p-4 space-y-3">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder={t("sales.searchSales")}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-            <Button 
-              onClick={fetchSales} 
-              className="w-full bg-temple-maroon hover:bg-temple-maroon/90"
-              disabled={isLoading}
-            >
-              {isLoading ? "Loading..." : "Filter Sales"}
-            </Button>
-          </CardContent>
-        </Card>
 
-        {/* Additional Filters */}
-        <Card className="temple-card">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold text-temple-maroon flex items-center gap-2">
-              <Filter className="h-5 w-5 text-temple-gold" />
-              Additional Filters
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-1 gap-3">
-              {isAdmin && (
-                <div>
-                  <Label htmlFor="sellerFilter">Filter by Seller</Label>
-                  <Select value={selectedSeller} onValueChange={setSelectedSeller}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Sellers" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">All Sellers</SelectItem>
-                      {availableSellers.map(seller => (
-                        <SelectItem key={seller.id} value={seller.id}>
-                          {seller.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              
-              <div>
-                <Label htmlFor="paymentFilter">Filter by Payment Method</Label>
-                <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Payment Methods" />
+            {/* Filters Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Seller Filter */}
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                <Select value={selectedSeller} onValueChange={handleSellerChange}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder={t("sales.selectSeller")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Payment Methods</SelectItem>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="card">Card</SelectItem>
-                    <SelectItem value="upi">UPI</SelectItem>
+                    <SelectItem value="all">{t("sales.allSellers")}</SelectItem>
+                    {sellers.map((seller) => (
+                      <SelectItem key={seller} value={seller}>
+                        {seller}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Payment Method Filter */}
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                <Select value={selectedPaymentMethod} onValueChange={handlePaymentMethodChange}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder={t("sales.selectPaymentMethod")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("sales.allPaymentMethods")}</SelectItem>
+                    {paymentMethods.map((method) => (
+                      <SelectItem key={method} value={method}>
+                        {method.charAt(0).toUpperCase() + method.slice(1)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
-            
-            {(selectedSeller || selectedPaymentMethod) && (
-              <Button 
-                onClick={clearFilters}
-                variant="outline"
-                className="w-full"
-              >
-                Clear Filters
-              </Button>
-            )}
           </CardContent>
         </Card>
 
-        {/* Debug Info */}
-        <Card className="temple-card">
-          <CardContent className="p-4">
-            <p className="text-xs text-gray-500">
-              User: {currentUser?.email} | Store: {currentStore} | Sales Count: {filteredSales.length} | Role: {isAdmin ? 'Admin' : 'Personnel'}
-              {(selectedSeller || selectedPaymentMethod) && ' | Filtered'}
-            </p>
-          </CardContent>
-        </Card>
+        {/* Results Summary */}
+        <div className="mb-4 text-sm text-gray-600">
+          <p>{t("sales.showingResults", { count: filteredSales.length, total: sales.length })}</p>
+        </div>
 
         {/* Sales List */}
-        <div className="space-y-3">
-          {filteredSales.length > 0 ? (
-            filteredSales.map((sale) => (
-              <Card key={sale.id} className="temple-card">
-                <CardContent className="p-4">
-                  <div className="flex gap-3 mb-3">
+        {isLoading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-temple-maroon mx-auto"></div>
+            <p className="mt-2 text-muted-foreground">{t("common.loading")}</p>
+          </div>
+        ) : filteredSales.length === 0 ? (
+          <Card className="text-center py-12">
+            <CardContent>
+              <BarChart3 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {t("sales.noSalesFound")}
+              </h3>
+              <p className="text-gray-500">
+                {searchTerm || selectedSeller !== "all" || selectedPaymentMethod !== "all"
+                  ? t("sales.tryDifferentFilters")
+                  : t("sales.noSalesRecorded")
+                }
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {filteredSales.map((sale) => (
+              <Card key={sale.id} className="overflow-hidden">
+                <CardContent className="p-0">
+                  <div className="flex">
                     {/* Book Thumbnail */}
-                    <div className="flex-shrink-0">
+                    <div className="w-16 h-22 flex-shrink-0">
                       <BookImage 
                         imageUrl={sale.book_imageurl} 
                         alt={sale.book_name}
                         size="small"
-                        className="w-16 h-20 rounded-md border border-gray-200"
+                        className="w-full h-full object-cover"
                       />
                     </div>
                     
                     {/* Sale Details */}
-                    <div className="flex-1">
+                    <div className="flex-1 p-4">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1">
-                          <h3 className="font-semibold text-sm text-temple-maroon">
+                          <h3 className="font-semibold text-gray-900 leading-tight mb-1">
                             {sale.book_name}
                           </h3>
-                          <p className="text-xs text-gray-600 mb-1">
-                            by {sale.book_author}
+                          <p className="text-sm text-gray-600 mb-1">
+                            {t("common.by")} {sale.book_author}
                           </p>
-                          <p className="text-xs text-gray-500">
-                            {new Date(sale.createdat).toLocaleDateString()} • Seller: {sale.seller_name}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-temple-maroon">
-                            ₹{sale.totalamount}
-                          </p>
-                          <Badge variant="secondary" className="text-xs">
-                            Qty: {sale.quantity}
-                          </Badge>
-                        </div>
-                      </div>
-                      
-                      {sale.buyername && (
-                        <div className="mb-2">
-                          <p className="text-xs text-gray-600">
-                            Buyer: {sale.buyername}
-                            {sale.buyerphone && ` • ${sale.buyerphone}`}
-                          </p>
-                        </div>
-                      )}
-                      
-                      <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="text-xs">
-                          {sale.paymentmethod}
-                        </Badge>
-                        <div className="flex gap-2">
-                          {/* Show edit/delete buttons if admin or if it's user's own sale */}
-                          {(isAdmin || sale.personnelid === currentUser?.email) && (
-                            <>
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleEditSale(sale)}
-                                    className="px-2 h-8"
-                                  >
-                                    <Edit className="h-3 w-3" />
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader>
-                                    <DialogTitle>Edit Sale</DialogTitle>
-                                  </DialogHeader>
-                                  <div className="space-y-4">
-                                    <div>
-                                      <Label htmlFor="editQuantity">Quantity</Label>
-                                      <Input
-                                        id="editQuantity"
-                                        type="number"
-                                        value={editQuantity}
-                                        onChange={(e) => setEditQuantity(parseInt(e.target.value) || 0)}
-                                        min="1"
-                                      />
-                                    </div>
-                                    <div>
-                                      <Label htmlFor="editPaymentMethod">Payment Method</Label>
-                                      <Select value={editPaymentMethod} onValueChange={setEditPaymentMethod}>
-                                        <SelectTrigger>
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="cash">Cash</SelectItem>
-                                          <SelectItem value="card">Card</SelectItem>
-                                          <SelectItem value="upi">UPI</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                    <div>
-                                      <Label htmlFor="editBuyerName">Buyer Name (Optional)</Label>
-                                      <Input
-                                        id="editBuyerName"
-                                        value={editBuyerName}
-                                        onChange={(e) => setEditBuyerName(e.target.value)}
-                                      />
-                                    </div>
-                                    <div>
-                                      <Label htmlFor="editBuyerPhone">Buyer Phone (Optional)</Label>
-                                      <Input
-                                        id="editBuyerPhone"
-                                        value={editBuyerPhone}
-                                        onChange={(e) => setEditBuyerPhone(e.target.value)}
-                                      />
-                                    </div>
-                                    <div className="flex gap-2">
-                                      <Button onClick={handleUpdateSale} className="flex-1">
-                                        Update Sale
-                                      </Button>
-                                      <Button 
-                                        variant="outline" 
-                                        onClick={() => setEditingSale(null)}
-                                        className="flex-1"
-                                      >
-                                        Cancel
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                              
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleDeleteSale(sale.id)}
-                                className="px-2 text-destructive hover:text-destructive h-8"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </>
+                          <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
+                            <span>
+                              <Users className="inline h-3 w-3 mr-1" />
+                              {sale.personnel_name}
+                            </span>
+                            <span>
+                              <CreditCard className="inline h-3 w-3 mr-1" />
+                              {sale.paymentmethod?.charAt(0).toUpperCase() + sale.paymentmethod?.slice(1)}
+                            </span>
+                          </div>
+                          {sale.buyername && (
+                            <p className="text-xs text-gray-500">
+                              {t("common.customer")}: {sale.buyername}
+                            </p>
                           )}
+                        </div>
+                        
+                        {/* Amount and Date */}
+                        <div className="text-right ml-4">
+                          <div className="text-lg font-bold text-temple-maroon">
+                            ₹{sale.totalamount}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {sale.quantity} × ₹{(sale.totalamount / sale.quantity).toFixed(2)}
+                          </div>
+                          <div className="text-xs text-gray-400 mt-1">
+                            {new Date(sale.createdat).toLocaleDateString()}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            ))
-          ) : (
-            <Card className="temple-card">
-              <CardContent className="p-6 text-center">
-                <p className="text-gray-500">
-                  {(selectedSeller || selectedPaymentMethod) 
-                    ? "No sales found matching the selected filters" 
-                    : (isAdmin ? "No sales found for the selected date range" : "No sales found for the selected date range")
-                  }
-                </p>
-                <p className="text-xs text-gray-400 mt-2">
-                  {isAdmin ? "All sales from all users will appear here" : "Your sales will appear here after you complete transactions"}
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
+            ))}
+          </div>
+        )}
+      </main>
     </div>
   );
 };
