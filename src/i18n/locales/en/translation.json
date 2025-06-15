@@ -1,6 +1,6 @@
 
 {
-  "appName": "Temple Book Manager",
+  "appName": "Book Store Manager",
   "common": {
     "loading": "Loading...",
     "error": "Error",
@@ -54,7 +54,8 @@
     "forgotPassword": "Forgot Password?",
     "rememberMe": "Remember me",
     "welcome": "Welcome",
-    "welcomeToBookStore": "Welcome to Book Store",
+    "welcomeToBookStore": "Welcome to Book Store Manager",
+    "bookStoreManager": "Book Store Manager",
     "manageBooksEfficiently": "Manage your books efficiently",
     "manageBookStoreEfficiently": "Manage your book store efficiently",
     "user": "User",
