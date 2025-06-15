@@ -12,6 +12,7 @@ import MobileHeader from "@/components/MobileHeader";
 import BookImage from "@/components/BookImage";
 import ExportSalesButton from "@/components/ExportSalesButton";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SaleData {
   id: string;
@@ -45,6 +46,7 @@ const SalesHistoryPage = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { currentUser, isAdmin } = useAuth();
 
   useEffect(() => {
     if (currentStore) {
@@ -165,7 +167,10 @@ const SalesHistoryPage = () => {
   };
 
   const handleEditSale = (sale: SaleData) => {
-    navigate(`/sales/edit/${sale.id}`);
+    // Only allow navigation if user is admin or the owner of the sale
+    if (isAdmin || sale.personnelid === currentUser?.email) {
+      navigate(`/sales/edit/${sale.id}`);
+    }
   };
 
   return (
@@ -278,79 +283,82 @@ const SalesHistoryPage = () => {
           </Card>
         ) : (
           <div className="space-y-3">
-            {filteredSales.map((sale) => (
-              <Card key={sale.id} className="overflow-hidden">
-                <CardContent className="p-0">
-                  <div className="flex">
-                    {/* Book Thumbnail */}
-                    <div className="w-16 h-22 flex-shrink-0">
-                      <BookImage 
-                        imageUrl={sale.book_imageurl} 
-                        alt={sale.book_name}
-                        size="small"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    
-                    {/* Sale Details */}
-                    <div className="flex-1 p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-gray-900 leading-tight mb-1">
-                                {sale.book_name}
-                              </h3>
-                              <p className="text-sm text-gray-600 mb-1">
-                                {t("common.by")} {sale.book_author}
-                              </p>
-                              <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
-                                <span>
-                                  <Users className="inline h-3 w-3 mr-1" />
-                                  {sale.personnel_name}
-                                </span>
-                                <span>
-                                  <CreditCard className="inline h-3 w-3 mr-1" />
-                                  {sale.paymentmethod?.charAt(0).toUpperCase() + sale.paymentmethod?.slice(1)}
-                                </span>
-                              </div>
-                              {sale.buyername && (
-                                <p className="text-xs text-gray-500">
-                                  {t("common.customer")}: {sale.buyername}
+            {filteredSales.map((sale) => {
+              // Determine whether "edit" should show
+              const canEdit = isAdmin || sale.personnelid === currentUser?.email;
+              return (
+                <Card key={sale.id} className="overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="flex">
+                      {/* Book Thumbnail */}
+                      <div className="w-16 h-22 flex-shrink-0">
+                        <BookImage 
+                          imageUrl={sale.book_imageurl} 
+                          alt={sale.book_name}
+                          size="small"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      {/* Sale Details */}
+                      <div className="flex-1 p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-gray-900 leading-tight mb-1">
+                                  {sale.book_name}
+                                </h3>
+                                <p className="text-sm text-gray-600 mb-1">
+                                  {t("common.by")} {sale.book_author}
                                 </p>
+                                <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
+                                  <span>
+                                    <Users className="inline h-3 w-3 mr-1" />
+                                    {sale.personnel_name}
+                                  </span>
+                                  <span>
+                                    <CreditCard className="inline h-3 w-3 mr-1" />
+                                    {sale.paymentmethod?.charAt(0).toUpperCase() + sale.paymentmethod?.slice(1)}
+                                  </span>
+                                </div>
+                                {sale.buyername && (
+                                  <p className="text-xs text-gray-500">
+                                    {t("common.customer")}: {sale.buyername}
+                                  </p>
+                                )}
+                              </div>
+                              {/* Edit Button logic */}
+                              {canEdit && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleEditSale(sale)}
+                                  className="ml-2"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
                               )}
                             </div>
-                            
-                            {/* Edit Button */}
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleEditSale(sale)}
-                              className="ml-2"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
                           </div>
-                        </div>
-                        
-                        {/* Amount and Date */}
-                        <div className="text-right ml-4">
-                          <div className="text-lg font-bold text-temple-maroon">
-                            ₹{sale.totalamount}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {sale.quantity} × ₹{(sale.totalamount / sale.quantity).toFixed(2)}
-                          </div>
-                          <div className="text-xs text-gray-400 mt-1">
-                            {new Date(sale.createdat).toLocaleDateString()}
+                          {/* Amount and Date */}
+                          <div className="text-right ml-4">
+                            <div className="text-lg font-bold text-temple-maroon">
+                              ₹{sale.totalamount}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {sale.quantity} × ₹{(sale.totalamount / sale.quantity).toFixed(2)}
+                            </div>
+                            <div className="text-xs text-gray-400 mt-1">
+                              {new Date(sale.createdat).toLocaleDateString()}
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </main>
