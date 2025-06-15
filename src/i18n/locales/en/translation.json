@@ -1,4 +1,3 @@
-
 {
   "appName": "Book Store Manager",
   "common": {
@@ -99,7 +98,9 @@
     "currentStore": "Current Store",
     "selectStore": "Select Store",
     "allDataBelongsToStore": "All data shown belongs to the selected store",
-    "unknownBook": "Unknown Book"
+    "unknownBook": "Unknown Book",
+    "by": "by",
+    "booksInventory": "Books Inventory"
   },
   "sellMultiple": {
     "sellMultipleBooks": "Sell Multiple Books",
@@ -131,5 +132,39 @@
   },
   "dashboard": {
     "recentSales": "Recent Sales"
+  },
+  "books": {
+    "books": "Books",
+    "allCategories": "All Categories",
+    "addBook": "Add Book",
+    "addNewBook": "Add New Book",
+    "editBook": "Edit Book",
+    "deleteBook": "Delete Book",
+    "selectCategory": "Select Category",
+    "code": "Code",
+    "categories": "Categories",
+    "noBooksFound": "No books found",
+    "tryDifferentSearch": "Try a different search or filter.",
+    "addFirstBook": "Add your first book to get started.",
+    "showingResults": "Showing {{count}} of {{total}} books",
+    "showingLowStock": "Showing {{count}} low stock books",
+    "lowStockItems": "Low Stock Books",
+    "allBooksWellStocked": "All your books are well stocked.",
+    "noLowStockBooks": "No low stock books",
+    "failedToLoadBooks": "Failed to load books",
+    "booksInventory": "Books Inventory",
+    "inStock": "In Stock",
+    "outOfStock": "Out of Stock",
+    "addToCart": "Add to Cart",
+    "viewAll": "View All",
+    "searchBooks": "Search Books"
+  },
+  "admin": {
+    "adminPanel": "Admin Panel",
+    "manageBooks": "Manage Books",
+    "manageUsers": "Manage Users",
+    "manageSales": "Manage Sales",
+    "settings": "Settings",
+    "logout": "Logout"
   }
 }
