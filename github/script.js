@@ -297,15 +297,14 @@ async function generatePDFAndOpenWhatsApp(orderData) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    // === Modern FLAT PDF Layout ===
+    // PURE WHITE background (default for jsPDF)
 
-    // ----- Saffron Header -----
-    const saffron = [249, 115, 22];
-    // Flat header, rectangular logo
+    // ----- Saffron Header Bar -----
+    const saffron = [249, 115, 22]; // aligns with web theme
     doc.setFillColor(...saffron);
-    doc.rect(0, 0, 210, 26, 'F');
+    doc.rect(0, 0, 210, 20, 'F');
 
-    // Logo (flat, rectangular, no mask)
+    // Header: Left logo (rectangular, no mask), title right-aligned from logo
     try {
         const imgUrl = window.location.origin + "/NBBStore/images/nbaba_header.jpg";
         const resp = await fetch(imgUrl);
@@ -316,87 +315,68 @@ async function generatePDFAndOpenWhatsApp(orderData) {
             reader.onerror = reject;
             reader.readAsDataURL(blob);
         });
-        doc.addImage(dataUrl, 'JPEG', 13, 4, 18, 18, undefined, 'FAST');
+        // Flat, no mask, small left rectangle
+        doc.addImage(dataUrl, 'JPEG', 7.5, 3.5, 13, 13, undefined, 'FAST');
     } catch (e) {}
 
-    // Header text, crisp white, left-aligned to logo
+    // Store name, single line, bold, crisp white, left aligned to logo
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(19);
-    doc.setTextColor(255, 255, 255);
-    doc.text('Sri Nampally Baba Book Store', 36, 14.3);
-
-    // Subtitle (Order Invoice)
+    doc.setFontSize(15.5);
+    doc.setTextColor(255,255,255);
+    doc.text('Sri Nampally Baba Book Store', 23.5, 11.5);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(11.5);
-    doc.text('- Order Invoice -', 37, 21.5);
+    doc.setFontSize(10.4);
+    doc.text('- Order Invoice -', 23.6, 16.9);
 
-    doc.setLineWidth(0.9);
-    doc.setDrawColor(236, 120, 20);
-    doc.line(13, 26.6, 197, 26.6);
-
-    // ----- Order/Customer Details FLAT -----
-    let y = 33;
-    doc.setFillColor(255,255,255);
-    doc.setDrawColor(245, 158, 11); // gold accent
-    doc.rect(13, y, 184, 19, 'FD'); // No border radius, flat
+    let y = 24;
+    // ----- Order/Customer Info FLAT (no border/box) -----
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.setTextColor(...saffron);
-    doc.text('Order Details', 17.5, y + 7.5);
+    doc.setFontSize(11.3);
+    doc.setTextColor(saffron[0], saffron[1], saffron[2]);
+    doc.text('Order Details', 7.5, y + 3.8);
 
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10.5);
-    doc.setTextColor(40,36,32);
-    doc.text(`Customer: `, 18, y + 14.7);
-    doc.setFont('helvetica', 'bold');
-    doc.text(orderData.customerName, 38.5, y + 14.7);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Phone:', 105, y + 14.7);
-    doc.setFont('helvetica', 'bold');
-    doc.text(orderData.customerPhone, 122, y + 14.7);
-
-    y += 23;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10.2);
-    doc.setTextColor(60, 50, 36);
-    doc.text('Address:', 18, y + 5.6);
+    doc.setTextColor(44, 44, 44);
+    doc.text('Customer:', 7.5, y + 11);
     doc.setFont('helvetica', 'bold');
-    const addressLines = doc.splitTextToSize(orderData.customerAddress, 130);
-    doc.text(addressLines, 38, y + 5.6);
+    doc.text(orderData.customerName, 29, y + 11);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Phone:', 115, y + 11);
+    doc.setFont('helvetica', 'bold');
+    doc.text(orderData.customerPhone, 130, y + 11);
 
     doc.setFont('helvetica', 'normal');
-    doc.text(`Order Date: `, 105, y + 5.6);
+    doc.setTextColor(60, 50, 36);
+    doc.text('Address:', 7.5, y + 16.3);
     doc.setFont('helvetica', 'bold');
-    doc.text(orderData.orderDate, 129, y + 5.6);
+    const addressLine = orderData.customerAddress.replace(/\s*\n\s*/g, " ").slice(0, 120);
+    doc.text(doc.splitTextToSize(addressLine, 128), 29, y + 16.3);
 
-    y += Math.max(addressLines.length * 7, 13);
-
-    // ----- Items Table Header -----
-    y += 7;
-    doc.setFillColor(...saffron);
-    doc.rect(13, y, 184, 9.25, 'F');
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(44, 44, 44);
+    doc.text(`Order Date: `, 115, y + 16.3);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(255,255,255);
-    doc.text('Book', 17, y + 6.5);
-    doc.text('Qty', 112, y + 6.5, { align: 'center' });
-    doc.text('Rate', 142, y + 6.5, { align: 'center' });
-    doc.text('Amount', 170, y + 6.5, { align: 'center' });
-    y += 9.25;
+    doc.text(orderData.orderDate, 145, y + 16.3);
 
-    // Flat table rows, left-aligned, no box/radius, rectangular thumbnail
-    const rowH = 19;
+    // ---- Table Header Flat, only text (no fill) ----
+    y += 22;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10.3);
+    doc.setTextColor(249,115,22);
+    doc.text('Book', 7.5, y + 5.5);
+    doc.text('Qty', 123, y + 5.5, {align: 'center'});
+    doc.text('Rate', 153, y + 5.5, {align: 'center'});
+    doc.text('Amount', 186, y + 5.5, {align: 'center'});
+    y += 5.7;
+
+    // --- Items, no boxes, just left-aligned ---
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.75);
     for (const [idx, item] of orderData.items.entries()) {
-        // White row bg
-        doc.setFillColor(255,255,255);
-        doc.rect(13, y, 184, rowH, 'FD');
-        // Book image (rectangular, flat, left)
         let itemImgUrl = item.imageurl || '';
-        if (itemImgUrl.startsWith('images/')) {
-            itemImgUrl = 'NBBStore/' + itemImgUrl;
-        } else if (itemImgUrl.startsWith('/images/')) {
-            itemImgUrl = 'NBBStore' + itemImgUrl;
-        }
+        if (itemImgUrl.startsWith('images/')) itemImgUrl = 'NBBStore/' + itemImgUrl;
+        else if (itemImgUrl.startsWith('/images/')) itemImgUrl = 'NBBStore' + itemImgUrl;
         if (itemImgUrl && !/^https?:\/\//.test(itemImgUrl)) {
             itemImgUrl = window.location.origin + "/" + itemImgUrl.replace(/^\/+/, "");
         }
@@ -411,85 +391,63 @@ async function generatePDFAndOpenWhatsApp(orderData) {
                     reader.onerror = e => reject(e);
                     reader.readAsDataURL(imgBlob);
                 });
-                doc.addImage(imgData, mimeType === "image/png" ? "PNG" : "JPEG", 16, y + 3.5, 12, 12.5, undefined, 'FAST');
+                doc.addImage(imgData, mimeType === "image/png" ? "PNG" : "JPEG", 7.6, y - 4.3, 8, 10, undefined, 'FAST');
             }
         } catch(e) {}
-        // Book name/details
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10.2);
+        doc.setFontSize(9.7);
         doc.setTextColor(44,44,44);
-        doc.text(`${idx+1}. ${item.name}`, 31, y + 8);
-
+        doc.text(`${idx+1}. ${item.name}`, 17.6, y + 2.4);
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8.6);
+        doc.setFontSize(8.3);
         doc.setTextColor(135, 110, 90);
-        doc.text(`by ${item.author}`, 31, y + 15);
+        doc.text(`by ${item.author}`, 17.6, y + 6.5);
 
-        // Qty, rate, amount (right-aligned columns)
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10.2);
-        doc.setTextColor(...saffron);
-        doc.text(`${item.quantity}`, 112, y + 11, { align: 'center' });
-        doc.text(`₹${item.price}`, 142, y + 11, { align: 'center' });
-        doc.text(`₹${(item.quantity * item.price).toFixed(2)}`, 170, y + 11, { align: 'center' });
+        doc.setFontSize(9.2);
+        doc.setTextColor(saffron[0], saffron[1], saffron[2]);
+        doc.text(`${item.quantity}`, 123, y + 4.4, { align: 'center' });
+        doc.text(`₹${item.price}`, 153, y + 4.4, { align: 'center' });
+        doc.text(`₹${(item.quantity * item.price).toFixed(2)}`, 186, y + 4.4, { align: 'center' });
 
-        // Subtle bottom divider
-        doc.setDrawColor(226, 135, 39);
-        doc.setLineWidth(0.38);
-        doc.line(13, y + rowH, 197, y + rowH);
-
-        y += rowH;
+        y += 13; // Room per row, no lines
     }
 
-    // ----- Totals: flat white box, no border-radius -----
-    y += 4;
-    doc.setFillColor(255,255,255);
-    doc.setDrawColor(245, 158, 11);
-    doc.rect(13, y, 184, 11.5, 'FD');
+    // --- Total amount, simple, bold, no border ---
+    y += 2;
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
+    doc.setFontSize(11.7);
     doc.setTextColor(231, 99, 12);
-    doc.text(`Total Amount: ₹${orderData.total.toFixed(2)}`, 18, y + 8.2);
+    doc.text(`Total: ₹${orderData.total.toFixed(2)}`, 7.5, y + 7);
 
-    // ----- Flat Orange Address Block -----
-    y += 18.5;
-    doc.setTextColor(221, 104, 19);
+    y += 19;
+
+    // --- Single-line Address Flat Footer ---
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.1);
+    doc.setTextColor(151, 52, 19);
+    const shortOrgAddr =
+        "SRI NAMPALLY BABA SAMSTHANAM, SRI DHARMAPURI KSHETRAM, DEEPTHISRI NAGAR, MADINAGUDA, MIYAPUR, HYDERABAD, TELANGANA, INDIA. PIN: 500050";
+    doc.text(shortOrgAddr, 9, 292, { align: 'left' });
+
+    // --- Thank you (optional, no bar needed, but keep in footer for user clarity) ---
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10.2);
-    const orgAddressLines = [
-        "SRI NAMPALLY BABA SAMSTHANAM",
-        "SRI DHARMAPURI KSHETRAM",
-        "DEEPTHISRI NAGAR, MADINAGUDA",
-        "MIYAPUR, HYDERABAD, TELANGANA",
-        "INDIA. PIN: 500050"
-    ];
-    let addrY = y;
-    orgAddressLines.forEach((line, idx) => {
-        doc.text(line, 18, addrY + idx * 6, { align: 'left' });
-    });
+    doc.setFontSize(11);
+    doc.setTextColor(245,130,16);
+    doc.text('Thank you for supporting spiritual wisdom!', 210/2, 298, {align: 'center'});
 
-    // --- Footer Bar (Saffron) flat, full bleed ---
-    const footerY = 292;
-    doc.setFillColor(...saffron);
-    doc.rect(0, footerY, 210, 10, 'F');
-    doc.setTextColor(255,255,255);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12.5);
-    doc.text('Thank you for supporting spiritual wisdom!', 105, footerY + 7, {align: 'center'});
-
-    // === EXPORT / OPEN WhatsApp (same as before) ===
+    // WhatsApp message and PDF
     const pdfBase64 = doc.output('datauristring');
     const message = `New Book Order from Sri Nampally Baba Book Store\n\n` +
                    `Customer: ${orderData.customerName}\n` +
                    `Phone: ${orderData.customerPhone}\n` +
                    `Address: ${orderData.customerAddress}\n\n` +
                    `Items:\n` +
-                   orderData.items.map((item, index) => 
+                   orderData.items.map((item, index) =>
                        `${index + 1}. ${item.name} by ${item.author}\n   Qty: ${item.quantity} x ₹${item.price}`
                    ).join('\n') +
                    `\n\nTotal: ₹${orderData.total.toFixed(2)}\n\n` +
                    `Please find the detailed order PDF attached.`;
-
     const whatsappURL = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappURL, '_blank');
     doc.save(`Order_${orderData.customerName}_${Date.now()}.pdf`);
