@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import MobileHeader from "@/components/MobileHeader";
@@ -172,29 +171,25 @@ const Index: React.FC = () => {
           </div>
         )}
 
-        {/* Simplified Menu Tiles - Reduced gradient */}
+        {/* Simplified, accessible Menu Tiles with readable text & subtler background */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           {filteredMenuTiles.map((tile, index) => {
             const IconComponent = tile.icon;
             return (
               <Card 
                 key={index}
-                className="cursor-pointer transition-all duration-200 hover:scale-102 hover:shadow-md border-0"
+                className="cursor-pointer transition-all duration-200 hover:scale-102 hover:shadow-md border"
                 onClick={() => navigate(tile.route)}
               >
-                <div className={`${tile.color} p-4 text-white rounded-lg`}>
-                  <div className="flex items-center gap-3">
-                    <div className="bg-white/15 p-2 rounded-md">
-                      <IconComponent size={20} />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-base leading-tight">
-                        {tile.title}
-                      </h3>
-                      <p className="text-xs opacity-85 leading-tight mt-1">
-                        {tile.description}
-                      </p>
-                    </div>
+                <div className="bg-neutral-100 p-4 rounded-lg flex items-center gap-3">
+                  <div className="bg-temple-maroon/10 p-2 rounded-md text-temple-maroon flex-shrink-0">
+                    <IconComponent size={24} />
+                  </div>
+                  <div className="flex-1 ml-2">
+                    <h3 className="font-semibold text-base leading-tight text-temple-maroon">
+                      {t(tile.title.replace(/\s/g, "")) || tile.title}
+                    </h3>
+                    <p className="text-xs text-gray-700 mt-1">{t(tile.description.replace(/\s/g, "")) || tile.description}</p>
                   </div>
                 </div>
               </Card>
@@ -207,11 +202,11 @@ const Index: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold">Current Store</h3>
+                <h3 className="font-semibold">{t("common.currentStore")}</h3>
                 <p className="text-sm opacity-90">{getCurrentStoreName()}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm opacity-90">Low Stock Items</p>
+                <p className="text-sm opacity-90">{t("common.lowStock")}</p>
                 <p className="text-2xl font-bold">{lowStockBooks.length}</p>
               </div>
             </div>

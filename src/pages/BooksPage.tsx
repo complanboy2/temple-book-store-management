@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -157,7 +156,7 @@ const BooksPage = () => {
   return (
     <div className="min-h-screen bg-temple-background pb-20">
       <MobileHeader 
-        title={showLowStockOnly ? t("books.lowStockItems") : t("common.books")}
+        title={showLowStockOnly ? t("books.lowStockItems") : t("books.books")}
         showBackButton={true}
         backTo="/"
         rightContent={
@@ -179,7 +178,6 @@ const BooksPage = () => {
                 createdAt: new Date(book.createdat),
                 updatedAt: new Date(book.updatedat)
               }))}
-              filename={showLowStockOnly ? "low-stock-books" : "books-list"}
             />
             {isAdmin && (
               <Button 
@@ -203,7 +201,7 @@ const BooksPage = () => {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder={t("books.searchBooks")}
+                placeholder={t("common.searchBooks")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -304,7 +302,7 @@ const BooksPage = () => {
                           )}
                           {book.barcode && (
                             <p className="text-xs text-gray-400">
-                              Code: {book.barcode}
+                              {t("books.code")}: {book.barcode}
                             </p>
                           )}
                         </div>

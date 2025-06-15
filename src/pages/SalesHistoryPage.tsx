@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,6 +44,7 @@ const SalesHistoryPage = () => {
   const { currentStore } = useStallContext();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (currentStore) {
@@ -165,8 +165,7 @@ const SalesHistoryPage = () => {
   };
 
   const handleEditSale = (sale: SaleData) => {
-    // Navigate to edit sale page - to be implemented
-    console.log("Edit sale:", sale.id);
+    navigate(`/sales/edit/${sale.id}`);
   };
 
   return (
@@ -190,8 +189,7 @@ const SalesHistoryPage = () => {
               stallId: sale.stallid,
               createdAt: new Date(sale.createdat),
               synced: sale.synced
-            }))} 
-            filename="sales-history"
+            }))}
           />
         }
       />

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,7 +22,7 @@ interface User {
   role?: string;
 }
 
-const AdminPage = () => {
+const AdminPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [newUserName, setNewUserName] = useState("");
   const [newUserEmail, setNewUserEmail] = useState("");
@@ -33,6 +32,7 @@ const AdminPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [hasRlsError, setHasRlsError] = useState(false);
+  const [dbError, setDbError] = useState(null);
 
   const { currentStore } = useStallContext();
   const { isAdmin } = useAuth();
@@ -217,185 +217,190 @@ const AdminPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-temple-background pb-20">
-      <MobileHeader 
-        title={t("admin.users")}
-        showBackButton={true}
-        backTo="/"
-      />
-      
-      <main className="container mx-auto px-3 py-4">
-        {hasRlsError && (
-          <Card className="mb-4 border-orange-200 bg-orange-50">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <div className="text-orange-600">⚠️</div>
-                <div>
-                  <h3 className="font-medium text-orange-800">Limited Functionality</h3>
-                  <p className="text-sm text-orange-700 mt-1">
-                    The admin panel is currently experiencing database access issues. Some features may be temporarily unavailable. 
-                    Please contact technical support if this persists.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Add New User */}
-        <Card className="mb-4">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Plus className="h-5 w-5" />
-              {t("admin.addNewUser")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="name" className="text-sm font-medium">{t("common.name")}</Label>
-              <Input
-                id="name"
-                value={newUserName}
-                onChange={(e) => setNewUserName(e.target.value)}
-                placeholder={t("common.name")}
-                className="mt-1"
-                disabled={hasRlsError}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="email" className="text-sm font-medium">{t("common.email")}</Label>
-              <Input
-                id="email"
-                type="email"
-                value={newUserEmail}
-                onChange={(e) => setNewUserEmail(e.target.value)}
-                placeholder={t("common.email")}
-                className="mt-1"
-                disabled={hasRlsError}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="phone" className="text-sm font-medium">{t("common.phone")} ({t("common.optional")})</Label>
-              <Input
-                id="phone"
-                value={newUserPhone}
-                onChange={(e) => setNewUserPhone(e.target.value)}
-                placeholder={t("common.phone")}
-                className="mt-1"
-                disabled={hasRlsError}
-              />
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="canSell"
-                  checked={newUserCanSell}
-                  onCheckedChange={(checked) => setNewUserCanSell(!!checked)}
-                  disabled={hasRlsError}
-                />
-                <Label htmlFor="canSell" className="text-sm">{t("admin.canSell")}</Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="canRestock"
-                  checked={newUserCanRestock}
-                  onCheckedChange={(checked) => setNewUserCanRestock(!!checked)}
-                  disabled={hasRlsError}
-                />
-                <Label htmlFor="canRestock" className="text-sm">{t("admin.canRestock")}</Label>
-              </div>
-            </div>
-
-            <Button 
-              onClick={addUser}
-              className="w-full bg-temple-maroon hover:bg-temple-maroon/90"
-              disabled={isAddingUser || hasRlsError}
-            >
-              {isAddingUser ? t("admin.adding") : t("admin.addUser")}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Users List */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Users className="h-5 w-5" />
-              {t("admin.users")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="text-center py-8">{t("common.loading")}</div>
-            ) : users.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                {hasRlsError ? (
-                  <>
-                    <p>{t("admin.noUsersFound")}</p>
-                    <p className="text-sm mt-2">
-                      User data is temporarily unavailable due to database configuration issues.
-                    </p>
-                  </>
-                ) : (
-                  <p>{t("admin.noUsersFound")}</p>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {users.map((user) => (
-                  <Card key={user.id} className="border">
-                    <CardContent className="p-4">
-                      <div className="space-y-3">
-                        <div>
-                          <h3 className="font-medium text-lg">{user.name}</h3>
-                          <p className="text-sm text-gray-600">{user.email}</p>
-                          {user.phone && (
-                            <p className="text-sm text-gray-600">{user.phone}</p>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`sell-${user.id}`}
-                              checked={user.cansell}
-                              onCheckedChange={(checked) =>
-                                updateUserPermissions(user.id, !!checked, user.canrestock)
-                              }
-                              disabled={hasRlsError}
-                            />
-                            <Label htmlFor={`sell-${user.id}`} className="text-sm">
-                              {t("admin.canSell")}
-                            </Label>
-                          </div>
-
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`restock-${user.id}`}
-                              checked={user.canrestock}
-                              onCheckedChange={(checked) =>
-                                updateUserPermissions(user.id, user.cansell, !!checked)
-                              }
-                              disabled={hasRlsError}
-                            />
-                            <Label htmlFor={`restock-${user.id}`} className="text-sm">
-                              {t("admin.canRestock")}
-                            </Label>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+    <div className="min-h-screen bg-temple-background">
+      <MobileHeader title={t("admin.adminPanel")} showBackButton={true} />
+      <div className="container mx-auto px-3 py-4">
+        {dbError ? (
+          <div className="bg-red-100 border border-red-300 rounded-lg p-6 mb-4">
+            <h1 className="text-lg font-bold text-red-700 mb-2">{t("admin.databaseIssue") || "Database issue"}</h1>
+            <p className="text-red-600">{t("admin.databaseContactSupport") || "The admin panel is currently experiencing database access issues. Some features may be temporarily unavailable. Please contact technical support if this persists."}</p>
+            <pre className="mt-2 text-xs text-gray-600">{dbError?.message || dbError}</pre>
+          </div>
+        ) : (
+          <main className="container mx-auto px-3 py-4">
+            {hasRlsError && (
+              <Card className="mb-4 border-orange-200 bg-orange-50">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="text-orange-600">⚠️</div>
+                    <div>
+                      <h3 className="font-medium text-orange-800">Limited Functionality</h3>
+                      <p className="text-sm text-orange-700 mt-1">
+                        The admin panel is currently experiencing database access issues. Some features may be temporarily unavailable. 
+                        Please contact technical support if this persists.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             )}
-          </CardContent>
-        </Card>
-      </main>
+
+            {/* Add New User */}
+            <Card className="mb-4">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Plus className="h-5 w-5" />
+                  {t("admin.addNewUser")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="name" className="text-sm font-medium">{t("common.name")}</Label>
+                  <Input
+                    id="name"
+                    value={newUserName}
+                    onChange={(e) => setNewUserName(e.target.value)}
+                    placeholder={t("common.name")}
+                    className="mt-1"
+                    disabled={hasRlsError}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="email" className="text-sm font-medium">{t("common.email")}</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={newUserEmail}
+                    onChange={(e) => setNewUserEmail(e.target.value)}
+                    placeholder={t("common.email")}
+                    className="mt-1"
+                    disabled={hasRlsError}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="phone" className="text-sm font-medium">{t("common.phone")} ({t("common.optional")})</Label>
+                  <Input
+                    id="phone"
+                    value={newUserPhone}
+                    onChange={(e) => setNewUserPhone(e.target.value)}
+                    placeholder={t("common.phone")}
+                    className="mt-1"
+                    disabled={hasRlsError}
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="canSell"
+                      checked={newUserCanSell}
+                      onCheckedChange={(checked) => setNewUserCanSell(!!checked)}
+                      disabled={hasRlsError}
+                    />
+                    <Label htmlFor="canSell" className="text-sm">{t("admin.canSell")}</Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="canRestock"
+                      checked={newUserCanRestock}
+                      onCheckedChange={(checked) => setNewUserCanRestock(!!checked)}
+                      disabled={hasRlsError}
+                    />
+                    <Label htmlFor="canRestock" className="text-sm">{t("admin.canRestock")}</Label>
+                  </div>
+                </div>
+
+                <Button 
+                  onClick={addUser}
+                  className="w-full bg-temple-maroon hover:bg-temple-maroon/90"
+                  disabled={isAddingUser || hasRlsError}
+                >
+                  {isAddingUser ? t("admin.adding") : t("admin.addUser")}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Users List */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Users className="h-5 w-5" />
+                  {t("admin.users")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="text-center py-8">{t("common.loading")}</div>
+                ) : users.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    {hasRlsError ? (
+                      <>
+                        <p>{t("admin.noUsersFound")}</p>
+                        <p className="text-sm mt-2">
+                          User data is temporarily unavailable due to database configuration issues.
+                        </p>
+                      </>
+                    ) : (
+                      <p>{t("admin.noUsersFound")}</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {users.map((user) => (
+                      <Card key={user.id} className="border">
+                        <CardContent className="p-4">
+                          <div className="space-y-3">
+                            <div>
+                              <h3 className="font-medium text-lg">{user.name}</h3>
+                              <p className="text-sm text-gray-600">{user.email}</p>
+                              {user.phone && (
+                                <p className="text-sm text-gray-600">{user.phone}</p>
+                              )}
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <div className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`sell-${user.id}`}
+                                  checked={user.cansell}
+                                  onCheckedChange={(checked) =>
+                                    updateUserPermissions(user.id, !!checked, user.canrestock)
+                                  }
+                                  disabled={hasRlsError}
+                                />
+                                <Label htmlFor={`sell-${user.id}`} className="text-sm">
+                                  {t("admin.canSell")}
+                                </Label>
+                              </div>
+
+                              <div className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`restock-${user.id}`}
+                                  checked={user.canrestock}
+                                  onCheckedChange={(checked) =>
+                                    updateUserPermissions(user.id, user.cansell, !!checked)
+                                  }
+                                  disabled={hasRlsError}
+                                />
+                                <Label htmlFor={`restock-${user.id}`} className="text-sm">
+                                  {t("admin.canRestock")}
+                                </Label>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </main>
+        )}
+      </div>
     </div>
   );
 };
