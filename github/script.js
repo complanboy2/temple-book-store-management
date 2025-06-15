@@ -454,6 +454,22 @@ async function generatePDFAndOpenWhatsApp(orderData) {
     doc.setTextColor(...saffron);
     doc.text(`Total Amount: ₹${orderData.total.toFixed(2)}`, 18, y + 14);
 
+    // === Address Block above Footer ===
+    const orgAddressLines = [
+      "SRI NAMPALLY BABA SAMSTHANAM,",
+      "SRI DHARMAPURI KSHETRAM,",
+      "DEEPTHISRI NAGAR, MADINAGUDA,",
+      "MIYAPUR, HYDERABAD, TELANGANA,",
+      "INDIA. PIN: 500050"
+    ];
+    let addrY = y + 22;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(244, 115, 33); // saffron
+    orgAddressLines.forEach((line, idx) => {
+        doc.text(line, 105, addrY + idx * 6.5, { align: 'center' });
+    });
+
     // --- Footer Bar (Saffron) ---
     const footerY = 292;
     doc.setFillColor(...saffron);
@@ -461,7 +477,7 @@ async function generatePDFAndOpenWhatsApp(orderData) {
     doc.setTextColor(255,255,255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12.5);
-    doc.text('Thank you for supporting spiritual wisdom!', 105, footerY+7, {align: 'center'});
+    doc.text('Thank you for supporting spiritual wisdom!', 105, footerY + 7, {align: 'center'});
 
     // Export/email/preview as before
     const pdfBase64 = doc.output('datauristring');
