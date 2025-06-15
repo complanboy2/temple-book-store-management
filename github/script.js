@@ -318,33 +318,37 @@ async function generatePDFAndOpenWhatsApp(orderData) {
         // Draw book thumbnail image if it exists
         if (item.imageurl) {
             try {
-                // Prefer relative path and fall back, if necessary
                 let imgUrl = item.imageurl;
                 if (!/^https?:\/\//.test(imgUrl)) {
-                    // try to fix relative path edge cases for /github/images and dev
                     imgUrl = window.location.origin + "/" + imgUrl.replace(/^\/+/, "");
                 }
-                const imgData = await fetch(imgUrl)
-                    .then(res => res.blob())
-                    .then(blob => new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = () => resolve(reader.result);
-                        reader.readAsDataURL(blob);
-                    }));
-                // Draw image (50x65)
-                doc.addImage(imgData, 'JPEG', 20, yPosition - 4, 20, 26, undefined, 'FAST');
+                const imgResponse = await fetch(imgUrl);
+                const imgBlob = await imgResponse.blob();
+                const mimeType = imgBlob.type || "image/jpeg";
+                console.log(`PDF: Book '${item.name}' imageurl=${imgUrl} mimeType=${mimeType} size=${imgBlob.size}`);
+
+                const imgData = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = (e) => reject(e);
+                    reader.readAsDataURL(imgBlob);
+                });
+
+                let imgType = "JPEG";
+                if (mimeType === "image/png") imgType = "PNG";
+                doc.addImage(imgData, imgType, 20, yPosition - 4, 20, 26, undefined, 'FAST');
             } catch(e) {
-                // Ignore errors, show no image
-                console.warn('Failed to load book thumbnail', e);
+                console.warn('PDF: Failed to load thumbnail for "' + item.name + '":', e);
+                doc.setFontSize(8);
+                doc.text('-- no image --', 21, yPosition + 5);
             }
         }
-
+        doc.setFontSize(12);
         doc.text(`${index + 1}. ${item.name}`, 44, yPosition);
         doc.text(`Author: ${item.author}`, 44, yPosition + 10);
         doc.text(`Quantity: ${item.quantity} x ₹${item.price} = ₹${(item.quantity * item.price).toFixed(2)}`, 44, yPosition + 20);
 
         yPosition += rowHeight;
-        // Page break if needed
         if (yPosition > 250) {
             doc.addPage();
             yPosition = 20;
