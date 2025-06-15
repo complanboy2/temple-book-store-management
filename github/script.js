@@ -3,10 +3,6 @@ let books = [];
 let cart = [];
 let filteredBooks = [];
 
-// API Configuration
-const SUPABASE_URL = 'https://pijhrmuamnwdgucfnycl.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpamhybXVhbW53ZGd1Y2ZueWNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNDk1NTAsImV4cCI6MjA2MDgyNTU1MH0.qf5P5eWDSLRmFKxIwtqBygxNAvIFtqGxJN3J4nX7ocE';
-
 // Initialize the app
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
