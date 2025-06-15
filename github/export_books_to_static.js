@@ -1,4 +1,3 @@
-
 /**
  * Node.js script: Run with `node github/export_books_to_static.js`
  * Requires: @supabase/supabase-js, fs, path, https
@@ -10,8 +9,10 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-const SUPABASE_URL = 'https://pijhrmuamnwdgucfnycl.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpamhybXVhbW53ZGd1Y2ZueWNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNDk1NTAsImV4cCI6MjA2MDgyNTU1MH0.qf5P5eWDSLRmFKxIwtqBygxNAvIFtqGxJN3J4nX7ocE';
+// ---- REMOVE YOUR SUPABASE CREDENTIALS ----
+const SUPABASE_URL = ""; // <-- Enter your Supabase URL or set via env
+const SUPABASE_ANON_KEY = ""; // <-- Enter your Supabase anon key or set via env
+
 const IMAGE_FOLDER = path.resolve(__dirname, 'images');
 const BOOKS_JSON_PATH = path.resolve(__dirname, 'books.json');
 
@@ -42,10 +43,8 @@ function downloadImage(url, dest) {
   if (error) throw error;
 
   for (const book of books) {
-    // Try to download image if imageurl exists and is http(s)
     let localImage = '';
     if (book.imageurl && /^https?:\/\//.test(book.imageurl)) {
-      // Save image as images/{book.id}.{ext}
       const ext = path.extname(book.imageurl.split('?')[0]) || '.jpg';
       const localPath = path.join(IMAGE_FOLDER, `${book.id}${ext}`);
       try {
