@@ -186,7 +186,11 @@ const SalesHistoryPage = () => {
   const handleEditSale = (sale: SaleData) => {
     // Only allow navigation if user is admin or the owner of the sale
     if (isAdmin || sale.personnelid === currentUser?.email) {
+      // Added for debug
+      console.log("Navigating to /sales/edit/" + sale.id);
       navigate(`/sales/edit/${sale.id}`);
+    } else {
+      console.warn("Unauthorized edit attempt!", sale, currentUser);
     }
   };
 
