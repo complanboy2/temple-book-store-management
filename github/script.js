@@ -297,9 +297,9 @@ async function generatePDFAndOpenWhatsApp(orderData) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    // Add title
+    // Add title - set to "Sri Nampally Baba Book Store - Order"
     doc.setFontSize(20);
-    doc.text('Temple Book Store - Order', 20, 20);
+    doc.text('Sri Nampally Baba Book Store - Order', 20, 20);
 
     // Add customer details
     doc.setFontSize(12);
