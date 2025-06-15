@@ -316,6 +316,7 @@ async function generatePDFAndOpenWhatsApp(orderData) {
     // Add each item, with book thumbnail if available
     for (const [index, item] of orderData.items.entries()) {
         // Draw book thumbnail image if it exists
+        let imageShown = false;
         if (item.imageurl) {
             try {
                 let imgUrl = item.imageurl;
@@ -327,22 +328,37 @@ async function generatePDFAndOpenWhatsApp(orderData) {
                 const mimeType = imgBlob.type || "image/jpeg";
                 console.log(`PDF: Book '${item.name}' imageurl=${imgUrl} mimeType=${mimeType} size=${imgBlob.size}`);
 
-                const imgData = await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.onerror = (e) => reject(e);
-                    reader.readAsDataURL(imgBlob);
-                });
+                if (mimeType.startsWith("image/")) {
+                    // Convert to dataURL
+                    const imgData = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = e => reject(e);
+                        reader.readAsDataURL(imgBlob);
+                    });
 
-                let imgType = "JPEG";
-                if (mimeType === "image/png") imgType = "PNG";
-                doc.addImage(imgData, imgType, 20, yPosition - 4, 20, 26, undefined, 'FAST');
+                    let imgType = "JPEG";
+                    if (mimeType === "image/png") imgType = "PNG";
+                    doc.addImage(imgData, imgType, 20, yPosition - 4, 20, 26, undefined, 'FAST');
+                    imageShown = true;
+                } else {
+                    // Not an image, show warning in PDF
+                    doc.setFontSize(8);
+                    doc.text('-- no image --', 21, yPosition + 5);
+                    console.warn(`PDF: '${item.name}' image url did not return an image.`, {imgUrl, mimeType});
+                }
             } catch(e) {
+                // Failed to load image, show warning in PDF
                 console.warn('PDF: Failed to load thumbnail for "' + item.name + '":', e);
                 doc.setFontSize(8);
                 doc.text('-- no image --', 21, yPosition + 5);
             }
+        } else {
+            // No imageurl at all, show warning in PDF
+            doc.setFontSize(8);
+            doc.text('-- no image --', 21, yPosition + 5);
         }
+
         doc.setFontSize(12);
         doc.text(`${index + 1}. ${item.name}`, 44, yPosition);
         doc.text(`Author: ${item.author}`, 44, yPosition + 10);
