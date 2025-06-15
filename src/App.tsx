@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -28,6 +27,7 @@ import MetadataManagerPage from "./pages/MetadataManagerPage";
 import ProfilePage from "./pages/ProfilePage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import NotFound from "./pages/NotFound";
+import EditSalePage from "./pages/EditSalePage";
 import "./App.css";
 
 const queryClient = new QueryClient();
@@ -57,6 +57,7 @@ function App() {
                 <Route path="/sales" element={<SalesPage />} />
                 <Route path="/sales/history" element={<SalesHistoryPage />} />
                 <Route path="/my-sales-history" element={<SalesHistoryPage />} />
+                <Route path="/sales/edit/:id" element={<EditSalePage />} />
                 <Route path="/reports" element={<ReportsPage />} />
                 <Route path="/orders" element={<OrdersPage />} />
                 <Route path="/orders/new" element={<NewOrderPage />} />
