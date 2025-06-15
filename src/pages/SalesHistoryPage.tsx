@@ -48,6 +48,23 @@ const SalesHistoryPage = () => {
   const navigate = useNavigate();
   const { currentUser, isAdmin } = useAuth();
 
+  // Construct a bookDetailsMap from all sales
+  const bookDetailsMap = React.useMemo(() => {
+    const map: Record<string, { name: string; author: string; price: number; imageUrl?: string }> = {};
+    sales.forEach((sale) => {
+      if (!map[sale.bookid] && sale.book_name) {
+        // Use sale.book_imageurl and infer price from totalamount/quantity as fallback
+        map[sale.bookid] = {
+          name: sale.book_name || "Unknown Book",
+          author: sale.book_author || "Unknown Author",
+          price: Number((sale.totalamount && sale.quantity) ? sale.totalamount / sale.quantity : 0),
+          imageUrl: sale.book_imageurl || "",
+        };
+      }
+    });
+    return map;
+  }, [sales]);
+
   useEffect(() => {
     if (currentStore) {
       fetchSalesHistory();
@@ -195,6 +212,7 @@ const SalesHistoryPage = () => {
               createdAt: new Date(sale.createdat),
               synced: sale.synced
             }))}
+            bookDetailsMap={bookDetailsMap}
           />
         }
       />
