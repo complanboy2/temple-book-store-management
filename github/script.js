@@ -414,6 +414,7 @@ async function generatePDFAndOpenWhatsApp(orderData) {
         doc.setFontSize(14.5);
         doc.setTextColor(44,44,44);
         const bookNameX = colX.book + imgWidth + 3;
+        // Only show index for book name, not for rate/qty/amount!
         doc.text(`${idx+1}. ${item.name}`, bookNameX, y + 5.9);
 
         // Author under name, slightly bigger
@@ -422,7 +423,7 @@ async function generatePDFAndOpenWhatsApp(orderData) {
         doc.setTextColor(100, 80, 55);
         doc.text(`by ${item.author}`, bookNameX, y + 11.6);
 
-        // Qty, Rate, Amount - normal font, bigger size, black; *NO prefix 1*
+        // Qty, Rate, Amount - normal font, bigger size, black; *NO prefix 1* (remove any prefix, just values!)
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(12.5);
         doc.setTextColor(0,0,0); // solid black
@@ -433,7 +434,7 @@ async function generatePDFAndOpenWhatsApp(orderData) {
         y += imgHeight + 3; // vertical gap for next book
     }
 
-    // --- Total: larger, left ---
+    // --- Total: larger, left --- (NO prefix, just the value)
     y += 3;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(13.5);
@@ -445,7 +446,7 @@ async function generatePDFAndOpenWhatsApp(orderData) {
     doc.setFillColor(255, 247, 232); // very light saffron
     doc.rect(0, footerY, 210, 15, 'F');
 
-    // Address: italic, center-aligned
+    // Address: italic, center-aligned (apply italic font as requested)
     doc.setFont('helvetica', 'italic');
     doc.setFontSize(10.4);
     doc.setTextColor(171, 78, 10);
@@ -456,7 +457,7 @@ async function generatePDFAndOpenWhatsApp(orderData) {
 
     // No thank you message
 
-    // WhatsApp message and PDF
+    // WhatsApp message and PDF (UPDATE to the correct number)
     const pdfBase64 = doc.output('datauristring');
     const message = `New Book Order from Sri Nampally Baba Book Store\n\n` +
                    `Customer: ${orderData.customerName}\n` +
@@ -468,6 +469,7 @@ async function generatePDFAndOpenWhatsApp(orderData) {
                    ).join('\n') +
                    `\n\nTotal: ₹${orderData.total.toFixed(2)}\n\n` +
                    `Please find the detailed order PDF attached.`;
+    // Hardcoded to the requested WhatsApp number
     const whatsappURL = `https://wa.me/918885378147?text=${encodeURIComponent(message)}`;
     window.open(whatsappURL, '_blank');
     doc.save(`Order_${orderData.customerName}_${Date.now()}.pdf`);
