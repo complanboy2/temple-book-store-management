@@ -14,7 +14,7 @@ import BookImage from "@/components/BookImage";
 import ExportSalesButton from "@/components/ExportSalesButton";
 import { supabase } from "@/integrations/supabase/client";
 
-interface Sale {
+interface SaleData {
   id: string;
   bookid: string;
   quantity: number;
@@ -23,6 +23,9 @@ interface Sale {
   buyername?: string;
   personnelid: string;
   createdat: string;
+  stallid: string;
+  synced: boolean;
+  buyerphone?: string;
   book_name?: string;
   book_author?: string;
   book_imageurl?: string;
@@ -30,8 +33,8 @@ interface Sale {
 }
 
 const SalesHistoryPage = () => {
-  const [sales, setSales] = useState<Sale[]>([]);
-  const [filteredSales, setFilteredSales] = useState<Sale[]>([]);
+  const [sales, setSales] = useState<SaleData[]>([]);
+  const [filteredSales, setFilteredSales] = useState<SaleData[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSeller, setSelectedSeller] = useState("all");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("all");
@@ -161,7 +164,7 @@ const SalesHistoryPage = () => {
     setSelectedPaymentMethod(value);
   };
 
-  const handleEditSale = (sale: Sale) => {
+  const handleEditSale = (sale: SaleData) => {
     // Navigate to edit sale page - to be implemented
     console.log("Edit sale:", sale.id);
   };
@@ -174,7 +177,20 @@ const SalesHistoryPage = () => {
         backTo="/"
         rightContent={
           <ExportSalesButton 
-            sales={filteredSales} 
+            sales={filteredSales.map(sale => ({
+              id: sale.id,
+              bookId: sale.bookid,
+              quantity: sale.quantity,
+              totalAmount: sale.totalamount,
+              paymentMethod: sale.paymentmethod,
+              buyerName: sale.buyername,
+              buyerPhone: sale.buyerphone,
+              personnelId: sale.personnelid,
+              personnelName: sale.personnel_name,
+              stallId: sale.stallid,
+              createdAt: new Date(sale.createdat),
+              synced: sale.synced
+            }))} 
             filename="sales-history"
           />
         }

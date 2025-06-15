@@ -15,7 +15,7 @@ import MobileHeader from "@/components/MobileHeader";
 import BookImage from "@/components/BookImage";
 import ExportBookListButton from "@/components/ExportBookListButton";
 
-interface Book {
+interface BookData {
   id: string;
   name: string;
   author: string;
@@ -27,16 +27,18 @@ interface Book {
   quantity: number;
   imageurl?: string;
   barcode?: string;
+  stallid: string;
+  createdat: string;
+  updatedat: string;
 }
 
 const BooksPage = () => {
-  const [books, setBooks] = useState<Book[]>([]);
-  const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
+  const [books, setBooks] = useState<BookData[]>([]);
+  const [filteredBooks, setFilteredBooks] = useState<BookData[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [categories, setCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
 
   const { currentStore } = useStallContext();
   const { isAdmin } = useAuth();
@@ -127,7 +129,7 @@ const BooksPage = () => {
     setSelectedCategory(value);
   };
 
-  const handleDeleteBook = async (book: Book) => {
+  const handleDeleteBook = async (book: BookData) => {
     try {
       const { error } = await supabase
         .from('books')
@@ -161,7 +163,22 @@ const BooksPage = () => {
         rightContent={
           <div className="flex items-center gap-2">
             <ExportBookListButton 
-              books={filteredBooks}
+              books={filteredBooks.map(book => ({
+                id: book.id,
+                bookCode: book.barcode,
+                name: book.name,
+                author: book.author,
+                category: book.category || '',
+                language: book.language,
+                printingInstitute: book.printinginstitute || '',
+                originalPrice: book.originalprice,
+                salePrice: book.saleprice,
+                quantity: book.quantity,
+                stallId: book.stallid,
+                imageUrl: book.imageurl,
+                createdAt: new Date(book.createdat),
+                updatedAt: new Date(book.updatedat)
+              }))}
               filename={showLowStockOnly ? "low-stock-books" : "books-list"}
             />
             {isAdmin && (
