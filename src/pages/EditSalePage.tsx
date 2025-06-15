@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import BookImage from "@/components/BookImage";
+import { useToast } from "@/hooks/use-toast";
 
 interface SaleData {
   id: string;
@@ -22,7 +23,6 @@ interface SaleData {
   personnelid: string;
   createdat: string;
   stallid: string;
-  // Book
   books?: {
     name: string;
     author: string;
@@ -35,12 +35,15 @@ const EditSalePage: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { currentUser, isAdmin } = useAuth();
+  const { toast } = useToast();
   const [sale, setSale] = useState<SaleData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [editValues, setEditValues] = useState({
     buyername: "",
     buyerphone: "",
     paymentmethod: "",
+    quantity: 1,
+    bookid: "",
   });
   const [error, setError] = useState<string>("");
 
@@ -56,7 +59,7 @@ const EditSalePage: React.FC = () => {
           "*, books(name, author, imageurl)"
         )
         .eq("id", id)
-        .single();
+        .maybeSingle();
 
       if (error || !data) {
         setError("Could not find sale record.");
@@ -69,13 +72,15 @@ const EditSalePage: React.FC = () => {
         buyername: data.buyername || "",
         buyerphone: data.buyerphone || "",
         paymentmethod: data.paymentmethod || "",
+        quantity: data.quantity || 1,
+        bookid: data.bookid,
       });
       setIsLoading(false);
     };
     fetchSale();
   }, [id]);
 
-  // Permission
+  // Permission: Admin can edit all, seller only own
   const canEdit =
     isAdmin ||
     (sale && currentUser && sale.personnelid === currentUser.email);
@@ -88,23 +93,107 @@ const EditSalePage: React.FC = () => {
     }));
   };
 
+  // Handle quantity as number
+  const onQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditValues((vals) => ({
+      ...vals,
+      quantity: Number(e.target.value),
+    }));
+  };
+
+  // Update sale (and update book stock if quantity changed)
   const onSave = async () => {
     if (!sale) return;
     setIsLoading(true);
     setError("");
+    let bookStockChanged = false;
+
+    // Check for quantity/bookid change
+    const quantityChanged = Number(editValues.quantity) !== sale.quantity;
+    const bookChanged = editValues.bookid && editValues.bookid !== sale.bookid;
+
+    let updateBookError = null;
+
+    // Adjust book stock if needed:
+    // - If only quantity changed, update that book's quantity
+    // - If book changed, revert old book qty and update new book qty
+    if (quantityChanged || bookChanged) {
+      // Only execute if changed
+      try {
+        // Return old quantity to original book
+        await supabase
+          .from("books")
+          .update({ quantity: (await getBookStock(sale.bookid)) + sale.quantity })
+          .eq("id", sale.bookid);
+
+        // Reduce new quantity from target book
+        await supabase
+          .from("books")
+          .update({ quantity: (await getBookStock(editValues.bookid)) - Number(editValues.quantity) })
+          .eq("id", editValues.bookid);
+
+        bookStockChanged = true;
+      } catch (err: any) {
+        updateBookError = err.message || err.toString();
+      }
+    }
+
+    // Update sale row
     const { error: updateError } = await supabase
       .from("sales")
       .update({
         buyername: editValues.buyername,
         buyerphone: editValues.buyerphone,
         paymentmethod: editValues.paymentmethod,
+        quantity: Number(editValues.quantity),
+        bookid: editValues.bookid,
       })
       .eq("id", sale.id);
+
     setIsLoading(false);
-    if (updateError) {
-      setError("Update failed!");
+    if (updateBookError || updateError) {
+      setError(
+        updateError?.message || updateBookError || "Update failed!"
+      );
       return;
     }
+    toast({
+      title: "Sale updated",
+      description: "The sale has been updated successfully.",
+    });
+    navigate("/sales/history");
+  };
+
+  // Helper to get latest book quantity
+  const getBookStock = async (bookid: string): Promise<number> => {
+    const { data, error } = await supabase
+      .from("books")
+      .select("quantity")
+      .eq("id", bookid)
+      .single();
+    if (error) return 0;
+    return data.quantity;
+  };
+
+  // Cancel (delete) sale
+  const onCancelSale = async () => {
+    if (!sale) return;
+    setIsLoading(true);
+    setError("");
+    // Delete sale (trigger restores book stock)
+    const { error: deleteError } = await supabase
+      .from("sales")
+      .delete()
+      .eq("id", sale.id);
+    setIsLoading(false);
+    if (deleteError) {
+      setError(deleteError.message || "Failed to cancel sale.");
+      return;
+    }
+    toast({
+      title: "Sale canceled",
+      description: "This sale has been canceled and removed.",
+    });
     navigate("/sales/history");
   };
 
@@ -227,6 +316,18 @@ const EditSalePage: React.FC = () => {
                         placeholder="Payment Method"
                       />
                     </div>
+                    <div>
+                      <Label htmlFor="quantity">Quantity</Label>
+                      <Input
+                        type="number"
+                        id="quantity"
+                        name="quantity"
+                        value={editValues.quantity}
+                        onChange={onQuantityChange}
+                        min={1}
+                        max={1000}
+                      />
+                    </div>
                     <div className="flex gap-2 mt-4">
                       <Button type="submit">
                         Save Changes
@@ -237,6 +338,14 @@ const EditSalePage: React.FC = () => {
                         onClick={() => navigate("/sales/history")}
                       >
                         Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={onCancelSale}
+                        className="ml-auto"
+                      >
+                        Cancel Sale
                       </Button>
                     </div>
                   </form>
@@ -256,3 +365,4 @@ const EditSalePage: React.FC = () => {
 
 export default EditSalePage;
 
+// ... end of file
