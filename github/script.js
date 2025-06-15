@@ -297,89 +297,193 @@ async function generatePDFAndOpenWhatsApp(orderData) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    // Add title - set to "Sri Nampally Baba Book Store - Order"
-    doc.setFontSize(20);
-    doc.text('Sri Nampally Baba Book Store - Order', 20, 20);
+    // --- Colorful saffron title band ---
+    // Saffron: #F97316
+    doc.setFillColor(249, 115, 22); // Saffron
+    doc.rect(0, 0, 210, 28, 'F'); // Top colored band (A4 width)
+    // Add Baba image to PDF (left side, circular)
+    try {
+        const imgUrl = window.location.origin + "/lovable-uploads/0a0d9c2d-aa69-4479-a9f0-68dd8212603f.png";
+        const resp = await fetch(imgUrl);
+        const blob = await resp.blob();
+        const dataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+        // Circle clip isn't natively supported, but shrink and border 'feel' circular
+        doc.addImage(dataUrl, 'PNG', 12, 5.5, 17, 17, undefined, 'FAST');
+        // Outer border (simulate circle)
+        doc.setDrawColor(234, 179, 8); // Golden border
+        doc.setLineWidth(1.5);
+        doc.circle(20.5, 14, 8.5, 'D');
+    } catch (e) {
+        // graceful fallback, ignore image issues
+    }
 
-    // Add customer details
+    // Title text over saffron band, slightly right to image
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(234, 179, 8); // Gold
+    doc.text('Sri Nampally Baba Book Store', 34, 15.8, { baseline: 'middle' });
+
+    // Sub-title below title
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(12);
-    doc.text(`Customer: ${orderData.customerName}`, 20, 40);
-    doc.text(`Phone: ${orderData.customerPhone}`, 20, 50);
-    doc.text(`Address: ${orderData.customerAddress}`, 20, 60);
-    doc.text(`Order Date: ${orderData.orderDate}`, 20, 70);
+    doc.setTextColor(255, 255, 255);
+    doc.text('- Order Invoice -', 36, 22);
 
-    // Add items header
-    doc.text('Order Items:', 20, 90);
-    let yPosition = 100;
-    const rowHeight = 40;
+    // Decorative divider
+    doc.setDrawColor(234, 179, 8); // Gold
+    doc.setLineWidth(0.7);
+    doc.line(10, 29, 200, 29);
 
-    // Add each item, with book thumbnail if available
+    // Page body background (soft yellow)
+    doc.setFillColor(255, 251, 245); // #FFFBF5 (theme card)
+    doc.rect(7, 32, 196, 250, 'F');
+
+    let y = 38;
+
+    // Customer details section
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.setTextColor(76, 39, 18); // Rich brown
+    doc.text(`Customer:`, 14, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(55, 65, 81);
+    doc.text(orderData.customerName, 44, y);
+
+    y += 7;
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(76, 39, 18); 
+    doc.text(`Phone:`, 14, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(55, 65, 81);
+    doc.text(orderData.customerPhone, 44, y);
+
+    y += 7;
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(76, 39, 18); 
+    doc.text(`Address:`, 14, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(55, 65, 81);
+    doc.text(orderData.customerAddress, 44, y);
+
+    y += 7;
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(76, 39, 18); 
+    doc.text(`Order Date:`, 14, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(55, 65, 81);
+    doc.text(orderData.orderDate, 44, y);
+
+    y += 8;
+    // Decorative dotted divider
+    doc.setDrawColor(249, 115, 22);
+    doc.setLineDashPattern([2, 2]);
+    doc.line(12, y, 198, y);
+    doc.setLineDashPattern([]);
+
+    y += 5;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(218, 56, 50);
+    doc.text('Order Items:', 13, y);
+
+    y += 4;
+    let rowHeight = 40;
+
     for (const [index, item] of orderData.items.entries()) {
-        // Draw book thumbnail image if it exists
+        // --- Fix: NBBStore/ before images/ ---
+        let itemImgUrl = item.imageurl || '';
+        if (itemImgUrl.startsWith('images/')) {
+            itemImgUrl = 'NBBStore/' + itemImgUrl;
+        } else if (itemImgUrl.startsWith('/images/')) {
+            itemImgUrl = 'NBBStore' + itemImgUrl;
+        }
+        // Convert to absolute path if needed
+        if (itemImgUrl && !/^https?:\/\//.test(itemImgUrl)) {
+            itemImgUrl = window.location.origin + "/" + itemImgUrl.replace(/^\/+/, "");
+        }
         let imageShown = false;
-        if (item.imageurl) {
-            try {
-                let imgUrl = item.imageurl;
-                if (!/^https?:\/\//.test(imgUrl)) {
-                    imgUrl = window.location.origin + "/" + imgUrl.replace(/^\/+/, "");
-                }
-                const imgResponse = await fetch(imgUrl);
-                const imgBlob = await imgResponse.blob();
+        try {
+            if (itemImgUrl) {
+                const imgResp = await fetch(itemImgUrl);
+                const imgBlob = await imgResp.blob();
                 const mimeType = imgBlob.type || "image/jpeg";
-                console.log(`PDF: Book '${item.name}' imageurl=${imgUrl} mimeType=${mimeType} size=${imgBlob.size}`);
-
                 if (mimeType.startsWith("image/")) {
-                    // Convert to dataURL
                     const imgData = await new Promise((resolve, reject) => {
                         const reader = new FileReader();
                         reader.onload = () => resolve(reader.result);
                         reader.onerror = e => reject(e);
                         reader.readAsDataURL(imgBlob);
                     });
-
-                    let imgType = "JPEG";
-                    if (mimeType === "image/png") imgType = "PNG";
-                    doc.addImage(imgData, imgType, 20, yPosition - 4, 20, 26, undefined, 'FAST');
+                    // Left thumbnail
+                    doc.addImage(imgData, mimeType === "image/png" ? "PNG" : "JPEG",
+                                 15, y + 1, 19, 25, undefined, 'FAST');
                     imageShown = true;
+                    // Image outline
+                    doc.setDrawColor(249, 115, 22);
+                    doc.rect(15, y + 1, 19, 25, 'D');
                 } else {
-                    // Not an image, show warning in PDF
                     doc.setFontSize(8);
-                    doc.text('-- no image --', 21, yPosition + 5);
-                    console.warn(`PDF: '${item.name}' image url did not return an image.`, {imgUrl, mimeType});
+                    doc.setTextColor(220, 38, 38);
+                    doc.text('-- no image --', 17, y + 15);
                 }
-            } catch(e) {
-                // Failed to load image, show warning in PDF
-                console.warn('PDF: Failed to load thumbnail for "' + item.name + '":', e);
-                doc.setFontSize(8);
-                doc.text('-- no image --', 21, yPosition + 5);
             }
-        } else {
-            // No imageurl at all, show warning in PDF
+        } catch (e) {
             doc.setFontSize(8);
-            doc.text('-- no image --', 21, yPosition + 5);
+            doc.setTextColor(220, 38, 38);
+            doc.text('-- no image --', 17, y + 15);
         }
-
+        // Item details
         doc.setFontSize(12);
-        doc.text(`${index + 1}. ${item.name}`, 44, yPosition);
-        doc.text(`Author: ${item.author}`, 44, yPosition + 10);
-        doc.text(`Quantity: ${item.quantity} x ₹${item.price} = ₹${(item.quantity * item.price).toFixed(2)}`, 44, yPosition + 20);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(34, 46, 64);
+        doc.text(`${index + 1}. `, 37, y + 7);
 
-        yPosition += rowHeight;
-        if (yPosition > 250) {
+        doc.setFont('helvetica', 'bold');
+        doc.text(item.name, 44, y + 7);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(11);
+        doc.setTextColor(107, 114, 128);
+        doc.text(`by ${item.author}`, 44, y + 13);
+
+        doc.setTextColor(88, 101, 242);
+        doc.text(`Qty: ${item.quantity} x ₹${item.price} = ₹${(item.quantity * item.price).toFixed(2)}`, 44, y + 20);
+
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(0.2);
+        doc.line(13, y + rowHeight - 5, 195, y + rowHeight - 5);
+
+        y += rowHeight;
+        if (y > 240) {
             doc.addPage();
-            yPosition = 20;
+            // repeat background
+            doc.setFillColor(255, 251, 245);
+            doc.rect(7, 16, 196, 275, 'F'); // y=16 for pages except first
+            y = 22;
         }
     }
 
-    // Add total
+    // --- Total Section ---
+    y += 6;
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
-    doc.text(`Total Amount: ₹${orderData.total.toFixed(2)}`, 20, yPosition + 10);
+    doc.setTextColor(251, 146, 60);
+    doc.text(`Total Amount: ₹${orderData.total.toFixed(2)}`, 13, y);
+    // Golden bar
+    doc.setDrawColor(234, 179, 8);
+    doc.setLineWidth(1);
+    doc.line(12, y + 2.7, 198, y + 2.7);
 
-    // Convert PDF to base64
+    // PDF to base64 (unchanged)
     const pdfBase64 = doc.output('datauristring');
-    
-    // Create WhatsApp message
-    const message = `New Book Order from Temple Book Store\n\n` +
+
+    // WhatsApp message as before
+    const message = `New Book Order from Sri Nampally Baba Book Store\n\n` +
                    `Customer: ${orderData.customerName}\n` +
                    `Phone: ${orderData.customerPhone}\n` +
                    `Address: ${orderData.customerAddress}\n\n` +
@@ -390,11 +494,11 @@ async function generatePDFAndOpenWhatsApp(orderData) {
                    `\n\nTotal: ₹${orderData.total.toFixed(2)}\n\n` +
                    `Please find the detailed order PDF attached.`;
 
-    // Open WhatsApp with the message
+    // Open WhatsApp
     const whatsappURL = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappURL, '_blank');
 
-    // Also download the PDF
+    // Download PDF
     doc.save(`Order_${orderData.customerName}_${Date.now()}.pdf`);
 }
 
