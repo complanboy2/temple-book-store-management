@@ -468,7 +468,7 @@ async function generatePDFAndOpenWhatsApp(orderData) {
                    ).join('\n') +
                    `\n\nTotal: ₹${orderData.total.toFixed(2)}\n\n` +
                    `Please find the detailed order PDF attached.`;
-    const whatsappURL = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    const whatsappURL = `https://wa.me/918885378147?text=${encodeURIComponent(message)}`;
     window.open(whatsappURL, '_blank');
     doc.save(`Order_${orderData.customerName}_${Date.now()}.pdf`);
 }
