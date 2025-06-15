@@ -32,6 +32,7 @@ const AdminPage = () => {
   const [newUserCanRestock, setNewUserCanRestock] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddingUser, setIsAddingUser] = useState(false);
+  const [hasRlsError, setHasRlsError] = useState(false);
 
   const { currentStore } = useStallContext();
   const { isAdmin } = useAuth();
@@ -62,8 +63,8 @@ const AdminPage = () => {
 
     try {
       setIsLoading(true);
+      setHasRlsError(false);
       
-      // Try to fetch users, but handle RLS errors gracefully
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -72,11 +73,11 @@ const AdminPage = () => {
       if (error) {
         console.error("Error fetching users:", error);
         
-        // If we get an RLS error, show a helpful message instead of failing completely
-        if (error.code === '42P17') {
+        if (error.code === '42P17' || error.message.includes('infinite recursion') || error.message.includes('policy')) {
+          setHasRlsError(true);
           toast({
-            title: t("admin.rlsError"),
-            description: "Database access policies need to be updated. Please contact support.",
+            title: "Database Access Issue",
+            description: "There's a configuration issue with user access policies. The admin panel functionality is temporarily limited.",
             variant: "destructive",
           });
           setUsers([]);
@@ -89,9 +90,10 @@ const AdminPage = () => {
       setUsers(data || []);
     } catch (error) {
       console.error("Error fetching users:", error);
+      setHasRlsError(true);
       toast({
         title: t("common.error"),
-        description: "Unable to load users due to permission restrictions.",
+        description: "Unable to load users. Please try again later or contact support if the issue persists.",
         variant: "destructive",
       });
       setUsers([]);
@@ -126,10 +128,10 @@ const AdminPage = () => {
         });
 
       if (error) {
-        if (error.code === '42P17') {
+        if (error.code === '42P17' || error.message.includes('infinite recursion') || error.message.includes('policy')) {
           toast({
-            title: t("admin.rlsError"),
-            description: "Unable to add user due to permission restrictions.",
+            title: "Database Access Issue",
+            description: "Unable to add user due to database configuration. Please contact support.",
             variant: "destructive",
           });
           return;
@@ -164,6 +166,15 @@ const AdminPage = () => {
   };
 
   const updateUserPermissions = async (userId: string, canSell: boolean, canRestock: boolean) => {
+    if (hasRlsError) {
+      toast({
+        title: "Feature Temporarily Unavailable",
+        description: "User permission updates are currently disabled due to database configuration issues.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('users')
@@ -174,10 +185,10 @@ const AdminPage = () => {
         .eq('id', userId);
 
       if (error) {
-        if (error.code === '42P17') {
+        if (error.code === '42P17' || error.message.includes('infinite recursion') || error.message.includes('policy')) {
           toast({
-            title: t("admin.rlsError"),
-            description: "Unable to update permissions due to access restrictions.",
+            title: "Database Access Issue",
+            description: "Unable to update permissions due to database configuration.",
             variant: "destructive",
           });
           return;
@@ -190,7 +201,6 @@ const AdminPage = () => {
         description: t("admin.userPermissionsUpdated"),
       });
 
-      // Update local state
       setUsers(users.map(user =>
         user.id === userId
           ? { ...user, cansell: canSell, canrestock: canRestock }
@@ -215,6 +225,23 @@ const AdminPage = () => {
       />
       
       <main className="container mx-auto px-3 py-4">
+        {hasRlsError && (
+          <Card className="mb-4 border-orange-200 bg-orange-50">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="text-orange-600">⚠️</div>
+                <div>
+                  <h3 className="font-medium text-orange-800">Limited Functionality</h3>
+                  <p className="text-sm text-orange-700 mt-1">
+                    The admin panel is currently experiencing database access issues. Some features may be temporarily unavailable. 
+                    Please contact technical support if this persists.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Add New User */}
         <Card className="mb-4">
           <CardHeader className="pb-3">
@@ -232,6 +259,7 @@ const AdminPage = () => {
                 onChange={(e) => setNewUserName(e.target.value)}
                 placeholder={t("common.name")}
                 className="mt-1"
+                disabled={hasRlsError}
               />
             </div>
 
@@ -244,6 +272,7 @@ const AdminPage = () => {
                 onChange={(e) => setNewUserEmail(e.target.value)}
                 placeholder={t("common.email")}
                 className="mt-1"
+                disabled={hasRlsError}
               />
             </div>
 
@@ -255,6 +284,7 @@ const AdminPage = () => {
                 onChange={(e) => setNewUserPhone(e.target.value)}
                 placeholder={t("common.phone")}
                 className="mt-1"
+                disabled={hasRlsError}
               />
             </div>
 
@@ -264,6 +294,7 @@ const AdminPage = () => {
                   id="canSell"
                   checked={newUserCanSell}
                   onCheckedChange={(checked) => setNewUserCanSell(!!checked)}
+                  disabled={hasRlsError}
                 />
                 <Label htmlFor="canSell" className="text-sm">{t("admin.canSell")}</Label>
               </div>
@@ -273,6 +304,7 @@ const AdminPage = () => {
                   id="canRestock"
                   checked={newUserCanRestock}
                   onCheckedChange={(checked) => setNewUserCanRestock(!!checked)}
+                  disabled={hasRlsError}
                 />
                 <Label htmlFor="canRestock" className="text-sm">{t("admin.canRestock")}</Label>
               </div>
@@ -281,7 +313,7 @@ const AdminPage = () => {
             <Button 
               onClick={addUser}
               className="w-full bg-temple-maroon hover:bg-temple-maroon/90"
-              disabled={isAddingUser}
+              disabled={isAddingUser || hasRlsError}
             >
               {isAddingUser ? t("admin.adding") : t("admin.addUser")}
             </Button>
@@ -301,10 +333,16 @@ const AdminPage = () => {
               <div className="text-center py-8">{t("common.loading")}</div>
             ) : users.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                {t("admin.noUsersFound")}
-                <p className="text-sm mt-2">
-                  If this is unexpected, there may be database permission issues that need to be resolved.
-                </p>
+                {hasRlsError ? (
+                  <>
+                    <p>{t("admin.noUsersFound")}</p>
+                    <p className="text-sm mt-2">
+                      User data is temporarily unavailable due to database configuration issues.
+                    </p>
+                  </>
+                ) : (
+                  <p>{t("admin.noUsersFound")}</p>
+                )}
               </div>
             ) : (
               <div className="space-y-3">
@@ -328,6 +366,7 @@ const AdminPage = () => {
                               onCheckedChange={(checked) =>
                                 updateUserPermissions(user.id, !!checked, user.canrestock)
                               }
+                              disabled={hasRlsError}
                             />
                             <Label htmlFor={`sell-${user.id}`} className="text-sm">
                               {t("admin.canSell")}
@@ -341,6 +380,7 @@ const AdminPage = () => {
                               onCheckedChange={(checked) =>
                                 updateUserPermissions(user.id, user.cansell, !!checked)
                               }
+                              disabled={hasRlsError}
                             />
                             <Label htmlFor={`restock-${user.id}`} className="text-sm">
                               {t("admin.canRestock")}

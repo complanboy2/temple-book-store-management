@@ -10,9 +10,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Plus, Search, Filter, BookOpen } from "lucide-react";
+import { Plus, Search, Filter, BookOpen, Trash2, Edit, Download } from "lucide-react";
 import MobileHeader from "@/components/MobileHeader";
 import BookImage from "@/components/BookImage";
+import ExportBookListButton from "@/components/ExportBookListButton";
 
 interface Book {
   id: string;
@@ -35,6 +36,7 @@ const BooksPage = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [categories, setCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
 
   const { currentStore } = useStallContext();
   const { isAdmin } = useAuth();
@@ -108,7 +110,7 @@ const BooksPage = () => {
       }
     }
 
-    // FIXED: Apply category filter - handle "all" category properly
+    // Apply category filter - handle "all" category properly
     if (selectedCategory && selectedCategory !== "all") {
       filtered = filtered.filter(book => book.category === selectedCategory);
     }
@@ -125,6 +127,31 @@ const BooksPage = () => {
     setSelectedCategory(value);
   };
 
+  const handleDeleteBook = async (book: Book) => {
+    try {
+      const { error } = await supabase
+        .from('books')
+        .delete()
+        .eq('id', book.id);
+
+      if (error) throw error;
+
+      toast({
+        title: t("common.success"),
+        description: t("common.bookDeleted"),
+      });
+
+      fetchBooks();
+    } catch (error) {
+      console.error("Error deleting book:", error);
+      toast({
+        title: t("common.error"),
+        description: t("common.deleteBookFailed"),
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-temple-background pb-20">
       <MobileHeader 
@@ -132,16 +159,22 @@ const BooksPage = () => {
         showBackButton={true}
         backTo="/"
         rightContent={
-          isAdmin && (
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="text-white"
-              onClick={() => navigate("/books/add")}
-            >
-              <Plus size={18} />
-            </Button>
-          )
+          <div className="flex items-center gap-2">
+            <ExportBookListButton 
+              books={filteredBooks}
+              filename={showLowStockOnly ? "low-stock-books" : "books-list"}
+            />
+            {isAdmin && (
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="text-white"
+                onClick={() => navigate("/books/add")}
+              >
+                <Plus size={18} />
+              </Button>
+            )}
+          </div>
         }
       />
       
@@ -252,6 +285,11 @@ const BooksPage = () => {
                               {book.category}
                             </p>
                           )}
+                          {book.barcode && (
+                            <p className="text-xs text-gray-400">
+                              Code: {book.barcode}
+                            </p>
+                          )}
                         </div>
                         
                         {/* Stock Status */}
@@ -274,17 +312,27 @@ const BooksPage = () => {
                           size="sm"
                           className="flex-1 bg-temple-maroon hover:bg-temple-maroon/90"
                           onClick={() => navigate(`/books/sell/${book.id}`)}
+                          disabled={book.quantity === 0}
                         >
-                          {t("common.sell")}
+                          {book.quantity === 0 ? t("common.outOfStock") : t("common.sell")}
                         </Button>
                         {isAdmin && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => navigate(`/books/edit/${book.id}`)}
-                          >
-                            {t("common.edit")}
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => navigate(`/books/edit/${book.id}`)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteBook(book)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>

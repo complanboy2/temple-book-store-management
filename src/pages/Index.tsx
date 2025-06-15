@@ -79,21 +79,21 @@ const Index: React.FC = () => {
       description: "Browse and manage book inventory",
       icon: BookOpen,
       route: "/books",
-      color: "bg-blue-500"
+      color: "bg-blue-400"
     },
     {
       title: "Sell Books",
       description: "Quick sale and transaction",
       icon: ShoppingCart,
       route: "/sell",
-      color: "bg-green-500"
+      color: "bg-green-400"
     },
     {
       title: "Add Books",
       description: "Add new books to inventory",
       icon: Package,
       route: "/books/add",
-      color: "bg-purple-500",
+      color: "bg-purple-400",
       adminOnly: true
     },
     {
@@ -101,14 +101,14 @@ const Index: React.FC = () => {
       description: "View transaction records",
       icon: BarChart3,
       route: "/sales/history",
-      color: "bg-orange-500"
+      color: "bg-orange-400"
     },
     {
       title: "Reports",
       description: "Analytics and insights",
       icon: BarChart3,
       route: "/reports",
-      color: "bg-indigo-500",
+      color: "bg-indigo-400",
       adminOnly: true
     },
     {
@@ -116,7 +116,7 @@ const Index: React.FC = () => {
       description: "User and system management",
       icon: Users,
       route: "/admin",
-      color: "bg-red-500",
+      color: "bg-red-400",
       adminOnly: true
     }
   ];
@@ -172,26 +172,26 @@ const Index: React.FC = () => {
           </div>
         )}
 
-        {/* Simplified Menu Tiles */}
+        {/* Simplified Menu Tiles - Reduced gradient */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           {filteredMenuTiles.map((tile, index) => {
             const IconComponent = tile.icon;
             return (
               <Card 
                 key={index}
-                className="cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-md border-0"
+                className="cursor-pointer transition-all duration-200 hover:scale-102 hover:shadow-md border-0"
                 onClick={() => navigate(tile.route)}
               >
-                <div className={`${tile.color} p-4 text-white`}>
+                <div className={`${tile.color} p-4 text-white rounded-lg`}>
                   <div className="flex items-center gap-3">
-                    <div className="bg-white/20 p-2 rounded-lg">
+                    <div className="bg-white/15 p-2 rounded-md">
                       <IconComponent size={20} />
                     </div>
                     <div className="flex-1">
                       <h3 className="font-semibold text-base leading-tight">
                         {tile.title}
                       </h3>
-                      <p className="text-xs opacity-90 leading-tight mt-1">
+                      <p className="text-xs opacity-85 leading-tight mt-1">
                         {tile.description}
                       </p>
                     </div>

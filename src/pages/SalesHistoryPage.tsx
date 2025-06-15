@@ -8,9 +8,10 @@ import { useStallContext } from "@/contexts/StallContext";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Search, BarChart3, Users, CreditCard } from "lucide-react";
+import { Search, BarChart3, Users, CreditCard, Edit, Download } from "lucide-react";
 import MobileHeader from "@/components/MobileHeader";
 import BookImage from "@/components/BookImage";
+import ExportSalesButton from "@/components/ExportSalesButton";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Sale {
@@ -74,7 +75,7 @@ const SalesHistoryPage = () => {
 
       if (salesError) throw salesError;
 
-      // Create a simple personnel name map based on email patterns
+      // Create a simple personnel name map based on email patterns or IDs
       const personnelMap: Record<string, string> = {};
       
       // Extract unique personnel IDs and try to create readable names
@@ -95,8 +96,6 @@ const SalesHistoryPage = () => {
         }
       });
 
-      console.log('DEBUG: Personnel map created:', personnelMap);
-
       // Combine sales with personnel and book information
       const salesWithDetails = salesData?.map(sale => ({
         ...sale,
@@ -105,8 +104,6 @@ const SalesHistoryPage = () => {
         book_author: sale.books?.author || 'Unknown Author',
         book_imageurl: sale.books?.imageurl || ''
       })) || [];
-
-      console.log('DEBUG: Sales with details:', salesWithDetails.slice(0, 3));
 
       setSales(salesWithDetails);
       
@@ -164,12 +161,23 @@ const SalesHistoryPage = () => {
     setSelectedPaymentMethod(value);
   };
 
+  const handleEditSale = (sale: Sale) => {
+    // Navigate to edit sale page - to be implemented
+    console.log("Edit sale:", sale.id);
+  };
+
   return (
     <div className="min-h-screen bg-temple-background pb-20">
       <MobileHeader 
         title={t("sales.salesHistory")}
         showBackButton={true}
         backTo="/"
+        rightContent={
+          <ExportSalesButton 
+            sales={filteredSales} 
+            filename="sales-history"
+          />
+        }
       />
       
       <main className="container mx-auto px-3 py-4">
@@ -274,27 +282,41 @@ const SalesHistoryPage = () => {
                     <div className="flex-1 p-4">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 leading-tight mb-1">
-                            {sale.book_name}
-                          </h3>
-                          <p className="text-sm text-gray-600 mb-1">
-                            {t("common.by")} {sale.book_author}
-                          </p>
-                          <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
-                            <span>
-                              <Users className="inline h-3 w-3 mr-1" />
-                              {sale.personnel_name}
-                            </span>
-                            <span>
-                              <CreditCard className="inline h-3 w-3 mr-1" />
-                              {sale.paymentmethod?.charAt(0).toUpperCase() + sale.paymentmethod?.slice(1)}
-                            </span>
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-900 leading-tight mb-1">
+                                {sale.book_name}
+                              </h3>
+                              <p className="text-sm text-gray-600 mb-1">
+                                {t("common.by")} {sale.book_author}
+                              </p>
+                              <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
+                                <span>
+                                  <Users className="inline h-3 w-3 mr-1" />
+                                  {sale.personnel_name}
+                                </span>
+                                <span>
+                                  <CreditCard className="inline h-3 w-3 mr-1" />
+                                  {sale.paymentmethod?.charAt(0).toUpperCase() + sale.paymentmethod?.slice(1)}
+                                </span>
+                              </div>
+                              {sale.buyername && (
+                                <p className="text-xs text-gray-500">
+                                  {t("common.customer")}: {sale.buyername}
+                                </p>
+                              )}
+                            </div>
+                            
+                            {/* Edit Button */}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleEditSale(sale)}
+                              className="ml-2"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
                           </div>
-                          {sale.buyername && (
-                            <p className="text-xs text-gray-500">
-                              {t("common.customer")}: {sale.buyername}
-                            </p>
-                          )}
                         </div>
                         
                         {/* Amount and Date */}
