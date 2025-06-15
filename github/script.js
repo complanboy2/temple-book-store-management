@@ -24,28 +24,18 @@ async function initializeApp() {
     }
 }
 
+// Use books.json file loaded from /github/books.json
 async function fetchBooks() {
     try {
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/books?select=*`, {
-            headers: {
-                'apikey': SUPABASE_ANON_KEY,
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to fetch books');
-        }
-
+        const response = await fetch('github/books.json');
+        if (!response.ok) throw new Error('Failed to load static books data');
         books = await response.json();
         filteredBooks = [...books];
-        
         document.getElementById('books-loading').classList.add('hidden');
-        
     } catch (error) {
-        console.error('Error fetching books:', error);
+        console.error('Error fetching books (static):', error);
         document.getElementById('books-loading').classList.add('hidden');
-        showError('Failed to load books from server');
+        showError('Failed to load books from static file');
     }
 }
 
