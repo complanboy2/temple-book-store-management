@@ -104,12 +104,12 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
     const timestamp = new Date().toLocaleString();
     let totalRevenue = 0;
     let totalQuantity = 0;
-    
+
     sales.forEach(sale => {
       totalRevenue += sale.totalAmount;
       totalQuantity += sale.quantity;
     });
-    
+
     let html = `
       <!DOCTYPE html>
       <html>
@@ -138,6 +138,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
             text-align: left;
             border-bottom: 1px solid #ddd;
             font-size: 12px;
+            vertical-align: middle;
           }
           th {
             background-color: #f5f5f5;
@@ -158,16 +159,10 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
             .no-print {
               display: none;
             }
-          }
-          .page-break {
-            page-break-after: always;
-            break-after: page;
-          }
-          .footer {
-            margin-top: 30px;
-            text-align: center;
-            font-size: 12px;
-            color: #888;
+            img.book-thumb {
+              max-width: 60px;
+              max-height: 80px;
+            }
           }
           .book-id {
             font-family: monospace;
@@ -177,6 +172,14 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
             word-break: break-all;
             font-size: 10px;
             color: #666;
+          }
+          img.book-thumb {
+            max-width: 60px;
+            max-height: 80px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            margin-right: 4px;
+            background: #eef;
           }
         </style>
       </head>
@@ -193,7 +196,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
               ${fields.bookName ? '<th>Book Title</th>' : ''}
               ${fields.bookAuthor ? '<th>Author</th>' : ''}
               ${fields.bookId ? '<th>Book ID</th>' : ''}
-              ${fields.imageUrl ? '<th>Image URL</th>' : ''}
+              ${fields.imageUrl ? '<th>Image</th>' : ''}
               ${fields.quantity ? '<th>Quantity</th>' : ''}
               ${fields.amount ? '<th>Amount</th>' : ''}
               ${fields.paymentMethod ? '<th>Payment Method</th>' : ''}
@@ -207,14 +210,22 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
     sales.forEach((sale, index) => {
       const bookDetails = bookDetailsMap[sale.bookId] || { name: 'Unknown', author: 'Unknown', price: 0, imageUrl: '' };
       const sellerName = personnelNames[sale.personnelId] || sale.personnelId || 'Unknown';
-      
+
       html += `
         <tr>
           ${fields.date ? `<td>${new Date(sale.createdAt).toLocaleDateString()}</td>` : ''}
           ${fields.bookName ? `<td>${bookDetails.name}</td>` : ''}
           ${fields.bookAuthor ? `<td>${bookDetails.author}</td>` : ''}
           ${fields.bookId ? `<td class="book-id">${sale.bookId}</td>` : ''}
-          ${fields.imageUrl ? `<td class="image-url">${bookDetails.imageUrl || 'N/A'}</td>` : ''}
+          ${fields.imageUrl ? `<td>
+            ${
+              bookDetails.imageUrl
+                ? `<img src="${bookDetails.imageUrl}" alt="Book Cover" class="book-thumb" onerror="this.style.display='none'" />`
+                : '<span style="color:#bbb;font-size:10px;">No Image</span>'
+            }
+            <br/>
+            <span class="image-url">${bookDetails.imageUrl || 'N/A'}</span>
+          </td>` : ''}
           ${fields.quantity ? `<td>${sale.quantity}</td>` : ''}
           ${fields.amount ? `<td>₹${sale.totalAmount.toFixed(2)}</td>` : ''}
           ${fields.paymentMethod ? `<td>${sale.paymentMethod}</td>` : ''}
@@ -238,7 +249,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
       </body>
       </html>
     `;
-    
+
     return html;
   };
 
