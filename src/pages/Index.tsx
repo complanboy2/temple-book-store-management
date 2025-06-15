@@ -79,21 +79,21 @@ const Index: React.FC = () => {
       description: "Browse and manage book inventory",
       icon: BookOpen,
       route: "/books",
-      color: "bg-gradient-to-br from-blue-500 to-blue-600"
+      color: "bg-blue-500/90"
     },
     {
       title: "Sell Books",
       description: "Quick sale and transaction",
       icon: ShoppingCart,
       route: "/sell",
-      color: "bg-gradient-to-br from-green-500 to-green-600"
+      color: "bg-green-500/90"
     },
     {
       title: "Add Books",
       description: "Add new books to inventory",
       icon: Package,
       route: "/books/add",
-      color: "bg-gradient-to-br from-purple-500 to-purple-600",
+      color: "bg-purple-500/90",
       adminOnly: true
     },
     {
@@ -101,14 +101,14 @@ const Index: React.FC = () => {
       description: "View transaction records",
       icon: BarChart3,
       route: "/sales/history",
-      color: "bg-gradient-to-br from-orange-500 to-orange-600"
+      color: "bg-orange-500/90"
     },
     {
       title: "Reports",
       description: "Analytics and insights",
       icon: BarChart3,
       route: "/reports",
-      color: "bg-gradient-to-br from-indigo-500 to-indigo-600",
+      color: "bg-indigo-500/90",
       adminOnly: true
     },
     {
@@ -116,7 +116,7 @@ const Index: React.FC = () => {
       description: "User and system management",
       icon: Users,
       route: "/admin",
-      color: "bg-gradient-to-br from-red-500 to-red-600",
+      color: "bg-red-500/90",
       adminOnly: true
     }
   ];
@@ -184,28 +184,28 @@ const Index: React.FC = () => {
               >
                 <div className={`${tile.color} p-6 text-white relative overflow-hidden`}>
                   {/* Background Pattern */}
-                  <div className="absolute top-0 right-0 w-32 h-32 opacity-10">
+                  <div className="absolute top-0 right-0 w-32 h-32 opacity-5">
                     <IconComponent size={128} className="transform rotate-12" />
                   </div>
                   
                   {/* Content */}
                   <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="bg-white/20 p-3 rounded-lg backdrop-blur-sm">
+                      <div className="bg-white/15 p-3 rounded-lg backdrop-blur-sm">
                         <IconComponent size={24} />
                       </div>
                       <div>
                         <h3 className="text-lg font-bold leading-tight">
                           {tile.title}
                         </h3>
-                        <p className="text-sm opacity-90 leading-tight">
+                        <p className="text-sm opacity-85 leading-tight">
                           {tile.description}
                         </p>
                       </div>
                     </div>
                     
                     {/* Action indicator */}
-                    <div className="flex items-center text-sm opacity-75">
+                    <div className="flex items-center text-sm opacity-70">
                       <span>Tap to access</span>
                       <svg 
                         className="w-4 h-4 ml-2 transform transition-transform group-hover:translate-x-1" 
@@ -224,7 +224,7 @@ const Index: React.FC = () => {
         </div>
 
         {/* Quick Stats */}
-        <Card className="bg-gradient-to-r from-temple-maroon to-temple-saffron text-white">
+        <Card className="bg-temple-maroon/90 text-white">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
