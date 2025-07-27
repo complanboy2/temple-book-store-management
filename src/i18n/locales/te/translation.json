@@ -108,7 +108,22 @@
     "missingRequiredInformation": "అవసరమైన సమాచారం లేదు",
     "inStock": "స్టాక్‌లో ఉంది",
     "outOfStock": "స్టాక్ అయిపోయింది",
-    "available": "అందుబాటులో ఉంది"
+    "available": "అందుబాటులో ఉంది",
+    "browseInventory": "పుస్తక జాబితాను బ్రౌజ్ చేసి నిర్వహించండి",
+    "quickSaleTransaction": "త్వరిత అమ్మకం మరియు లావాదేవీ",
+    "addNewBooksInventory": "జాబితాలో కొత్త పుస్తకాలను జోడించండి",
+    "viewTransactionRecords": "లావాదేవీ రికార్డులను చూడండి",
+    "analyticsInsights": "విశ్లేషణలు మరియు అంతర్దృష్టులు",
+    "userSystemManagement": "వినియోగదారు మరియు సిస్టమ్ నిర్వహణ",
+    "left": "మిగిలినవి",
+    "andMore": "మరియు {{count}} మరిన్ని",
+    "tapToView": "చూడటానికి ట్యాప్ చేయండి",
+    "goBack": "వెనుకకు వెళ్ళండి",
+    "accessDenied": "యాక్సెస్ నిరాకరించబడింది",
+    "noPermission": "ఈ విభాగాన్ని యాక్సెస్ చేయడానికి మీకు అనుమతి లేదు",
+    "databaseIssue": "డేటాబేస్ సమస్య",
+    "databaseContactSupport": "అడ్మిన్ ప్యానెల్‌లో డేటాబేస్ సమస్యలు ఉన్నాయి।",
+    "failedToLoadOrUploadImage": "చిత్రాన్ని లోడ్ చేయడంలో విఫలమైంది"
   },
   "sellMultiple": {
     "sellMultipleBooks": "అనేక పుస్తకాలను అమ్మండి",

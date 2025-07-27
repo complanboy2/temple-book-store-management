@@ -74,48 +74,48 @@ const Index: React.FC = () => {
 
   const menuTiles: MenuTile[] = [
     {
-      title: "View Books",
-      description: "Browse and manage book inventory",
+      title: t("common.viewBooks"),
+      description: t("common.browseInventory"),
       icon: BookOpen,
       route: "/books",
       color: "bg-blue-400"
     },
     {
-      title: "Sell Books",
-      description: "Quick sale and transaction",
+      title: t("common.sellBooks"),
+      description: t("common.quickSaleTransaction"),
       icon: ShoppingCart,
       route: "/sell",
       color: "bg-green-400"
     },
     {
-      title: "Add Books",
-      description: "Add new books to inventory",
+      title: t("common.addBook"),
+      description: t("common.addNewBooksInventory"),
       icon: Package,
       route: "/books/add",
       color: "bg-purple-400",
       adminOnly: true
     },
     {
-      title: "Sales History",
-      description: "View transaction records",
+      title: t("common.viewSalesHistory"),
+      description: t("common.viewTransactionRecords"),
       icon: BarChart3,
       route: "/sales/history",
       color: "bg-orange-400"
     },
     {
-      title: "Reports",
-      description: "Analytics and insights",
+      title: t("common.reports"),
+      description: t("common.analyticsInsights"),
       icon: BarChart3,
       route: "/reports",
       color: "bg-indigo-400",
       adminOnly: true
     },
     {
-      title: "Admin Panel",
-      description: "User and system management",
+      title: t("common.adminPanel"),
+      description: t("common.userSystemManagement"),
       icon: Users,
       route: "/admin",
-      color: "bg-red-400",
+      color: "bg-gray-400",
       adminOnly: true
     }
   ];
@@ -186,10 +186,10 @@ const Index: React.FC = () => {
                     <IconComponent size={24} />
                   </div>
                   <div className="flex-1 ml-2">
-                    <h3 className="font-semibold text-base leading-tight text-temple-maroon">
-                      {t(tile.title.replace(/\s/g, "")) || tile.title}
-                    </h3>
-                    <p className="text-xs text-gray-700 mt-1">{t(tile.description.replace(/\s/g, "")) || tile.description}</p>
+                     <h3 className="font-semibold text-base leading-tight text-temple-maroon">
+                       {tile.title}
+                     </h3>
+                     <p className="text-xs text-gray-700 mt-1">{tile.description}</p>
                   </div>
                 </div>
               </Card>

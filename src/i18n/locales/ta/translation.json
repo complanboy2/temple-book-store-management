@@ -108,7 +108,22 @@
     "missingRequiredInformation": "தேவையான தகவல் இல்லை",
     "inStock": "இருப்பில் உள்ளது",
     "outOfStock": "இருப்பு முடிந்துவிட்டது",
-    "available": "கிடைக்கும்"
+    "available": "கிடைக்கும்",
+    "browseInventory": "புத்தக பட்டியலை பார்க்கவும் மற்றும் நிர்வகிக்கவும்",
+    "quickSaleTransaction": "விரைவான விற்பனை மற்றும் பரிவர்த்தனை",
+    "addNewBooksInventory": "பட்டியலில் புதிய புத்தகங்களைச் சேர்க்கவும்",
+    "viewTransactionRecords": "பரிவர்த்தனை பதிவுகளைப் பார்க்கவும்",
+    "analyticsInsights": "பகுப்பாய்வு மற்றும் நுண்ணறிவுகள்",
+    "userSystemManagement": "பயனர் மற்றும் கணினி மேலாண்மை",
+    "left": "மீதம்",
+    "andMore": "மற்றும் {{count}} மேலும்",
+    "tapToView": "பார்க்க தட்டவும்",
+    "goBack": "திரும்பிச் செல்லவும்",
+    "accessDenied": "அணுகல் மறுக்கப்பட்டது",
+    "noPermission": "இந்த பிரிவை அணுக உங்களுக்கு அனுமதி இல்லை",
+    "databaseIssue": "தரவுத்தள சிக்கல்",
+    "databaseContactSupport": "நிர்வாக குழுவில் தரவுத்தள சிக்கல்கள் உள்ளன।",
+    "failedToLoadOrUploadImage": "படத்தை ஏற்ற அல்லது பதிவேற்ற முடியவில்லை"
   },
   "sellMultiple": {
     "sellMultipleBooks": "பல புத்தகங்களை விற்கவும்",

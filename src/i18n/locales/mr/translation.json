@@ -96,7 +96,22 @@
     "viewAll": "सर्व पहा",
     "sold": "विकले गेले",
     "unknownBook": "अज्ञात पुस्तक",
-    "more": "अधिक"
+    "more": "अधिक",
+    "browseInventory": "पुस्तक यादी ब्राउझ करा आणि व्यवस्थापित करा",
+    "quickSaleTransaction": "जलद विक्री आणि व्यवहार",
+    "addNewBooksInventory": "यादीत नवीन पुस्तके जोडा",
+    "viewTransactionRecords": "व्यवहार रेकॉर्ड पहा",
+    "analyticsInsights": "विश्लेषण आणि अंतर्दृष्टी",
+    "userSystemManagement": "वापरकर्ता आणि सिस्टम व्यवस्थापन",
+    "left": "शिल्लक",
+    "andMore": "आणि {{count}} अधिक",
+    "tapToView": "पाहण्यासाठी टॅप करा",
+    "goBack": "परत जा",
+    "accessDenied": "प्रवेश नाकारला",
+    "noPermission": "आपल्याला या विभागात प्रवेश करण्याची परवानगी नाही",
+    "databaseIssue": "डेटाबेस समस्या",
+    "databaseContactSupport": "अॅडमिन पॅनेलमध्ये डेटाबेस समस्या आहेत।",
+    "failedToLoadOrUploadImage": "प्रतिमा लोड करण्यात अयशस्वी"
   },
   "sell": {
     "title": "पुस्तक विक्री",

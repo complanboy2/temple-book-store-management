@@ -108,7 +108,22 @@
     "missingRequiredInformation": "आवश्यक जानकारी गुम है",
     "inStock": "स्टॉक में",
     "outOfStock": "स्टॉक समाप्त",
-    "available": "उपलब्ध"
+    "available": "उपलब्ध",
+    "browseInventory": "पुस्तक भंडार ब्राउज़ करें और प्रबंधित करें",
+    "quickSaleTransaction": "त्वरित बिक्री और लेनदेन",
+    "addNewBooksInventory": "भंडार में नई पुस्तकें जोड़ें",
+    "viewTransactionRecords": "लेनदेन रिकॉर्ड देखें",
+    "analyticsInsights": "विश्लेषण और अंतर्दृष्टि",
+    "userSystemManagement": "उपयोगकर्ता और सिस्टम प्रबंधन",
+    "left": "बचे",
+    "andMore": "और {{count}} और",
+    "tapToView": "देखने के लिए टैप करें",
+    "goBack": "वापस जाएं",
+    "accessDenied": "पहुंच अस्वीकृत",
+    "noPermission": "आपको इस अनुभाग तक पहुंचने की अनुमति नहीं है",
+    "databaseIssue": "डेटाबेस समस्या",
+    "databaseContactSupport": "एडमिन पैनल में वर्तमान में डेटाबेस एक्सेस समस्याएं हैं।",
+    "failedToLoadOrUploadImage": "छवि लोड या अपलोड करने में विफल"
   },
   "sellMultiple": {
     "sellMultipleBooks": "कई पुस्तकें बेचें",

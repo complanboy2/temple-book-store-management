@@ -96,7 +96,22 @@
     "viewAll": "ಎಲ್ಲವನ್ನೂ ನೋಡಿ",
     "sold": "ಮಾರಲ್ಪಟ್ಟಿದೆ",
     "unknownBook": "ಅಜ್ಞಾತ ಪುಸ್ತಕ",
-    "more": "ಹೆಚ್ಚು"
+    "more": "ಹೆಚ್ಚು",
+    "browseInventory": "ಪುಸ್ತಕ ದಾಸ್ತಾನು ಬ್ರೌಸ್ ಮಾಡಿ ಮತ್ತು ನಿರ್ವಹಿಸಿ",
+    "quickSaleTransaction": "ತ್ವರಿತ ಮಾರಾಟ ಮತ್ತು ವ್ಯವಹಾರ",
+    "addNewBooksInventory": "ದಾಸ್ತಾನಿಗೆ ಹೊಸ ಪುಸ್ತಕಗಳನ್ನು ಸೇರಿಸಿ",
+    "viewTransactionRecords": "ವ್ಯವಹಾರ ದಾಖಲೆಗಳನ್ನು ವೀಕ್ಷಿಸಿ",
+    "analyticsInsights": "ವಿಶ್ಲೇಷಣೆ ಮತ್ತು ಒಳನೋಟಗಳು",
+    "userSystemManagement": "ಬಳಕೆದಾರ ಮತ್ತು ಸಿಸ್ಟಂ ನಿರ್ವಹಣೆ",
+    "left": "ಬಾಕಿ",
+    "andMore": "ಮತ್ತು {{count}} ಹೆಚ್ಚು",
+    "tapToView": "ವೀಕ್ಷಿಸಲು ಟ್ಯಾಪ್ ಮಾಡಿ",
+    "goBack": "ಹಿಂತಿರುಗಿ",
+    "accessDenied": "ಪ್ರವೇಶ ನಿರಾಕರಿಸಲಾಗಿದೆ",
+    "noPermission": "ಈ ವಿಭಾಗವನ್ನು ಪ್ರವೇಶಿಸಲು ನಿಮಗೆ ಅನುಮತಿ ಇಲ್ಲ",
+    "databaseIssue": "ಡೇಟಾಬೇಸ್ ಸಮಸ್ಯೆ",
+    "databaseContactSupport": "ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ ಡೇಟಾಬೇಸ್ ಸಮಸ್ಯೆಗಳಿವೆ।",
+    "failedToLoadOrUploadImage": "ಚಿತ್ರವನ್ನು ಲೋಡ್ ಮಾಡಲು ವಿಫಲವಾಗಿದೆ"
   },
   "sell": {
     "title": "ಪುಸ್ತಕ ಮಾರಾಟ",
