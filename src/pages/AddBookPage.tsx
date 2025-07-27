@@ -237,14 +237,14 @@ const AddBookPage = () => {
   };
 
   const handleOriginalPriceChange = (value: string) => {
-    if (value === "" || value === "0") {
+    if (value === "") {
       setOriginalPrice("");
       setSalePrice("");
       return;
     }
     setOriginalPrice(value);
     const price = parseFloat(value);
-    if (!isNaN(price)) {
+    if (!isNaN(price) && price > 0) {
       setSalePrice(calculateSalePrice(price).toString());
     }
   };
@@ -336,17 +336,12 @@ const AddBookPage = () => {
                   id="originalPrice"
                   type="number"
                   step="0.01"
-                  min="0"
+                  min="0.01"
                   value={originalPrice}
                   onChange={(e) => handleOriginalPriceChange(e.target.value)}
                   placeholder={t("addBook.enterOriginalPrice")}
                   required
                   className="mt-1"
-                  onFocus={(e) => {
-                    if (e.target.value === "0") {
-                      setOriginalPrice("");
-                    }
-                  }}
                 />
               </div>
 
@@ -356,17 +351,12 @@ const AddBookPage = () => {
                   id="salePrice"
                   type="number"
                   step="0.01"
-                  min="0"
+                  min="0.01"
                   value={salePrice}
                   onChange={(e) => setSalePrice(e.target.value)}
                   placeholder={t("addBook.enterSalePrice")}
                   required
                   className="mt-1"
-                  onFocus={(e) => {
-                    if (e.target.value === "0") {
-                      setSalePrice("");
-                    }
-                  }}
                 />
                 <p className="text-xs text-gray-500 mt-1">{t("addBook.salePriceCalculated")}</p>
               </div>
@@ -376,7 +366,7 @@ const AddBookPage = () => {
                 <Input
                   id="quantity"
                   type="number"
-                  min="0"
+                  min="1"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
                   placeholder={t("addBook.enterQuantity")}

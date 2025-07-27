@@ -188,10 +188,14 @@ const EditBookPage = () => {
     const { name, value } = e.target;
     
     if (name === "originalPrice" || name === "salePrice" || name === "quantity") {
-      const numValue = parseFloat(value) || 0;
+      if (value === "") {
+        setFormData((prev) => ({ ...prev, [name]: "" }));
+        return;
+      }
+      const numValue = parseFloat(value);
       
       // When original price changes, automatically update sale price
-      if (name === "originalPrice") {
+      if (name === "originalPrice" && !isNaN(numValue) && numValue > 0) {
         setFormData((prev) => ({ 
           ...prev, 
           originalPrice: numValue,
@@ -407,8 +411,8 @@ const EditBookPage = () => {
                     value={formData.originalPrice} 
                     onChange={handleInputChange} 
                     required
-                    min={0}
-                    step={0.01}
+                    min="0.01"
+                    step="0.01"
                     className="text-sm"
                   />
                 </div>
@@ -422,8 +426,8 @@ const EditBookPage = () => {
                     value={formData.salePrice} 
                     onChange={handleInputChange} 
                     required
-                    min={0}
-                    step={0.01}
+                    min="0.01"
+                    step="0.01"
                     className="text-sm"
                   />
                 </div>
@@ -438,7 +442,7 @@ const EditBookPage = () => {
                   value={formData.quantity} 
                   onChange={handleInputChange} 
                   required
-                  min={0}
+                  min="1"
                   className="text-sm"
                 />
               </div>
