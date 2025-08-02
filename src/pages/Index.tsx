@@ -197,21 +197,6 @@ const Index: React.FC = () => {
           })}
         </div>
 
-        {/* Quick Stats */}
-        <Card className="bg-temple-maroon text-white">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold">{t("common.currentStore")}</h3>
-                <p className="text-sm opacity-90">{getCurrentStoreName()}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm opacity-90">{t("common.lowStock")}</p>
-                <p className="text-2xl font-bold">{lowStockBooks.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
