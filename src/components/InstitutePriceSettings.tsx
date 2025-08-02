@@ -9,6 +9,7 @@ import {
   getPrintingInstitutes 
 } from "@/services/storageService";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 const InstitutePriceSettings: React.FC = () => {
   const [institutes, setInstitutes] = useState<string[]>([]);
@@ -16,6 +17,7 @@ const InstitutePriceSettings: React.FC = () => {
   const [newInstitute, setNewInstitute] = useState<string>("");
   const [newPercentage, setNewPercentage] = useState<string>("");
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   useEffect(() => {
     // Load data
@@ -98,7 +100,7 @@ const InstitutePriceSettings: React.FC = () => {
   return (
     <Card className="temple-card mb-6">
       <CardHeader>
-        <CardTitle>Printing Institute Price Settings</CardTitle>
+        <CardTitle>{t("institute.priceSettings")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-4">
@@ -133,7 +135,7 @@ const InstitutePriceSettings: React.FC = () => {
           <h3 className="font-medium mb-3">Add New Institute</h3>
           <div className="flex flex-col md:flex-row gap-3">
             <Input
-              placeholder="Institute Name"
+              placeholder={t("institute.instituteNamePlaceholder")}
               value={newInstitute}
               onChange={(e) => setNewInstitute(e.target.value)}
               className="flex-1"
@@ -144,7 +146,7 @@ const InstitutePriceSettings: React.FC = () => {
                 min="0"
                 max="100"
                 step="0.1"
-                placeholder="Percentage"
+                placeholder={t("institute.percentagePlaceholder")}
                 value={newPercentage}
                 onChange={(e) => setNewPercentage(e.target.value)}
                 className="w-24"

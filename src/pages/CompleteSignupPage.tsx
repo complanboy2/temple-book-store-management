@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { storeInviteCode, getPendingInviteCode } from "@/services/localStorageService";
+import { useTranslation } from "react-i18next";
 
 const CompleteSignupPage = () => {
   const { inviteCode } = useParams<{ inviteCode: string }>();
@@ -17,6 +18,7 @@ const CompleteSignupPage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [invalidInvite, setInvalidInvite] = useState(false);
+  const { t } = useTranslation();
 
   // Handle invite code from URL and restore from localStorage if app was installed after receiving link
   useEffect(() => {
@@ -158,7 +160,7 @@ const CompleteSignupPage = () => {
               <Input
                 id="password"
                 type="password"
-                placeholder="Create a password"
+                placeholder={t("placeholders.createPassword")}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -171,7 +173,7 @@ const CompleteSignupPage = () => {
               <Input
                 id="confirmPassword"
                 type="password"
-                placeholder="Confirm your password"
+                placeholder={t("placeholders.confirmPassword")}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required

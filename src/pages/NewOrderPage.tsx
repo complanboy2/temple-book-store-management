@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useStallContext } from "@/contexts/StallContext";
 import { supabase } from "@/integrations/supabase/client";
 import MobileHeader from "@/components/MobileHeader";
+import { useTranslation } from "react-i18next";
 
 interface Book {
   id: string;
@@ -32,6 +33,7 @@ const NewOrderPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { currentStore } = useStallContext();
+  const { t } = useTranslation();
   const [books, setBooks] = useState<Book[]>([]);
   const [lowStockBooks, setLowStockBooks] = useState<Book[]>([]);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
@@ -246,13 +248,13 @@ const NewOrderPage = () => {
 
   return (
     <div className="min-h-screen bg-temple-background pb-20">
-      <MobileHeader title="Create New Order" showBackButton={true} />
+      <MobileHeader title={t("titles.createNewOrder")} showBackButton={true} />
       
       <div className="container mx-auto px-4 py-6 space-y-6">
         {/* Quick Actions */}
         <Card>
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+            <CardTitle>{t("actions.quickActions")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <Button
@@ -347,7 +349,7 @@ const NewOrderPage = () => {
                 type="tel"
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
-                placeholder="Enter customer phone number"
+                placeholder={t("placeholders.enterCustomerPhone")}
                 required
               />
             </div>
@@ -359,7 +361,7 @@ const NewOrderPage = () => {
                 type="email"
                 value={customerEmail}
                 onChange={(e) => setCustomerEmail(e.target.value)}
-                placeholder="Enter customer email"
+                placeholder={t("placeholders.enterCustomerEmail")}
               />
             </div>
             
@@ -369,7 +371,7 @@ const NewOrderPage = () => {
                 id="notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Any special notes for this order"
+                placeholder={t("placeholders.specialNotes")}
               />
             </div>
           </CardContent>

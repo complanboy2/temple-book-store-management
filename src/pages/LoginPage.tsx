@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const LoginPage: React.FC = () => {
   const [emailOrPhone, setEmailOrPhone] = useState("");
@@ -14,6 +15,7 @@ const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +63,7 @@ const LoginPage: React.FC = () => {
                   onChange={(e) => setEmailOrPhone(e.target.value)}
                   required
                   className="temple-input w-full"
-                  placeholder="Enter your email or phone number"
+                  placeholder={t("placeholders.enterEmailOrPhone")}
                 />
               </div>
 
@@ -75,7 +77,7 @@ const LoginPage: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="temple-input w-full"
-                  placeholder="Enter your password"
+                  placeholder={t("placeholders.enterPassword")}
                 />
               </div>
 

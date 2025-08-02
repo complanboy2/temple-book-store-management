@@ -297,5 +297,63 @@
     "helpCenter": "Help Center",
     "settingsUpdated": "Settings updated successfully",
     "failedToUpdateSettings": "Failed to update settings"
+  },
+  "institute": {
+    "printingInstitute": "Printing Institute",
+    "publisher": "Publisher",
+    "instituteName": "Institute Name",
+    "instituteNamePlaceholder": "Institute Name",
+    "percentage": "Percentage",
+    "percentagePlaceholder": "Percentage",
+    "addNewInstitute": "Add New Institute",
+    "priceSettings": "Printing Institute Price Settings",
+    "instituteNameCannotBeEmpty": "Institute name cannot be empty",
+    "updatedPercentageFor": "Updated percentage for",
+    "addedWithMarkup": "with markup"
+  },
+  "placeholders": {
+    "createPassword": "Create a password",
+    "confirmPassword": "Confirm your password",
+    "enterEmailOrPhone": "Enter your email or phone number",
+    "enterPassword": "Enter your password",
+    "enterCustomerPhone": "Enter customer phone number",
+    "enterCustomerEmail": "Enter customer email",
+    "specialNotes": "Any special notes for this order",
+    "selectBook": "Select book",
+    "enterPrintingInstitute": "Enter printing institute name",
+    "enterCustomerName": "Enter customer name",
+    "enterContactPerson": "Enter contact person name",
+    "enterContactMobile": "Enter contact person mobile",
+    "enterPhoneNumber": "Enter phone number",
+    "enterEmail": "Enter email",
+    "selectPaymentStatus": "Select payment status",
+    "selectPaymentMethod": "Select payment method",
+    "addInstructions": "Add any special instructions or notes",
+    "qtyThreshold": "Qty threshold",
+    "selectABook": "Select a book",
+    "searchOrders": "Search orders...",
+    "status": "Status",
+    "payment": "Payment",
+    "quantity": "1",
+    "zero": "0",
+    "name": "Name",
+    "phone": "Phone",
+    "paymentMethod": "Payment Method"
+  },
+  "titles": {
+    "createNewOrder": "Create New Order",
+    "orders": "Orders",
+    "bookOrders": "Book Orders"
+  },
+  "actions": {
+    "quickActions": "Quick Actions",
+    "addLowStockBooks": "Add Low Stock Books",
+    "create": "Create",
+    "createOrder": "Create Order",
+    "actions": "Actions"
+  },
+  "validation": {
+    "noImage": "No image",
+    "loading": "Loading..."
   }
 }

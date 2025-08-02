@@ -254,7 +254,7 @@ const SellBookPage = () => {
                 type="text"
                 value={quantity}
                 onChange={handleQuantityChange}
-                placeholder="1"
+                placeholder={t("placeholders.quantity")}
                 className="mt-1"
                 max={book.quantity}
               />

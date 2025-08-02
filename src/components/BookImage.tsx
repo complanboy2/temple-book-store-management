@@ -1,6 +1,7 @@
 
 // src/components/BookImage.tsx
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { getCachedImageUrl } from "@/services/imageService";
 
@@ -17,6 +18,7 @@ const BookImage: React.FC<BookImageProps> = ({
   alt = "Book cover",
   size = "medium"
 }) => {
+  const { t } = useTranslation();
   const [displayUrl, setDisplayUrl] = useState<string | undefined>(imageUrl);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -94,7 +96,7 @@ const BookImage: React.FC<BookImageProps> = ({
       {isLoading ? (
         <div className="animate-pulse bg-gray-200 w-12 h-12 rounded-full" />
       ) : hasError || !displayUrl ? (
-        <div className="text-xs text-gray-400">No image</div>
+        <div className="text-xs text-gray-400">{t("validation.noImage")}</div>
       ) : (
         <img
           src={displayUrl}

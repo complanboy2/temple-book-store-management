@@ -137,7 +137,7 @@ const MetadataInput: React.FC<MetadataInputProps> = ({
               step="0.1"
               value={percentageValue}
               onChange={handlePercentageChange}
-              placeholder="0"
+              placeholder={t("placeholders.zero")}
               className="mt-1"
             />
           </div>

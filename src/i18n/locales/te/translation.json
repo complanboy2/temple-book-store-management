@@ -291,5 +291,63 @@
     "helpCenter": "సహాయ కేంద్రం",
     "settingsUpdated": "సెట్టింగులు విజయవంతంగా నవీకరించబడ్డాయి",
     "failedToUpdateSettings": "సెట్టింగులను నవీకరించడంలో విఫలమైంది"
+  },
+  "institute": {
+    "printingInstitute": "ప్రింటింగ్ ఇన్స్టిట్యూట్",
+    "publisher": "ప్రచురణకర్త",
+    "instituteName": "ఇన్స్టిట్యూట్ పేరు",
+    "instituteNamePlaceholder": "ఇన్స్టిట్యూట్ పేరు",
+    "percentage": "శాతం",
+    "percentagePlaceholder": "శాతం",
+    "addNewInstitute": "కొత్త ఇన్స్టిట్యూట్ జోడించండి",
+    "priceSettings": "ప్రింటింగ్ ఇన్స్టిట్యూట్ ధర సెట్టింగులు",
+    "instituteNameCannotBeEmpty": "ఇన్స్టిట్యూట్ పేరు ఖాళీగా ఉండకూడదు",
+    "updatedPercentageFor": "శాతం అప్డేట్ చేయబడింది",
+    "addedWithMarkup": "మార్కప్ తో జోడించబడింది"
+  },
+  "placeholders": {
+    "createPassword": "పాస్‌వర్డ్ సృష్టించండి",
+    "confirmPassword": "మీ పాస్‌వర్డ్‌ను నిర్ధారించండి",
+    "enterEmailOrPhone": "మీ ఇమెయిల్ లేదా ఫోన్ నంబర్ నమోదు చేయండి",
+    "enterPassword": "మీ పాస్‌వర్డ్ నమోదు చేయండి",
+    "enterCustomerPhone": "కస్టమర్ ఫోన్ నంబర్ నమోదు చేయండి",
+    "enterCustomerEmail": "కస్టమర్ ఇమెయిల్ నమోదు చేయండి",
+    "specialNotes": "ఈ ఆర్డర్ కోసం ఏవైనా ప్రత్యేక గమనికలు",
+    "selectBook": "పుస్తకం ఎంచుకోండి",
+    "enterPrintingInstitute": "ప్రింటింగ్ ఇన్స్టిట్యూట్ పేరు నమోదు చేయండి",
+    "enterCustomerName": "కస్టమర్ పేరు నమోదు చేయండి",
+    "enterContactPerson": "సంప్రదింపు వ్యక్తి పేరు నమోదు చేయండి",
+    "enterContactMobile": "సంప్రదింపు వ్యక్తి మొబైల్ నమోదు చేయండి",
+    "enterPhoneNumber": "ఫోన్ నంబర్ నమోదు చేయండి",
+    "enterEmail": "ఇమెయిల్ నమోదు చేయండి",
+    "selectPaymentStatus": "చెల్లింపు స్థితిని ఎంచుకోండి",
+    "selectPaymentMethod": "చెల్లింపు పద్ధతిని ఎంచుకోండి",
+    "addInstructions": "ఏవైనా ప్రత్యేక సూచనలు లేదా గమనికలు జోడించండి",
+    "qtyThreshold": "మొత్తం థ్రెషోల్డ్",
+    "selectABook": "ఒక పుస్తకం ఎంచుకోండి",
+    "searchOrders": "ఆర్డర్లను వెతకండి...",
+    "status": "స్థితి",
+    "payment": "చెల్లింపు",
+    "quantity": "1",
+    "zero": "0",
+    "name": "పేరు",
+    "phone": "ఫోన్",
+    "paymentMethod": "చెల్లింపు పద్ధతి"
+  },
+  "titles": {
+    "createNewOrder": "కొత్త ఆర్డర్ సృష్టించండి",
+    "orders": "ఆర్డర్లు",
+    "bookOrders": "పుస్తక ఆర్డర్లు"
+  },
+  "actions": {
+    "quickActions": "శీఘ్ర చర్యలు",
+    "addLowStockBooks": "తక్కువ స్టాక్ పుస్తకాలను జోడించండి",
+    "create": "సృష్టించండి",
+    "createOrder": "ఆర్డర్ సృష్టించండి",
+    "actions": "చర్యలు"
+  },
+  "validation": {
+    "noImage": "చిత్రం లేదు",
+    "loading": "లోడ్ అవుతోంది..."
   }
 }

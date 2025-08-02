@@ -476,7 +476,7 @@ const OrdersPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-temple-background pb-20">
       <MobileHeader 
-        title="Orders"
+        title={t("titles.orders")}
         showBackButton={true}
         backTo="/"
         showStallSelector={true}
@@ -484,7 +484,7 @@ const OrdersPage: React.FC = () => {
       
       <main className="container mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-temple-maroon mb-4 md:mb-0">Book Orders</h1>
+          <h1 className="text-2xl font-bold text-temple-maroon mb-4 md:mb-0">{t("titles.bookOrders")}</h1>
           
           {currentUser?.role === "admin" && (
             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
