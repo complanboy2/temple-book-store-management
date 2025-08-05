@@ -94,8 +94,8 @@ const MainMenu = () => {
   } else {
     // Add seller-specific items
     menuItems.push({
-      title: "My Sales History",
-      description: "View and edit your sales",
+      title: t("navigation.mySalesHistory"),
+      description: t("navigation.viewAndEditYourSales"),
       icon: History,
       path: "/my-sales-history",
       bgColor: "bg-amber-500",

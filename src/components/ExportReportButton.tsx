@@ -28,15 +28,15 @@ const ExportReportButton: React.FC<ExportReportButtonProps> = ({
     if (bookData.length > 0) {
       data = bookData.map(book => {
         return {
-          [t("common.bookId")]: book.id,
-          [t("common.bookName")]: book.name,
-          [t("common.author")]: book.author,
-          [t("common.price")]: book.price,
-          [t("common.quantity")]: book.quantity,
-          [t("common.category")]: book.category,
-          [t("common.printingInstitute")]: book.printingInstitute,
-          [t("common.imageUrl")]: book.imageurl,
-          [t("common.quantitySold")]: book.quantitySold,
+          [t("reportExport.bookId")]: book.id,
+          [t("reportExport.bookName")]: book.name,
+          [t("reportExport.author")]: book.author,
+          [t("reportExport.price")]: book.price,
+          [t("reportExport.quantity")]: book.quantity,
+          [t("reportExport.category")]: book.category,
+          [t("reportExport.printingInstitute")]: book.printingInstitute,
+          [t("reportExport.imageUrl")]: book.imageurl,
+          [t("reportExport.quantitySold")]: book.quantitySold,
         };
       });
     }
@@ -44,16 +44,16 @@ const ExportReportButton: React.FC<ExportReportButtonProps> = ({
     else if (salesData.length > 0) {
       data = salesData.map(sale => {
         return {
-          [t("common.id")]: sale.id,
-          [t("common.bookName")]: sale.bookName,
-          [t("common.author")]: sale.author,
-          [t("common.price")]: sale.price,
-          [t("common.quantity")]: sale.quantity,
-          [t("common.amount")]: sale.totalAmount,
-          [t("common.date")]: sale.date instanceof Date ? sale.date.toLocaleDateString() : sale.date,
-          [t("common.buyer")]: sale.buyerName || "",
-          [t("common.seller")]: sale.sellerName || "",
-          [t("common.paymentMethod")]: sale.paymentMethod,
+          [t("reportExport.id")]: sale.id,
+          [t("reportExport.bookName")]: sale.bookName,
+          [t("reportExport.author")]: sale.author,
+          [t("reportExport.price")]: sale.price,
+          [t("reportExport.quantity")]: sale.quantity,
+          [t("reportExport.amount")]: sale.totalAmount,
+          [t("reportExport.date")]: sale.date instanceof Date ? sale.date.toLocaleDateString() : sale.date,
+          [t("reportExport.buyer")]: sale.buyerName || "",
+          [t("reportExport.seller")]: sale.sellerName || "",
+          [t("reportExport.paymentMethod")]: sale.paymentMethod,
         };
       });
     }
@@ -102,7 +102,7 @@ const ExportReportButton: React.FC<ExportReportButtonProps> = ({
           d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
         />
       </svg>
-      {t("common.export")}
+      {t("reportExport.export")}
     </Button>
   );
 };

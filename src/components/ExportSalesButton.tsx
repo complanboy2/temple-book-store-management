@@ -15,6 +15,7 @@ import { Sale } from "@/types";
 import { useToast } from '@/hooks/use-toast';
 import { useStallContext } from '@/contexts/StallContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useTranslation } from 'react-i18next';
 
 interface ExportSalesButtonProps {
   sales: Sale[];
@@ -56,6 +57,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
   const [personnelNames, setPersonnelNames] = useState<Record<string, string>>({});
   const { toast } = useToast();
   const { currentStore } = useStallContext();
+  const { t } = useTranslation();
 
   // Auto-close toast function
   const showToast = (title: string, description: string, variant: "default" | "destructive" = "default") => {
@@ -183,26 +185,26 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
           }
         </style>
       </head>
-      <body>
-        <h1>Sales History</h1>
-        <div class="info">
-          <p>Total Transactions: ${sales.length}</p>
-          <p>Generated: ${timestamp}</p>
-        </div>
+       <body>
+         <h1>${t('salesExport.salesHistory')}</h1>
+         <div class="info">
+           <p>${t('salesExport.totalTransactions')}: ${sales.length}</p>
+           <p>${t('salesExport.generated')}: ${timestamp}</p>
+         </div>
         <table>
           <thead>
-            <tr>
-              ${fields.date ? '<th>Date</th>' : ''}
-              ${fields.bookName ? '<th>Book Title</th>' : ''}
-              ${fields.bookAuthor ? '<th>Author</th>' : ''}
-              ${fields.bookId ? '<th>Book ID</th>' : ''}
-              ${fields.imageUrl ? '<th>Image</th>' : ''}
-              ${fields.quantity ? '<th>Quantity</th>' : ''}
-              ${fields.amount ? '<th>Amount</th>' : ''}
-              ${fields.paymentMethod ? '<th>Payment Method</th>' : ''}
-              ${fields.buyerInfo ? '<th>Buyer</th>' : ''}
-              ${fields.personnel ? '<th>Sold By</th>' : ''}
-            </tr>
+             <tr>
+               ${fields.date ? `<th>${t('salesExport.date')}</th>` : ''}
+               ${fields.bookName ? `<th>${t('salesExport.bookTitle')}</th>` : ''}
+               ${fields.bookAuthor ? `<th>${t('salesExport.author')}</th>` : ''}
+               ${fields.bookId ? `<th>${t('salesExport.bookId')}</th>` : ''}
+               ${fields.imageUrl ? `<th>${t('salesExport.image')}</th>` : ''}
+               ${fields.quantity ? `<th>${t('salesExport.quantity')}</th>` : ''}
+               ${fields.amount ? `<th>${t('salesExport.amount')}</th>` : ''}
+               ${fields.paymentMethod ? `<th>${t('salesExport.paymentMethod')}</th>` : ''}
+               ${fields.buyerInfo ? `<th>${t('salesExport.buyer')}</th>` : ''}
+               ${fields.personnel ? `<th>${t('salesExport.soldBy')}</th>` : ''}
+             </tr>
           </thead>
           <tbody>
     `;
@@ -218,19 +220,19 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
           ${fields.bookAuthor ? `<td>${bookDetails.author}</td>` : ''}
           ${fields.bookId ? `<td class="book-id">${sale.bookId}</td>` : ''}
           ${fields.imageUrl ? `<td>
-            ${
-              bookDetails.imageUrl
-                ? `<img src="${bookDetails.imageUrl}" alt="Book Cover" class="book-thumb" onerror="this.style.display='none'" />`
-                : '<span style="color:#bbb;font-size:10px;">No Image</span>'
-            }
-            <br/>
-            <span class="image-url">${bookDetails.imageUrl || 'N/A'}</span>
+             ${
+               bookDetails.imageUrl
+                 ? `<img src="${bookDetails.imageUrl}" alt="Book Cover" class="book-thumb" onerror="this.style.display='none'" />`
+                 : `<span style="color:#bbb;font-size:10px;">${t('salesExport.noImage')}</span>`
+             }
+             <br/>
+             <span class="image-url">${bookDetails.imageUrl || t('salesExport.na')}</span>
           </td>` : ''}
           ${fields.quantity ? `<td>${sale.quantity}</td>` : ''}
           ${fields.amount ? `<td>₹${sale.totalAmount.toFixed(2)}</td>` : ''}
-          ${fields.paymentMethod ? `<td>${sale.paymentMethod}</td>` : ''}
-          ${fields.buyerInfo ? `<td>${sale.buyerName || 'N/A'}${sale.buyerPhone ? ` (${sale.buyerPhone})` : ''}</td>` : ''}
-          ${fields.personnel ? `<td>${sellerName}</td>` : ''}
+           ${fields.paymentMethod ? `<td>${sale.paymentMethod}</td>` : ''}
+           ${fields.buyerInfo ? `<td>${sale.buyerName || t('salesExport.na')}${sale.buyerPhone ? ` (${sale.buyerPhone})` : ''}</td>` : ''}
+           ${fields.personnel ? `<td>${sellerName}</td>` : ''}
         </tr>
         ${(index + 1) % 20 === 0 ? '<tr class="page-break"><td colspan="10"></td></tr>' : ''}
       `;
@@ -239,13 +241,13 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
     html += `
           </tbody>
         </table>
-        <div class="summary">
-          <p>Total Items Sold: ${totalQuantity}</p>
-          <p>Total Revenue: ₹${totalRevenue.toFixed(2)}</p>
-        </div>
-        <div class="footer">
-          <p>Temple Book Stall Manager</p>
-        </div>
+         <div class="summary">
+           <p>${t('salesExport.totalItemsSold')}: ${totalQuantity}</p>
+           <p>${t('salesExport.totalRevenue')}: ₹${totalRevenue.toFixed(2)}</p>
+         </div>
+         <div class="footer">
+           <p>${t('salesExport.templeBookStallManager')}</p>
+         </div>
       </body>
       </html>
     `;
@@ -269,7 +271,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
         // This allows the user to see the preview
       }, 500);
     } else {
-      showToast("Error", "Could not open print window. Please check your popup settings.", "destructive");
+      showToast(t('salesExport.error'), t('salesExport.couldNotOpenPrintWindow'), "destructive");
     }
     
     setOpen(false);
@@ -301,7 +303,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
     
     setOpen(false);
     
-    showToast("Success", "Sales history downloaded successfully");
+    showToast(t('salesExport.success'), t('salesExport.salesHistoryDownloadedSuccessfully'));
   };
 
   return (
@@ -318,17 +320,17 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
           ) : (
             <Printer className="h-4 w-4" />
           )}
-          {variant === "print" ? "Print" : variant === "download" ? "Download" : "Export"} Sales History
+          {variant === "print" ? t('salesExport.print') : variant === "download" ? t('salesExport.download') : t('salesExport.export')} {t('salesExport.salesHistory')}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Export Sales History</DialogTitle>
+          <DialogTitle>{t('salesExport.exportSalesHistory')}</DialogTitle>
         </DialogHeader>
         
         <div className="py-4">
           <p className="text-sm text-muted-foreground mb-4">
-            Choose the fields you want to include in the export:
+            {t('salesExport.chooseFields')}
           </p>
           
           <div className="grid grid-cols-2 gap-4">
@@ -338,7 +340,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
                 checked={fields.bookName} 
                 onCheckedChange={(checked) => handleFieldChange('bookName', !!checked)} 
               />
-              <Label htmlFor="bookName">Book Title</Label>
+              <Label htmlFor="bookName">{t('salesExport.bookTitle')}</Label>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -347,7 +349,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
                 checked={fields.bookAuthor} 
                 onCheckedChange={(checked) => handleFieldChange('bookAuthor', !!checked)} 
               />
-              <Label htmlFor="bookAuthor">Author</Label>
+              <Label htmlFor="bookAuthor">{t('salesExport.author')}</Label>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -356,7 +358,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
                 checked={fields.bookId} 
                 onCheckedChange={(checked) => handleFieldChange('bookId', !!checked)} 
               />
-              <Label htmlFor="bookId">Book ID</Label>
+              <Label htmlFor="bookId">{t('salesExport.bookId')}</Label>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -365,7 +367,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
                 checked={fields.imageUrl} 
                 onCheckedChange={(checked) => handleFieldChange('imageUrl', !!checked)} 
               />
-              <Label htmlFor="imageUrl">Image URL</Label>
+              <Label htmlFor="imageUrl">{t('salesExport.imageUrl')}</Label>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -374,7 +376,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
                 checked={fields.quantity} 
                 onCheckedChange={(checked) => handleFieldChange('quantity', !!checked)} 
               />
-              <Label htmlFor="quantity">Quantity</Label>
+              <Label htmlFor="quantity">{t('salesExport.quantity')}</Label>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -383,7 +385,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
                 checked={fields.amount} 
                 onCheckedChange={(checked) => handleFieldChange('amount', !!checked)} 
               />
-              <Label htmlFor="amount">Amount</Label>
+              <Label htmlFor="amount">{t('salesExport.amount')}</Label>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -392,7 +394,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
                 checked={fields.date} 
                 onCheckedChange={(checked) => handleFieldChange('date', !!checked)} 
               />
-              <Label htmlFor="date">Date</Label>
+              <Label htmlFor="date">{t('salesExport.date')}</Label>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -401,7 +403,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
                 checked={fields.paymentMethod} 
                 onCheckedChange={(checked) => handleFieldChange('paymentMethod', !!checked)} 
               />
-              <Label htmlFor="paymentMethod">Payment Method</Label>
+              <Label htmlFor="paymentMethod">{t('salesExport.paymentMethod')}</Label>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -410,7 +412,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
                 checked={fields.buyerInfo} 
                 onCheckedChange={(checked) => handleFieldChange('buyerInfo', !!checked)} 
               />
-              <Label htmlFor="buyerInfo">Buyer Information</Label>
+              <Label htmlFor="buyerInfo">{t('salesExport.buyerInformation')}</Label>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -419,7 +421,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
                 checked={fields.personnel} 
                 onCheckedChange={(checked) => handleFieldChange('personnel', !!checked)} 
               />
-              <Label htmlFor="personnel">Sold By</Label>
+              <Label htmlFor="personnel">{t('salesExport.soldBy')}</Label>
             </div>
           </div>
         </div>
@@ -429,7 +431,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
             variant="outline"
             onClick={() => setOpen(false)}
           >
-            Cancel
+            {t('salesExport.cancel')}
           </Button>
           
           <div className="flex gap-2">
@@ -439,7 +441,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
                 className="flex items-center gap-2"
               >
                 <Printer className="h-4 w-4" />
-                Print
+                {t('salesExport.print')}
               </Button>
             )}
             
@@ -449,7 +451,7 @@ const ExportSalesButton: React.FC<ExportSalesButtonProps> = ({
                 className="flex items-center gap-2"
               >
                 <Download className="h-4 w-4" />
-                Download
+                {t('salesExport.download')}
               </Button>
             )}
           </div>

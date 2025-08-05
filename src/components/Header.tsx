@@ -48,7 +48,7 @@ const Header = ({ showBackButton = false, backTo = "/", title }: HeaderProps) =>
               <SheetContent side="left" className="w-72 bg-temple-background">
                 <div className="flex flex-col h-full">
                   <div className="p-4 border-b border-temple-gold/30">
-                    <h2 className="text-xl font-bold text-temple-maroon">{t("common.templeBookStall")}</h2>
+                    <h2 className="text-xl font-bold text-temple-maroon">{t("navigation.templeBookStall")}</h2>
                     {currentUser && (
                       <p className="text-sm text-muted-foreground mt-1">{currentUser.name}</p>
                     )}
@@ -62,7 +62,7 @@ const Header = ({ showBackButton = false, backTo = "/", title }: HeaderProps) =>
                           className="w-full justify-start text-lg font-medium"
                           onClick={() => navigate("/")}
                         >
-                          🏠 {t("common.home")}
+                          🏠 {t("navigation.home")}
                         </Button>
                       </li>
                       <li>
@@ -71,7 +71,7 @@ const Header = ({ showBackButton = false, backTo = "/", title }: HeaderProps) =>
                           className="w-full justify-start text-lg font-medium"
                           onClick={() => navigate("/books")}
                         >
-                          📚 {t("common.books")}
+                          📚 {t("navigation.books")}
                         </Button>
                       </li>
                       <li>
@@ -80,7 +80,7 @@ const Header = ({ showBackButton = false, backTo = "/", title }: HeaderProps) =>
                           className="w-full justify-start text-lg font-medium"
                           onClick={() => navigate("/books")}
                         >
-                          💰 {t("common.newSale")}
+                          💰 {t("navigation.newSale")}
                         </Button>
                       </li>
                       <li>
@@ -89,7 +89,7 @@ const Header = ({ showBackButton = false, backTo = "/", title }: HeaderProps) =>
                           className="w-full justify-start text-lg font-medium"
                           onClick={() => navigate("/sales")}
                         >
-                          💰 {t("common.sales")}
+                          💰 {t("navigation.sales")}
                         </Button>
                       </li>
                       <li>
@@ -98,7 +98,7 @@ const Header = ({ showBackButton = false, backTo = "/", title }: HeaderProps) =>
                           className="w-full justify-start text-lg font-medium"
                           onClick={() => navigate("/orders")}
                         >
-                          📦 {t("common.orders")}
+                          📦 {t("navigation.orders")}
                         </Button>
                       </li>
                       {isAdmin && (
@@ -109,7 +109,7 @@ const Header = ({ showBackButton = false, backTo = "/", title }: HeaderProps) =>
                               className="w-full justify-start text-lg font-medium"
                               onClick={() => navigate("/reports")}
                             >
-                              📊 {t("common.reports")}
+                              📊 {t("navigation.reports")}
                             </Button>
                           </li>
                           <li>
@@ -118,7 +118,7 @@ const Header = ({ showBackButton = false, backTo = "/", title }: HeaderProps) =>
                               className="w-full justify-start text-lg font-medium"
                               onClick={() => navigate("/admin")}
                             >
-                              ⚙️ {t("common.administration")}
+                              ⚙️ {t("navigation.administration")}
                             </Button>
                           </li>
                           <li>
@@ -127,7 +127,7 @@ const Header = ({ showBackButton = false, backTo = "/", title }: HeaderProps) =>
                               className="w-full justify-start text-lg font-medium"
                               onClick={() => navigate("/settings")}
                             >
-                              ⚙️ {t("common.settings")}
+                              ⚙️ {t("navigation.settings")}
                             </Button>
                           </li>
                         </>
@@ -138,7 +138,7 @@ const Header = ({ showBackButton = false, backTo = "/", title }: HeaderProps) =>
                           className="w-full justify-start text-lg font-medium"
                           onClick={() => navigate("/profile")}
                         >
-                          👤 {t("common.profile")}
+                          👤 {t("navigation.profile")}
                         </Button>
                       </li>
                       <li>
@@ -147,7 +147,7 @@ const Header = ({ showBackButton = false, backTo = "/", title }: HeaderProps) =>
                           className="w-full justify-start text-lg font-medium"
                           onClick={() => navigate("/privacy-policy")}
                         >
-                          📜 {t("common.privacyPolicy")}
+                          📜 {t("navigation.privacyPolicy")}
                         </Button>
                       </li>
                     </ul>
@@ -159,14 +159,14 @@ const Header = ({ showBackButton = false, backTo = "/", title }: HeaderProps) =>
                       className="w-full justify-start border-temple-maroon text-temple-maroon hover:bg-temple-maroon/10"
                       onClick={handleLogout}
                     >
-                      {t("common.logout")}
+                      {t("navigation.logout")}
                     </Button>
                   </div>
                 </div>
               </SheetContent>
             </Sheet>
             <h1 className="text-xl font-bold text-white" onClick={() => navigate("/")}>
-              {title || t("common.templeBookStall")}
+              {title || t("navigation.templeBookStall")}
             </h1>
           </div>
           
@@ -189,7 +189,7 @@ const Header = ({ showBackButton = false, backTo = "/", title }: HeaderProps) =>
         </div>
       </header>
       <div className="bg-temple-maroon/80 py-2 px-4 text-center">
-        <h2 className="text-sm font-medium text-white">{t("common.bookStoreManager")}</h2>
+        <h2 className="text-sm font-medium text-white">{t("navigation.bookStoreManager")}</h2>
       </div>
     </>
   );
