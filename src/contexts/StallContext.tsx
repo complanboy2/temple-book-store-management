@@ -43,64 +43,32 @@ export const StallProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       console.log("DEBUG: Fetching stalls for user:", currentUser.email, "Role:", currentUser.role);
 
-      if (isAdmin) {
-        // For admins, fetch stores they created
-        console.log("DEBUG: User is admin, fetching owned stores...");
-        const { data: stallsData, error: stallsError } = await supabase
-          .from('book_stalls')
-          .select('id, name, location, is_default')
-          .eq('admin_id', currentUser.email)
-          .order('name');
+      // Always query book_stalls table for all users
+      const { data: stallsData, error: stallsError } = await supabase
+        .from('book_stalls')
+        .select('id, name, location, is_default')
+        .order('name');
 
-        if (stallsError) {
-          console.error("DEBUG: Error fetching admin stalls:", stallsError);
-        } else {
-          console.log("DEBUG: Fetched admin stalls:", stallsData);
-          const formattedStores = stallsData?.map(stall => ({
-            id: stall.id,
-            name: stall.name,
-            location: stall.location || "",
-            is_default: stall.is_default
-          })) || [];
-          
-          setStores(formattedStores);
-          
-          if (formattedStores.length > 0 && !currentStore) {
-            setCurrentStore(formattedStores[0].id);
-          }
-        }
+      if (stallsError) {
+        console.error("DEBUG: Error fetching stalls:", stallsError);
+        setStores([]);
       } else {
-        // For personnel/sellers, use admin@temple.com as fallback
-        console.log("DEBUG: User is personnel, using fallback admin...");
-        const adminEmail = "admin@temple.com"; // Fallback for personnel users
+        console.log("DEBUG: Fetched stalls:", stallsData);
+        const formattedStores = stallsData?.map(stall => ({
+          id: stall.id,
+          name: stall.name,
+          location: stall.location || "",
+          is_default: stall.is_default
+        })) || [];
         
-        console.log("DEBUG: Querying stalls for admin_id:", adminEmail);
-        const { data: stallsData, error: stallsError } = await supabase
-          .from('book_stalls')
-          .select('id, name, location, is_default')
-          .eq('admin_id', adminEmail)
-          .order('name');
-
-        if (stallsError) {
-          console.error("DEBUG: Error fetching personnel stalls:", stallsError);
-        } else {
-          console.log("DEBUG: Fetched personnel stalls:", stallsData);
-          const formattedStores = stallsData?.map(stall => ({
-            id: stall.id,
-            name: stall.name,
-            location: stall.location || "",
-            is_default: stall.is_default
-          })) || [];
-          
-          setStores(formattedStores);
-          
-          if (formattedStores.length > 0 && !currentStore) {
-            setCurrentStore(formattedStores[0].id);
-          }
+        setStores(formattedStores);
+        
+        if (formattedStores.length > 0 && !currentStore) {
+          setCurrentStore(formattedStores[0].id);
         }
+        
+        console.log("DEBUG: Final stores state will be:", formattedStores);
       }
-
-      console.log("DEBUG: Fetched stores:", stores);
     } catch (error) {
       console.error("DEBUG: General error in fetchStalls:", error);
     } finally {

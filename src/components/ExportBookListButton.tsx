@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Download, Printer } from "lucide-react";
 import { Book } from "@/types";
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 interface ExportBookListButtonProps {
   books: Book[];
@@ -44,6 +45,7 @@ const ExportBookListButton: React.FC<ExportBookListButtonProps> = ({
     image: true,
   });
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleFieldChange = (field: keyof ExportFields, value: boolean) => {
     setFields(prev => ({ ...prev, [field]: value }));
@@ -220,17 +222,17 @@ const ExportBookListButton: React.FC<ExportBookListButtonProps> = ({
           ) : (
             <Printer className="h-4 w-4" />
           )}
-          {variant === "print" ? "Print" : variant === "download" ? "Download" : "Export"} Book List
+          {variant === "print" ? t("hardcoded.printLabel") : variant === "download" ? t("hardcoded.downloadLabel") : t("hardcoded.exportLabel")} {t("hardcoded.exportBookListLabel")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Export Book List</DialogTitle>
+          <DialogTitle>{t("hardcoded.exportBookListLabel")}</DialogTitle>
         </DialogHeader>
         
         <div className="py-4">
           <p className="text-sm text-muted-foreground mb-4">
-            Choose the fields you want to include in the export:
+            {t("hardcoded.chooseFields")}
           </p>
           
           <div className="grid grid-cols-2 gap-4">
@@ -240,7 +242,7 @@ const ExportBookListButton: React.FC<ExportBookListButtonProps> = ({
                 checked={fields.name} 
                 onCheckedChange={(checked) => handleFieldChange('name', !!checked)} 
               />
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">{t("hardcoded.nameLabel")}</Label>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -249,7 +251,7 @@ const ExportBookListButton: React.FC<ExportBookListButtonProps> = ({
                 checked={fields.author} 
                 onCheckedChange={(checked) => handleFieldChange('author', !!checked)} 
               />
-              <Label htmlFor="author">Author</Label>
+              <Label htmlFor="author">{t("hardcoded.authorLabel")}</Label>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -258,7 +260,7 @@ const ExportBookListButton: React.FC<ExportBookListButtonProps> = ({
                 checked={fields.category} 
                 onCheckedChange={(checked) => handleFieldChange('category', !!checked)} 
               />
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="category">{t("hardcoded.categoryLabel")}</Label>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -267,7 +269,7 @@ const ExportBookListButton: React.FC<ExportBookListButtonProps> = ({
                 checked={fields.price} 
                 onCheckedChange={(checked) => handleFieldChange('price', !!checked)} 
               />
-              <Label htmlFor="price">Price</Label>
+              <Label htmlFor="price">{t("hardcoded.priceLabel")}</Label>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -276,7 +278,7 @@ const ExportBookListButton: React.FC<ExportBookListButtonProps> = ({
                 checked={fields.quantity} 
                 onCheckedChange={(checked) => handleFieldChange('quantity', !!checked)} 
               />
-              <Label htmlFor="quantity">Quantity</Label>
+              <Label htmlFor="quantity">{t("hardcoded.quantityLabel")}</Label>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -285,7 +287,7 @@ const ExportBookListButton: React.FC<ExportBookListButtonProps> = ({
                 checked={fields.printingInstitute} 
                 onCheckedChange={(checked) => handleFieldChange('printingInstitute', !!checked)} 
               />
-              <Label htmlFor="printingInstitute">Publisher</Label>
+              <Label htmlFor="printingInstitute">{t("hardcoded.publisherLabel")}</Label>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -294,7 +296,7 @@ const ExportBookListButton: React.FC<ExportBookListButtonProps> = ({
                 checked={fields.image} 
                 onCheckedChange={(checked) => handleFieldChange('image', !!checked)} 
               />
-              <Label htmlFor="image">Images</Label>
+              <Label htmlFor="image">{t("hardcoded.imagesLabel")}</Label>
             </div>
           </div>
         </div>
@@ -304,7 +306,7 @@ const ExportBookListButton: React.FC<ExportBookListButtonProps> = ({
             variant="outline"
             onClick={() => setOpen(false)}
           >
-            Cancel
+            {t("hardcoded.cancel")}
           </Button>
           
           <div className="flex gap-2">
@@ -314,7 +316,7 @@ const ExportBookListButton: React.FC<ExportBookListButtonProps> = ({
                 className="flex items-center gap-2"
               >
                 <Printer className="h-4 w-4" />
-                Print
+                {t("hardcoded.printLabel")}
               </Button>
             )}
             
@@ -324,7 +326,7 @@ const ExportBookListButton: React.FC<ExportBookListButtonProps> = ({
                 className="flex items-center gap-2"
               >
                 <Download className="h-4 w-4" />
-                Download
+                {t("hardcoded.downloadLabel")}
               </Button>
             )}
           </div>
