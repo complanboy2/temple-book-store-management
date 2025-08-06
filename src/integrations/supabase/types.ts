@@ -14,6 +14,77 @@ export type Database = {
   }
   public: {
     Tables: {
+      activities: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          institute_id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          institute_id: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          institute_id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      activity_slots: {
+        Row: {
+          activity_id: string
+          created_at: string
+          created_by: string | null
+          display_name: string
+          id: string
+          institute_id: string
+          scheduled_date: string
+          updated_at: string
+        }
+        Insert: {
+          activity_id: string
+          created_at?: string
+          created_by?: string | null
+          display_name: string
+          id?: string
+          institute_id: string
+          scheduled_date: string
+          updated_at?: string
+        }
+        Update: {
+          activity_id?: string
+          created_at?: string
+          created_by?: string | null
+          display_name?: string
+          id?: string
+          institute_id?: string
+          scheduled_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_slots_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       book_images: {
         Row: {
           created_at: string
@@ -322,6 +393,90 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_activity_bookings: {
+        Row: {
+          activity_slot_id: string
+          booking_date: string
+          created_by: string | null
+          id: string
+          institute_id: string
+          notes: string | null
+          user_metadata_id: string
+        }
+        Insert: {
+          activity_slot_id: string
+          booking_date?: string
+          created_by?: string | null
+          id?: string
+          institute_id: string
+          notes?: string | null
+          user_metadata_id: string
+        }
+        Update: {
+          activity_slot_id?: string
+          booking_date?: string
+          created_by?: string | null
+          id?: string
+          institute_id?: string
+          notes?: string | null
+          user_metadata_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_activity_bookings_activity_slot_id_fkey"
+            columns: ["activity_slot_id"]
+            isOneToOne: false
+            referencedRelation: "activity_slots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_activity_bookings_user_metadata_id_fkey"
+            columns: ["user_metadata_id"]
+            isOneToOne: false
+            referencedRelation: "user_metadata"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_metadata: {
+        Row: {
+          address: string | null
+          created_at: string
+          created_by: string | null
+          family_members: string | null
+          gothram: string | null
+          id: string
+          institute_id: string
+          mobile_number: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          created_by?: string | null
+          family_members?: string | null
+          gothram?: string | null
+          id?: string
+          institute_id: string
+          mobile_number: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          created_by?: string | null
+          family_members?: string | null
+          gothram?: string | null
+          id?: string
+          institute_id?: string
+          mobile_number?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       users: {
         Row: {
