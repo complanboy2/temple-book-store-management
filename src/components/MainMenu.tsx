@@ -12,7 +12,10 @@ import {
   TrendingUp, 
   ShoppingBag,
   Users,
-  History
+  History,
+  Calendar,
+  UserPlus,
+  FileText
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -89,6 +92,42 @@ const MainMenu = () => {
         bgColor: "bg-red-500",
         textColor: "text-red-700",
         hoverColor: "hover:bg-red-600"
+      },
+      {
+        title: "User Management",
+        description: "Manage user metadata and information",
+        icon: Users,
+        path: "/user-metadata",
+        bgColor: "bg-violet-500",
+        textColor: "text-violet-700",
+        hoverColor: "hover:bg-violet-600"
+      },
+      {
+        title: "Activities",
+        description: "Manage religious activities and ceremonies",
+        icon: Calendar,
+        path: "/activity-management",
+        bgColor: "bg-rose-500",
+        textColor: "text-rose-700",
+        hoverColor: "hover:bg-rose-600"
+      },
+      {
+        title: "Slot Booking",
+        description: "Create activity slots and manage bookings",
+        icon: UserPlus,
+        path: "/slot-booking",
+        bgColor: "bg-cyan-500",
+        textColor: "text-cyan-700",
+        hoverColor: "hover:bg-cyan-600"
+      },
+      {
+        title: "Activity Reports",
+        description: "View and export participant reports",
+        icon: FileText,
+        path: "/activity-reports",
+        bgColor: "bg-emerald-500",
+        textColor: "text-emerald-700",
+        hoverColor: "hover:bg-emerald-600"
       }
     );
   } else {

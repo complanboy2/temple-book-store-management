@@ -24,6 +24,10 @@ import SettingsPage from "./pages/SettingsPage";
 import SearchPage from "./pages/SearchPage";
 import AdminPage from "./pages/AdminPage";
 import MetadataManagerPage from "./pages/MetadataManagerPage";
+import UserMetadataPage from "./pages/UserMetadataPage";
+import ActivityManagementPage from "./pages/ActivityManagementPage";
+import SlotBookingPage from "./pages/SlotBookingPage";
+import ActivityReportsPage from "./pages/ActivityReportsPage";
 import ProfilePage from "./pages/ProfilePage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import NotFound from "./pages/NotFound";
@@ -66,6 +70,10 @@ function App() {
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="/metadata" element={<MetadataManagerPage />} />
+                <Route path="/user-metadata" element={<UserMetadataPage />} />
+                <Route path="/activity-management" element={<ActivityManagementPage />} />
+                <Route path="/slot-booking" element={<SlotBookingPage />} />
+                <Route path="/activity-reports" element={<ActivityReportsPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
                 <Route path="*" element={<NotFound />} />
