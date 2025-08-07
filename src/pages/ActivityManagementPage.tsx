@@ -22,6 +22,7 @@ interface Activity {
 
 export default function ActivityManagementPage() {
   const { t } = useTranslation();
+  const { currentUser } = useAuth();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
@@ -58,7 +59,6 @@ export default function ActivityManagementPage() {
 
   const handleSubmit = async () => {
     try {
-      const { currentUser } = useAuth();
       if (!currentUser) throw new Error('Not authenticated');
 
       const activityData = {

@@ -24,6 +24,7 @@ interface UserMetadata {
 
 export default function UserMetadataPage() {
   const { t } = useTranslation();
+  const { currentUser } = useAuth();
   const [users, setUsers] = useState<UserMetadata[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -64,7 +65,6 @@ export default function UserMetadataPage() {
 
   const handleSubmit = async () => {
     try {
-      const { currentUser } = useAuth();
       if (!currentUser) throw new Error('Not authenticated');
 
       const userData = {
