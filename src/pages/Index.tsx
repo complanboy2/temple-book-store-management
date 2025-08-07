@@ -230,40 +230,172 @@ const Index: React.FC = () => {
           </TabsContent>
           
           <TabsContent value="books" className="space-y-4">
-            <div className="text-center py-8">
-              <p className="text-muted-foreground mb-4">
-                View all books in your inventory
-              </p>
-              <Button onClick={() => navigate('/books')} variant="outline">
-                Go to Books
-              </Button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Card className="cursor-pointer transition-all duration-200 hover:scale-102 hover:shadow-md border" onClick={() => navigate('/books')}>
+                <div className="bg-neutral-100 p-4 rounded-lg flex items-center gap-3">
+                  <div className="bg-temple-maroon/10 p-2 rounded-md text-temple-maroon flex-shrink-0">
+                    <BookOpen size={24} />
+                  </div>
+                  <div className="flex-1 ml-2">
+                    <h3 className="font-semibold text-base leading-tight text-temple-maroon">
+                      {t("common.viewBooks")}
+                    </h3>
+                    <p className="text-xs text-gray-700 mt-1">{t("common.browseInventory")}</p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="cursor-pointer transition-all duration-200 hover:scale-102 hover:shadow-md border" onClick={() => navigate('/sell')}>
+                <div className="bg-neutral-100 p-4 rounded-lg flex items-center gap-3">
+                  <div className="bg-temple-maroon/10 p-2 rounded-md text-temple-maroon flex-shrink-0">
+                    <ShoppingCart size={24} />
+                  </div>
+                  <div className="flex-1 ml-2">
+                    <h3 className="font-semibold text-base leading-tight text-temple-maroon">
+                      {t("common.sellBooks")}
+                    </h3>
+                    <p className="text-xs text-gray-700 mt-1">{t("common.quickSaleTransaction")}</p>
+                  </div>
+                </div>
+              </Card>
+
+              {isAdmin && (
+                <Card className="cursor-pointer transition-all duration-200 hover:scale-102 hover:shadow-md border" onClick={() => navigate('/books/add')}>
+                  <div className="bg-neutral-100 p-4 rounded-lg flex items-center gap-3">
+                    <div className="bg-temple-maroon/10 p-2 rounded-md text-temple-maroon flex-shrink-0">
+                      <Package size={24} />
+                    </div>
+                    <div className="flex-1 ml-2">
+                      <h3 className="font-semibold text-base leading-tight text-temple-maroon">
+                        {t("common.addBook")}
+                      </h3>
+                      <p className="text-xs text-gray-700 mt-1">{t("common.addNewBooksInventory")}</p>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              <Card className="cursor-pointer transition-all duration-200 hover:scale-102 hover:shadow-md border" onClick={() => navigate('/sales/history')}>
+                <div className="bg-neutral-100 p-4 rounded-lg flex items-center gap-3">
+                  <div className="bg-temple-maroon/10 p-2 rounded-md text-temple-maroon flex-shrink-0">
+                    <BarChart3 size={24} />
+                  </div>
+                  <div className="flex-1 ml-2">
+                    <h3 className="font-semibold text-base leading-tight text-temple-maroon">
+                      {t("common.viewSalesHistory")}
+                    </h3>
+                    <p className="text-xs text-gray-700 mt-1">{t("common.viewTransactionRecords")}</p>
+                  </div>
+                </div>
+              </Card>
+
+              {isAdmin && (
+                <Card className="cursor-pointer transition-all duration-200 hover:scale-102 hover:shadow-md border" onClick={() => navigate('/reports')}>
+                  <div className="bg-neutral-100 p-4 rounded-lg flex items-center gap-3">
+                    <div className="bg-temple-maroon/10 p-2 rounded-md text-temple-maroon flex-shrink-0">
+                      <BarChart3 size={24} />
+                    </div>
+                    <div className="flex-1 ml-2">
+                      <h3 className="font-semibold text-base leading-tight text-temple-maroon">
+                        {t("common.reports")}
+                      </h3>
+                      <p className="text-xs text-gray-700 mt-1">{t("common.analyticsInsights")}</p>
+                    </div>
+                  </div>
+                </Card>
+              )}
             </div>
           </TabsContent>
           
           <TabsContent value="activities" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {activities.map((activity) => (
-                <Card key={activity.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader>
-                    <CardTitle className="text-lg">{activity.name}</CardTitle>
-                    {activity.description && (
-                      <p className="text-sm text-muted-foreground mt-2">
-                        {activity.description}
-                      </p>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-xs text-muted-foreground">
-                      Created: {new Date(activity.created_at).toLocaleDateString()}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-              {activities.length === 0 && (
-                <div className="col-span-full text-center py-8 text-muted-foreground">
-                  No activities created yet. Go to Activity Management to create activities.
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              {isAdmin && (
+                <>
+                  <Card className="cursor-pointer transition-all duration-200 hover:scale-102 hover:shadow-md border" onClick={() => navigate('/user-metadata')}>
+                    <div className="bg-neutral-100 p-4 rounded-lg flex items-center gap-3">
+                      <div className="bg-temple-maroon/10 p-2 rounded-md text-temple-maroon flex-shrink-0">
+                        <Users size={24} />
+                      </div>
+                      <div className="flex-1 ml-2">
+                        <h3 className="font-semibold text-base leading-tight text-temple-maroon">
+                          User Management
+                        </h3>
+                        <p className="text-xs text-gray-700 mt-1">Create and manage users</p>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="cursor-pointer transition-all duration-200 hover:scale-102 hover:shadow-md border" onClick={() => navigate('/activity-management')}>
+                    <div className="bg-neutral-100 p-4 rounded-lg flex items-center gap-3">
+                      <div className="bg-temple-maroon/10 p-2 rounded-md text-temple-maroon flex-shrink-0">
+                        <Settings size={24} />
+                      </div>
+                      <div className="flex-1 ml-2">
+                        <h3 className="font-semibold text-base leading-tight text-temple-maroon">
+                          Activity Management
+                        </h3>
+                        <p className="text-xs text-gray-700 mt-1">Create and manage activities</p>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="cursor-pointer transition-all duration-200 hover:scale-102 hover:shadow-md border" onClick={() => navigate('/activity-reports')}>
+                    <div className="bg-neutral-100 p-4 rounded-lg flex items-center gap-3">
+                      <div className="bg-temple-maroon/10 p-2 rounded-md text-temple-maroon flex-shrink-0">
+                        <BarChart3 size={24} />
+                      </div>
+                      <div className="flex-1 ml-2">
+                        <h3 className="font-semibold text-base leading-tight text-temple-maroon">
+                          Activity Reports
+                        </h3>
+                        <p className="text-xs text-gray-700 mt-1">View activity analytics</p>
+                      </div>
+                    </div>
+                  </Card>
+                </>
               )}
+
+              <Card className="cursor-pointer transition-all duration-200 hover:scale-102 hover:shadow-md border" onClick={() => navigate('/slot-booking')}>
+                <div className="bg-neutral-100 p-4 rounded-lg flex items-center gap-3">
+                  <div className="bg-temple-maroon/10 p-2 rounded-md text-temple-maroon flex-shrink-0">
+                    <BookOpen size={24} />
+                  </div>
+                  <div className="flex-1 ml-2">
+                    <h3 className="font-semibold text-base leading-tight text-temple-maroon">
+                      Slot Booking
+                    </h3>
+                    <p className="text-xs text-gray-700 mt-1">Book slots for activities</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            <div className="border-t pt-4">
+              <h3 className="font-semibold text-temple-maroon mb-3">Created Activities</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {activities.map((activity) => (
+                  <Card key={activity.id} className="hover:shadow-md transition-shadow">
+                    <CardHeader>
+                      <CardTitle className="text-lg">{activity.name}</CardTitle>
+                      {activity.description && (
+                        <p className="text-sm text-muted-foreground mt-2">
+                          {activity.description}
+                        </p>
+                      )}
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-xs text-muted-foreground">
+                        Created: {new Date(activity.created_at).toLocaleDateString()}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))}
+                {activities.length === 0 && (
+                  <div className="col-span-full text-center py-8 text-muted-foreground">
+                    No activities created yet. Use Activity Management to create activities.
+                  </div>
+                )}
+              </div>
             </div>
           </TabsContent>
         </Tabs>
