@@ -13,6 +13,7 @@ import { Plus, Calendar, Users, Search, UserPlus } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import MobileHeader from '@/components/MobileHeader';
 import { format } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Activity {
   id: string;
@@ -45,6 +46,7 @@ interface UserBooking {
 
 export default function SlotBookingPage() {
   const { t } = useTranslation();
+  const { currentUser } = useAuth();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [activitySlots, setActivitySlots] = useState<ActivitySlot[]>([]);
   const [users, setUsers] = useState<UserMetadata[]>([]);
@@ -127,8 +129,7 @@ export default function SlotBookingPage() {
         return;
       }
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!currentUser) throw new Error('Not authenticated');
 
       const activity = activities.find(a => a.id === slotForm.activity_id);
       if (!activity) return;
@@ -141,7 +142,7 @@ export default function SlotBookingPage() {
           activity_id: slotForm.activity_id,
           scheduled_date: format(slotForm.scheduled_date, 'yyyy-MM-dd'),
           display_name: displayName,
-          created_by: user.id,
+        created_by: currentUser.id,
           institute_id: 'default'
         }]);
 
@@ -169,15 +170,14 @@ export default function SlotBookingPage() {
     try {
       if (!selectedSlot) return;
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!currentUser) throw new Error('Not authenticated');
 
       const { error } = await supabase
         .from('user_activity_bookings')
         .insert([{
           user_metadata_id: userId,
           activity_slot_id: selectedSlot.id,
-          created_by: user.id,
+          created_by: currentUser.id,
           institute_id: 'default'
         }]);
 

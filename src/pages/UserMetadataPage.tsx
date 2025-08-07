@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Plus, Search, Edit, Phone, MapPin } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import MobileHeader from '@/components/MobileHeader';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface UserMetadata {
   id: string;
@@ -63,12 +64,12 @@ export default function UserMetadataPage() {
 
   const handleSubmit = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      const { currentUser } = useAuth();
+      if (!currentUser) throw new Error('Not authenticated');
 
       const userData = {
         ...formData,
-        created_by: user.id,
+        created_by: currentUser.id,
         institute_id: 'default' // You might want to get this from context
       };
 
