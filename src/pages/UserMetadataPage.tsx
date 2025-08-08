@@ -67,9 +67,10 @@ export default function UserMetadataPage() {
     try {
       if (!currentUser) throw new Error('Not authenticated');
 
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(currentUser.id);
       const userData = {
         ...formData,
-        created_by: currentUser.id,
+        created_by: isUuid ? currentUser.id : null,
         institute_id: 'default' // You might want to get this from context
       };
 
