@@ -166,14 +166,12 @@ export default function ActivityManagementPage() {
                 <p className="text-muted-foreground">Manage religious activities and ceremonies</p>
               </div>
               
+              <Button onClick={() => { setEditingActivity(null); setFormData({ name: '', description: '' }); setIsAddDialogOpen(true); }}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Activity
+              </Button>
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={() => resetForm()}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Activity
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
+                <DialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
                   <DialogHeader>
                     <DialogTitle>{editingActivity ? 'Edit Activity' : 'Add New Activity'}</DialogTitle>
                     <DialogDescription>
