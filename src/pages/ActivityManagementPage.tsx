@@ -36,6 +36,16 @@ export default function ActivityManagementPage() {
     fetchActivities();
   }, []);
 
+  // Keep focus inside the Activity Name input while the dialog is open
+  useEffect(() => {
+    if (isAddDialogOpen) {
+      // Defer to next tick to avoid Radix initial focus race
+      setTimeout(() => {
+        nameInputRef.current?.focus();
+      }, 0);
+    }
+  }, [isAddDialogOpen]);
+
   const fetchActivities = async () => {
     try {
       const { data, error } = await supabase
@@ -131,11 +141,16 @@ export default function ActivityManagementPage() {
           autoFocus
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          onInput={() => nameInputRef.current?.focus()}
+          onKeyDownCapture={(e) => e.stopPropagation()}
           placeholder="e.g., Dattatreya Homam, Satyanarayana Swamy Vratam"
           required
           onFocus={() => console.info('Activity name input focused')}
-          onBlur={() => console.info('Activity name input blurred')}
+          onBlur={() => {
+            console.info('Activity name input blurred. Active element:', document.activeElement);
+            if (isAddDialogOpen) {
+              setTimeout(() => nameInputRef.current?.focus(), 0);
+            }
+          }}
         />
       </div>
       
@@ -176,7 +191,7 @@ export default function ActivityManagementPage() {
                 Add Activity
               </Button>
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
+                <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} onCloseAutoFocus={(e) => e.preventDefault()}>
                   <DialogHeader>
                     <DialogTitle>{editingActivity ? 'Edit Activity' : 'Add New Activity'}</DialogTitle>
                     <DialogDescription>
