@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,7 @@ export default function ActivityManagementPage() {
     name: '',
     description: ''
   });
-
+  const nameInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     fetchActivities();
   }, []);
@@ -127,10 +127,15 @@ export default function ActivityManagementPage() {
         <Label htmlFor="activityName">Activity Name *</Label>
         <Input
           id="activityName"
+          ref={nameInputRef}
+          autoFocus
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          onInput={() => nameInputRef.current?.focus()}
           placeholder="e.g., Dattatreya Homam, Satyanarayana Swamy Vratam"
           required
+          onFocus={() => console.info('Activity name input focused')}
+          onBlur={() => console.info('Activity name input blurred')}
         />
       </div>
       
